@@ -20,6 +20,7 @@ import { NewArrivalsPage } from './pages/NewArrivalsPage'
 import { NotificationsPage } from './pages/NotificationsPage'
 import { OrdersPage } from './pages/OrdersPage'
 import { PressPage } from './pages/PressPage'
+import { ProductDetailsPage } from './pages/ProductDetailsPage'
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { ReturnsPage } from './pages/ReturnsPage'
@@ -64,6 +65,7 @@ function AppContent() {
               <Route path="/cart" element={<CartPage />} />
               <Route path="/categories" element={<CategoriesPage />} />
               <Route path="/category/:categorySlug" element={<CategoryProductsPage />} />
+              <Route path="/product/:productId" element={<ProductDetailsPage />} />
               <Route path="/new-arrivals" element={<NewArrivalsPage />} />
               <Route path="/best-sellers" element={<BestSellersPage />} />
               <Route path="/sale" element={<SalePage />} />

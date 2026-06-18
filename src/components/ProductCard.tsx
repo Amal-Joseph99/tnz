@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useCurrency } from '../context/CurrencyContext'
 import type { Product } from '../data/products'
 import { CartIcon, EyeIcon, HeartIcon, StarIcon } from './Icons'
@@ -12,7 +13,9 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <article className="product-card">
       <div className="product-card__image-wrap">
-        <img src={product.image} alt={product.title} className="product-card__image" />
+        <Link to={`/product/${product.id}`} className="product-card__image-link">
+          <img src={product.image} alt={product.title} className="product-card__image" />
+        </Link>
         <div className="product-card__badges">
           {product.badge && <span className="product-card__badge">{product.badge}</span>}
           {product.discount && <span className="product-card__discount">{product.discount}</span>}
@@ -28,7 +31,9 @@ export function ProductCard({ product }: ProductCardProps) {
       </div>
       <div className="product-card__body">
         <p className="product-card__brand">{product.brand}</p>
-        <h3 className="product-card__title">{product.title}</h3>
+        <h3 className="product-card__title">
+          <Link to={`/product/${product.id}`}>{product.title}</Link>
+        </h3>
         <div className="product-card__rating">
           {Array.from({ length: 5 }).map((_, i) => (
             <StarIcon key={i} className={i < product.rating ? 'star filled' : 'star'} />
