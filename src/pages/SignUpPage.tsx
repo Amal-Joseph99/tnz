@@ -41,8 +41,8 @@ export function SignUpPage() {
       return
     }
 
-    setSuccess('Buyer account created. Verify your email to continue.')
-    window.setTimeout(() => navigate('/buyer/verify-email'), 600)
+    setSuccess('Buyer account created. Check your email for the 6-digit code.')
+    window.setTimeout(() => navigate('/buyer/verify-email', { state: { email: email.trim() } }), 600)
   }
 
   return (
@@ -64,15 +64,37 @@ export function SignUpPage() {
           }}>
             <label>
               Full name
-              <input value={name} type="text" placeholder="Enter your full name" onChange={(event) => setName(event.target.value)} />
+              <input
+                value={name}
+                type="text"
+                placeholder="Enter your full name"
+                autoComplete="name"
+                required
+                onChange={(event) => setName(event.target.value)}
+              />
             </label>
             <label>
               Email address
-              <input value={email} type="email" placeholder="you@example.com" autoComplete="email" onChange={(event) => setEmail(event.target.value)} />
+              <input
+                value={email}
+                type="email"
+                placeholder="you@example.com"
+                autoComplete="email"
+                required
+                onChange={(event) => setEmail(event.target.value)}
+              />
             </label>
             <label>
               Password
-              <input value={password} type="password" placeholder="Minimum 8 characters" autoComplete="new-password" onChange={(event) => setPassword(event.target.value)} />
+              <input
+                value={password}
+                type="password"
+                placeholder="Minimum 8 characters"
+                autoComplete="new-password"
+                minLength={8}
+                required
+                onChange={(event) => setPassword(event.target.value)}
+              />
             </label>
             <button type="submit" className="seller-login__submit" disabled={loading}>
               {loading ? 'Creating account...' : 'Create buyer account'}

@@ -1,14 +1,32 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { OTP_LENGTH, isValidOtp } from './authHelpers'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { getOtpValue, OTP_LENGTH, isValidOtp } from './authHelpers'
+import { supabase } from '../lib/supabase'
+
+type BuyerVerifyLocationState = {
+  email?: string
+}
 
 export function BuyerOtpVerificationPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const email = (location.state as BuyerVerifyLocationState | null)?.email?.trim() ?? ''
   const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(''))
   const [secondsLeft, setSecondsLeft] = useState(30)
   const [error, setError] = useState('')
-  const [message, setMessage] = useState('A 6-digit OTP has been sent to your buyer email address.')
+  const [message, setMessage] = useState(
+    email
+      ? `A 6-digit code was sent to ${email}.`
+      : 'Enter the 6-digit code from your buyer signup email.',
+  )
+  const [verifying, setVerifying] = useState(false)
   const inputRefs = useRef<Array<HTMLInputElement | null>>([])
+
+  useEffect(() => {
+    if (!email) {
+      setError('Missing signup email. Start again from buyer signup.')
+    }
+  }, [email])
 
   useEffect(() => {
     if (secondsLeft <= 0) return
@@ -32,9 +50,32 @@ export function BuyerOtpVerificationPage() {
     }
   }
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
+    if (!email) {
+      setError('Missing signup email. Start again from buyer signup.')
+      return
+    }
+
     if (!isValidOtp(otp)) {
-      setError('Please enter the complete 6-digit email OTP.')
+      setError('Please enter the complete 6-digit email code.')
+      return
+    }
+
+    if (!supabase) {
+      setError('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.')
+      return
+    }
+
+    setVerifying(true)
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      email,
+      token: getOtpValue(otp),
+      type: 'signup',
+    })
+    setVerifying(false)
+
+    if (verifyError) {
+      setError(verifyError.message)
       return
     }
 
@@ -42,11 +83,31 @@ export function BuyerOtpVerificationPage() {
     window.setTimeout(() => navigate('/profile'), 700)
   }
 
-  const handleResend = () => {
+  const handleResend = async () => {
+    if (!email) {
+      setError('Missing signup email. Start again from buyer signup.')
+      return
+    }
+
+    if (!supabase) {
+      setError('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.')
+      return
+    }
+
+    const { error: resendError } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+    })
+
+    if (resendError) {
+      setError(resendError.message)
+      return
+    }
+
     setOtp(Array(OTP_LENGTH).fill(''))
     setSecondsLeft(30)
     setError('')
-    setMessage('A new 6-digit OTP has been sent to your buyer email address.')
+    setMessage(`A new 6-digit code was sent to ${email}.`)
     inputRefs.current[0]?.focus()
   }
 
@@ -54,17 +115,17 @@ export function BuyerOtpVerificationPage() {
     <section className="seller-otp-page">
       <div className="seller-otp-card">
         <span className="seller-otp-card__eyebrow">Buyer account</span>
-        <h1>Email OTP verification</h1>
-        <p>Enter the 6-digit OTP sent to your registered email address.</p>
+        <h1>Email verification</h1>
+        <p>Enter the 6-digit code sent to your registered email address.</p>
 
         {message && <div className="auth-message auth-message--success">{message}</div>}
         {error && <div className="auth-message auth-message--error">{error}</div>}
 
         <form className="seller-otp-form" onSubmit={(event) => {
           event.preventDefault()
-          handleVerify()
+          void handleVerify()
         }}>
-          <div className="seller-otp-form__inputs" aria-label="6 digit buyer email OTP">
+          <div className="seller-otp-form__inputs" aria-label="6 digit buyer email code">
             {otp.map((digit, index) => (
               <input
                 key={`buyer-otp-${index + 1}`}
@@ -74,7 +135,8 @@ export function BuyerOtpVerificationPage() {
                 value={digit}
                 inputMode="numeric"
                 maxLength={1}
-                aria-label={`OTP digit ${index + 1}`}
+                aria-label={`Code digit ${index + 1}`}
+                disabled={!email || verifying}
                 onChange={(event) => handleOtpChange(index, event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === 'Backspace' && !otp[index] && index > 0) {
@@ -85,11 +147,19 @@ export function BuyerOtpVerificationPage() {
             ))}
           </div>
 
-          <button type="submit" className="seller-otp-form__verify">Verify and sign in</button>
+          <button type="submit" className="seller-otp-form__verify" disabled={!email || verifying}>
+            {verifying ? 'Verifying...' : 'Verify and sign in'}
+          </button>
         </form>
 
         <div className="seller-otp-card__resend">
-          {secondsLeft > 0 ? <span>Resend OTP in {secondsLeft}s</span> : <button type="button" onClick={handleResend}>Resend OTP</button>}
+          {secondsLeft > 0 ? (
+            <span>Resend code in {secondsLeft}s</span>
+          ) : (
+            <button type="button" onClick={() => void handleResend()} disabled={!email || verifying}>
+              Resend code
+            </button>
+          )}
         </div>
 
         <Link to="/buyer/signup" className="seller-otp-card__back">Change buyer details</Link>

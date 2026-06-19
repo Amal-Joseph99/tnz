@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { fetchSellerCountryOptions, type SellerCountryOption } from '../lib/sellerCountries'
-import { supabase } from '../lib/supabase'
+import { signUpSeller } from '../lib/sellerAuth'
 import { isValidEmail, isValidPassword } from './authHelpers'
 
 export function SellersSignupPage() {
@@ -77,41 +77,23 @@ export function SellersSignupPage() {
       return
     }
 
-    if (!supabase) {
-      setError('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.')
-      return
-    }
-
-    const fullPhone = `+${selectedCountry.isd_code}${localDigits}`
-
     setSubmitting(true)
-
-    const { error: signUpError } = await supabase.auth.signUp({
-      email: email.trim(),
+    const result = await signUpSeller({
+      businessName,
+      country: selectedCountry,
+      email,
+      phoneLocal,
       password,
-      options: {
-        data: {
-          account_type: 'seller',
-          business_name: businessName.trim(),
-          country_id: selectedCountry.id,
-          iso_alpha2: selectedCountry.iso_alpha2,
-          iso_alpha3: selectedCountry.iso_alpha3,
-          isd_code: selectedCountry.isd_code,
-          base_currency_code: selectedCountry.currency_code,
-          phone: fullPhone,
-        },
-      },
     })
-
     setSubmitting(false)
 
-    if (signUpError) {
-      setError(signUpError.message)
+    if (!result.ok) {
+      setError(result.message)
       return
     }
 
-    setSuccess('Seller account created. Verify your email to continue.')
-    window.setTimeout(() => navigate('/seller/verify-email'), 700)
+    setSuccess('Seller account created. Check your email for the 6-digit code.')
+    window.setTimeout(() => navigate('/seller/verify-email', { state: { email: email.trim() } }), 700)
   }
 
   return (
@@ -137,6 +119,8 @@ export function SellersSignupPage() {
                 value={businessName}
                 type="text"
                 placeholder="Your store or company name"
+                autoComplete="organization"
+                required
                 onChange={(event) => setBusinessName(event.target.value)}
               />
             </label>
@@ -145,6 +129,7 @@ export function SellersSignupPage() {
               <select
                 value={countryId}
                 disabled={loadingCountries}
+                required
                 onChange={(event) => setCountryId(event.target.value)}
               >
                 <option value="">{loadingCountries ? 'Loading countries...' : 'Select country'}</option>
@@ -162,11 +147,19 @@ export function SellersSignupPage() {
                 value={selectedCountry ? `${selectedCountry.currency_code} · ${selectedCountry.country_name}` : 'Select a country first'}
                 readOnly
                 aria-readonly="true"
+                tabIndex={-1}
               />
             </label>
             <label>
               Seller email
-              <input value={email} type="email" placeholder="seller@example.com" onChange={(event) => setEmail(event.target.value)} />
+              <input
+                value={email}
+                type="email"
+                placeholder="seller@example.com"
+                autoComplete="email"
+                required
+                onChange={(event) => setEmail(event.target.value)}
+              />
             </label>
             <label>
               Phone number
@@ -178,6 +171,8 @@ export function SellersSignupPage() {
                   value={phoneLocal}
                   type="tel"
                   placeholder="98765 43210"
+                  autoComplete="tel-national"
+                  required
                   disabled={!selectedCountry}
                   onChange={(event) => setPhoneLocal(event.target.value)}
                 />
@@ -185,7 +180,15 @@ export function SellersSignupPage() {
             </label>
             <label>
               Password
-              <input value={password} type="password" placeholder="Minimum 8 characters" onChange={(event) => setPassword(event.target.value)} />
+              <input
+                value={password}
+                type="password"
+                placeholder="Minimum 8 characters"
+                autoComplete="new-password"
+                minLength={8}
+                required
+                onChange={(event) => setPassword(event.target.value)}
+              />
             </label>
             <button type="submit" className="seller-login__submit" disabled={submitting || loadingCountries}>
               {submitting ? 'Creating account...' : 'Create seller account'}

@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { absoluteUrl } from './site'
 
 export type AccountType = 'buyer' | 'seller' | 'admin' | 'unknown'
 
@@ -69,6 +70,7 @@ export async function signUpBuyer(fullName: string, email: string, password: str
     email: email.trim(),
     password,
     options: {
+      emailRedirectTo: absoluteUrl('/buyer/verify-email'),
       data: {
         account_type: 'buyer',
         full_name: fullName.trim(),

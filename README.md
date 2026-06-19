@@ -32,7 +32,7 @@ This repo includes `amplify.yml`. Connect GitHub in the Amplify console.
 ```env
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_SITE_URL=https://store.shopncart.store
+VITE_SITE_URL=https://main.d13h6a6205mdyf.amplifyapp.com
 ```
 
 4. **SPA rewrite** (Amplify → App settings → Rewrites and redirects):
@@ -47,13 +47,23 @@ Or simpler rule already used on this app:
 |--------|--------|------|
 | `/<*>` | `/index.html` | 404-200 |
 
-5. **Custom domain** (Amplify → Hosting → Custom domains):
-   - Use **`store.shopncart.store`** (works on your AWS account)
-   - `www.shopncart.store` is blocked by another AWS account’s CloudFront — use **Hostinger redirect** `www` → `store.shopncart.store` until that is cleared
+5. **Custom domain (not on Amplify)** — `shopncart.store` / `www` are locked on another AWS account’s CloudFront. Use **Hostinger redirects** to the Amplify default URL instead:
+
+   **Target:** `https://main.d13h6a6205mdyf.amplifyapp.com`
+
+   1. In **Hostinger hPanel** → **Domains** → `shopncart.store` → **DNS / Nameservers**
+   2. Set nameservers back to **Hostinger** (not Cloudflare). Current public NS must be Hostinger before redirects work.
+   3. **Domains** → **Redirects** (not basic “Forward domain” — that often breaks HTTPS and drops paths)
+   4. Create **301** redirects with **path preserved**:
+      - `shopncart.store` → `https://main.d13h6a6205mdyf.amplifyapp.com`
+      - `www.shopncart.store` → `https://main.d13h6a6205mdyf.amplifyapp.com`
+   5. If **Redirects** is unavailable (domain-only plan), use **Forward domain** as a temporary fallback — note that HTTPS visitors may see a certificate warning until you add a Hostinger hosting plan or use path-aware redirects.
+
+   Visitors will see the `amplifyapp.com` URL in the browser after redirect. Product/share links in the app use `VITE_SITE_URL` (`https://shopncart.store`) so paths like `/product/123` still work when redirects preserve the path.
 
 6. **Live URLs**
-   - Default: `https://main.d13h6a6205mdyf.amplifyapp.com`
-   - Custom: `https://store.shopncart.store` (after DNS is connected)
+   - App (served): `https://main.d13h6a6205mdyf.amplifyapp.com`
+   - Public entry (redirect): `https://shopncart.store` and `https://www.shopncart.store`
 
 ## Environment Variables
 
