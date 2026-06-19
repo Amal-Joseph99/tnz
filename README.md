@@ -53,26 +53,32 @@ SPA routing is handled by `public/_redirects` (copied to `dist` on build).
 
 ### Cloudflare build settings (important)
 
-**Option A — recommended (Pages Git, no Wrangler deploy):**
+Your Cloudflare **Workers Builds** job may still be using the old deploy command. That makes every push **build** but **fail on deploy**.
 
-| Setting | Value |
-|---------|-------|
-| Build command | `npm run build` |
-| Build output directory | `dist` |
-| Deploy command | *(leave empty)* |
+In Cloudflare → **Workers & Pages** → **agtrenz** → **Settings** → **Build**:
 
-**Option B — Workers Builds (use this if deploy command is required):**
-
-| Setting | Value |
-|---------|-------|
+| Setting | Correct value |
+|---------|----------------|
+| Production branch | `main` |
 | Build command | `npm run build` |
 | Deploy command | `npm run deploy` |
 
-Uses Workers static assets (`wrangler deploy`) — not `wrangler pages deploy`.
+**Delete** the environment variable `CLOUDFLARE_API_TOKEN` from Cloudflare project settings if you added it manually — it breaks deploy auth.
 
-**Important:** In Cloudflare → Settings → Environment variables, **delete `CLOUDFLARE_API_TOKEN`** if you added one manually. It overrides the build token and causes auth errors.
+### GitHub Actions auto-deploy (recommended)
 
-`wrangler.toml` must match your Worker/Pages project name (`agtrenz`).
+This repo includes `.github/workflows/deploy-cloudflare.yml`. Add these **GitHub repository secrets** (Settings → Secrets → Actions):
+
+| Secret | Value |
+|--------|-------|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with **Workers Scripts:Edit** |
+| `CLOUDFLARE_ACCOUNT_ID` | `57cfd6f54a4c2fe8358748a00e679a2f` |
+| `VITE_SUPABASE_URL` | your Supabase URL |
+| `VITE_SUPABASE_ANON_KEY` | your Supabase anon key |
+
+Create token: [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens) → Create Token → **Edit Cloudflare Workers** template.
+
+After secrets are saved, every push to `main` deploys automatically via GitHub Actions.
 
 ## Environment Variables
 
