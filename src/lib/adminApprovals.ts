@@ -1,0 +1,161 @@
+import { supabase } from './supabase'
+
+export type KycQueueItem = {
+  userId: string
+  kycId: string
+  status: string
+  businessType: string
+  businessName: string
+  businessAddress: string
+  taxId: string | null
+  accountHolderName: string
+  bankName: string
+  accountNumber: string
+  ifscSwift: string
+  submittedAt: string
+  reviewedAt: string | null
+  rejectionReason: string | null
+  sellerEmail: string
+  signupBusinessName: string
+  countryName: string
+  phone: string
+}
+
+export type ProductQueueItem = {
+  id: number
+  userId: string
+  sku: string
+  productName: string
+  categoryName: string
+  subCategoryName: string
+  productTypeName: string
+  hsnCode: string
+  brandName: string
+  approvalStatus: string
+  submittedAt: string | null
+  reviewedAt: string | null
+  rejectionReason: string | null
+  sellerEmail: string
+  sellerBusinessName: string
+}
+
+type MutationResult = { ok: true } | { ok: false; message: string }
+
+export async function fetchKycQueue(status?: string): Promise<KycQueueItem[]> {
+  if (!supabase) return []
+
+  const { data, error } = await supabase.rpc('list_seller_kyc_submissions', {
+    p_status: status ?? null,
+  })
+
+  if (error || !data) return []
+
+  return data.map((row: Record<string, unknown>) => ({
+    userId: String(row.user_id),
+    kycId: String(row.kyc_id),
+    status: String(row.status),
+    businessType: String(row.business_type),
+    businessName: String(row.business_name),
+    businessAddress: String(row.business_address),
+    taxId: row.tax_id ? String(row.tax_id) : null,
+    accountHolderName: String(row.account_holder_name),
+    bankName: String(row.bank_name),
+    accountNumber: String(row.account_number),
+    ifscSwift: String(row.ifsc_swift),
+    submittedAt: String(row.submitted_at),
+    reviewedAt: row.reviewed_at ? String(row.reviewed_at) : null,
+    rejectionReason: row.rejection_reason ? String(row.rejection_reason) : null,
+    sellerEmail: String(row.seller_email),
+    signupBusinessName: String(row.signup_business_name),
+    countryName: String(row.country_name),
+    phone: String(row.phone),
+  }))
+}
+
+export async function reviewSellerKyc(
+  userId: string,
+  approved: boolean,
+  rejectionReason?: string,
+): Promise<MutationResult> {
+  if (!supabase) {
+    return { ok: false, message: 'Supabase is not configured.' }
+  }
+
+  const { error } = await supabase.rpc('review_seller_kyc', {
+    p_user_id: userId,
+    p_approved: approved,
+    p_rejection_reason: rejectionReason ?? null,
+  })
+
+  if (error) {
+    return { ok: false, message: error.message }
+  }
+
+  return { ok: true }
+}
+
+export async function fetchProductQueue(status?: string): Promise<ProductQueueItem[]> {
+  if (!supabase) return []
+
+  const { data, error } = await supabase.rpc('list_seller_product_submissions', {
+    p_status: status ?? null,
+  })
+
+  if (error || !data) return []
+
+  return data.map((row: Record<string, unknown>) => ({
+    id: Number(row.id),
+    userId: String(row.user_id),
+    sku: String(row.sku),
+    productName: String(row.product_name),
+    categoryName: String(row.category_name),
+    subCategoryName: String(row.sub_category_name),
+    productTypeName: String(row.product_type_name),
+    hsnCode: String(row.hsn_code),
+    brandName: String(row.brand_name),
+    approvalStatus: String(row.approval_status),
+    submittedAt: row.submitted_at ? String(row.submitted_at) : null,
+    reviewedAt: row.reviewed_at ? String(row.reviewed_at) : null,
+    rejectionReason: row.rejection_reason ? String(row.rejection_reason) : null,
+    sellerEmail: String(row.seller_email),
+    sellerBusinessName: String(row.seller_business_name),
+  }))
+}
+
+export async function reviewSellerProduct(
+  productId: number,
+  approved: boolean,
+  rejectionReason?: string,
+): Promise<MutationResult> {
+  if (!supabase) {
+    return { ok: false, message: 'Supabase is not configured.' }
+  }
+
+  const { error } = await supabase.rpc('review_seller_product', {
+    p_product_id: productId,
+    p_approved: approved,
+    p_rejection_reason: rejectionReason ?? null,
+  })
+
+  if (error) {
+    return { ok: false, message: error.message }
+  }
+
+  return { ok: true }
+}
+
+export async function fetchPendingApprovalCounts() {
+  if (!supabase) {
+    return { pendingKyc: 0, pendingProducts: 0 }
+  }
+
+  const { data, error } = await supabase.rpc('count_pending_admin_approvals')
+  if (error || !data) {
+    return { pendingKyc: 0, pendingProducts: 0 }
+  }
+
+  return {
+    pendingKyc: Number(data.pendingKyc ?? 0),
+    pendingProducts: Number(data.pendingProducts ?? 0),
+  }
+}

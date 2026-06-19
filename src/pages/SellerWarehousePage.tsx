@@ -1,18 +1,72 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { SellerDashboardShell } from '../components/SellerDashboardShell'
-import { getSellerWorkflow, updateSellerWorkflow } from '../lib/sellerWorkflow'
+import { fetchSellerWarehouse, saveSellerWarehouse } from '../lib/sellerWarehouse'
+import { fetchSellerWorkflow, type SellerWorkflowState } from '../lib/sellerWorkflow'
 
 export function SellerWarehousePage() {
-  const [workflow, setWorkflow] = useState(getSellerWorkflow)
+  const [workflow, setWorkflow] = useState<SellerWorkflowState | null>(null)
+  const [warehouseName, setWarehouseName] = useState('Main Fulfillment Center')
+  const [addressLine, setAddressLine] = useState('')
+  const [postalCode, setPostalCode] = useState('')
+  const [dispatchCutoffTime, setDispatchCutoffTime] = useState('17:00')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
 
-  const handleSaveWarehouse = () => {
-    const nextWorkflow = updateSellerWorkflow((state) => ({
-      ...state,
-      warehouseCompleted: true,
-    }))
+  useEffect(() => {
+    let active = true
+
+    Promise.all([fetchSellerWorkflow(), fetchSellerWarehouse()])
+      .then(([workflowState, warehouse]) => {
+        if (!active) return
+        setWorkflow(workflowState)
+        if (warehouse) {
+          setWarehouseName(warehouse.warehouseName)
+          setAddressLine(warehouse.addressLine)
+          setPostalCode(warehouse.postalCode)
+          setDispatchCutoffTime(warehouse.dispatchCutoffTime)
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const handleSaveWarehouse = async () => {
+    setError('')
+    setMessage('')
+    setSaving(true)
+
+    const result = await saveSellerWarehouse({
+      warehouseName,
+      addressLine,
+      postalCode,
+      dispatchCutoffTime,
+    })
+
+    setSaving(false)
+
+    if (!result.ok) {
+      setError(result.message)
+      return
+    }
+
+    const nextWorkflow = await fetchSellerWorkflow()
     setWorkflow(nextWorkflow)
     setMessage('Warehouse address saved. Product listing is now unlocked, but each product still needs admin approval.')
+  }
+
+  if (loading || !workflow) {
+    return (
+      <SellerDashboardShell title="Warehouse" subtitle="Manage fulfillment locations, stock movement, and dispatch readiness.">
+        <p>Loading warehouse...</p>
+      </SellerDashboardShell>
+    )
   }
 
   if (workflow.kycStatus !== 'approved') {
@@ -42,14 +96,15 @@ export function SellerWarehousePage() {
             <span className="seller-badge seller-badge--success">KYC approved</span>
           </div>
           <form className="seller-console-form seller-console-form--single">
-            <label>Warehouse name<input defaultValue="Main Fulfillment Center" /></label>
-            <label>Address line<textarea defaultValue="Taliparamba, Kannur, Kerala, India" /></label>
-            <label>Postal code<input defaultValue="670141" /></label>
-            <label>Dispatch cutoff time<input type="time" defaultValue="17:00" /></label>
+            <label>Warehouse name<input value={warehouseName} onChange={(event) => setWarehouseName(event.target.value)} /></label>
+            <label>Address line<textarea value={addressLine} onChange={(event) => setAddressLine(event.target.value)} /></label>
+            <label>Postal code<input value={postalCode} onChange={(event) => setPostalCode(event.target.value)} /></label>
+            <label>Dispatch cutoff time<input type="time" value={dispatchCutoffTime} onChange={(event) => setDispatchCutoffTime(event.target.value)} /></label>
           </form>
+          {error && <div className="auth-message auth-message--error">{error}</div>}
           {message && <div className="auth-message auth-message--success">{message}</div>}
-          <button type="button" className="seller-primary-action" onClick={handleSaveWarehouse}>
-            Save warehouse address
+          <button type="button" className="seller-primary-action" disabled={saving} onClick={() => void handleSaveWarehouse()}>
+            {saving ? 'Saving...' : 'Save warehouse address'}
           </button>
         </article>
         <article className="seller-console-card">

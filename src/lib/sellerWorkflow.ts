@@ -1,3 +1,5 @@
+import { supabase } from './supabase'
+
 export type KycStatus = 'not_submitted' | 'pending' | 'approved' | 'rejected'
 export type ProductApprovalStatus = 'none' | 'pending' | 'approved' | 'rejected'
 
@@ -7,9 +9,8 @@ export type SellerWorkflowState = {
   warehouseCompleted: boolean
   productApprovalStatus: ProductApprovalStatus
   productName: string
+  productId: number
 }
-
-const STORAGE_KEY = 'agtrenz-seller-workflow'
 
 export const defaultWorkflowState: SellerWorkflowState = {
   kycId: '',
@@ -17,29 +18,25 @@ export const defaultWorkflowState: SellerWorkflowState = {
   warehouseCompleted: false,
   productApprovalStatus: 'none',
   productName: '',
+  productId: 0,
 }
 
-export function createKycId() {
-  return Math.floor(100000000000 + Math.random() * 900000000000).toString()
-}
-
-export function getSellerWorkflow(): SellerWorkflowState {
-  try {
-    const saved = window.localStorage.getItem(STORAGE_KEY)
-    return saved ? { ...defaultWorkflowState, ...JSON.parse(saved) } : defaultWorkflowState
-  } catch {
+export async function fetchSellerWorkflow(): Promise<SellerWorkflowState> {
+  if (!supabase) {
     return defaultWorkflowState
   }
-}
 
-export function saveSellerWorkflow(nextState: SellerWorkflowState) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState))
-}
+  const { data, error } = await supabase.rpc('get_seller_workflow_state')
+  if (error || !data) {
+    return defaultWorkflowState
+  }
 
-export function updateSellerWorkflow(
-  updater: (state: SellerWorkflowState) => SellerWorkflowState,
-) {
-  const nextState = updater(getSellerWorkflow())
-  saveSellerWorkflow(nextState)
-  return nextState
+  return {
+    kycId: String(data.kycId ?? ''),
+    kycStatus: (data.kycStatus ?? 'not_submitted') as KycStatus,
+    warehouseCompleted: Boolean(data.warehouseCompleted),
+    productApprovalStatus: (data.productApprovalStatus ?? 'none') as ProductApprovalStatus,
+    productName: String(data.productName ?? ''),
+    productId: Number(data.productId ?? 0),
+  }
 }

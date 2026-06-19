@@ -1,29 +1,78 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminDashboardShell } from '../components/AdminDashboardShell'
 import { PanelEmptyState } from '../components/PanelEmptyState'
-import { getSellerWorkflow, updateSellerWorkflow } from '../lib/sellerWorkflow'
+import {
+  fetchKycQueue,
+  fetchPendingApprovalCounts,
+  fetchProductQueue,
+  reviewSellerKyc,
+  reviewSellerProduct,
+} from '../lib/adminApprovals'
 
 export function AdminDashboardPage() {
-  const [workflow, setWorkflow] = useState(getSellerWorkflow)
+  const [pendingKyc, setPendingKyc] = useState(0)
+  const [pendingProducts, setPendingProducts] = useState(0)
+  const [priorityKyc, setPriorityKyc] = useState<Awaited<ReturnType<typeof fetchKycQueue>>[number] | null>(null)
+  const [priorityProduct, setPriorityProduct] = useState<Awaited<ReturnType<typeof fetchProductQueue>>[number] | null>(null)
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
 
-  const pendingKyc = workflow.kycStatus === 'pending' ? 1 : 0
-  const pendingProducts = workflow.productApprovalStatus === 'pending' ? 1 : 0
+  const loadDashboard = async () => {
+    const [counts, kycQueue, productQueue] = await Promise.all([
+      fetchPendingApprovalCounts(),
+      fetchKycQueue('pending'),
+      fetchProductQueue('pending'),
+    ])
 
-  const handleKycDecision = (approved: boolean) => {
-    setWorkflow(updateSellerWorkflow((state) => ({
-      ...state,
-      kycStatus: approved ? 'approved' : 'rejected',
-      warehouseCompleted: approved ? state.warehouseCompleted : false,
-      productApprovalStatus: approved ? state.productApprovalStatus : 'none',
-    })))
+    setPendingKyc(counts.pendingKyc)
+    setPendingProducts(counts.pendingProducts)
+    setPriorityKyc(kycQueue[0] ?? null)
+    setPriorityProduct(productQueue[0] ?? null)
   }
 
-  const handleProductDecision = (approved: boolean) => {
-    setWorkflow(updateSellerWorkflow((state) => ({
-      ...state,
-      productApprovalStatus: approved ? 'approved' : 'rejected',
-    })))
+  useEffect(() => {
+    void loadDashboard()
+  }, [])
+
+  const handleKycDecision = async (approved: boolean) => {
+    if (!priorityKyc) return
+    setError('')
+    setMessage('')
+
+    const result = await reviewSellerKyc(
+      priorityKyc.userId,
+      approved,
+      approved ? undefined : 'Documents or bank details did not pass verification.',
+    )
+
+    if (!result.ok) {
+      setError(result.message)
+      return
+    }
+
+    setMessage(approved ? 'KYC approved.' : 'KYC rejected.')
+    await loadDashboard()
+  }
+
+  const handleProductDecision = async (approved: boolean) => {
+    if (!priorityProduct) return
+    setError('')
+    setMessage('')
+
+    const result = await reviewSellerProduct(
+      priorityProduct.id,
+      approved,
+      approved ? undefined : 'Listing did not meet marketplace compliance requirements.',
+    )
+
+    if (!result.ok) {
+      setError(result.message)
+      return
+    }
+
+    setMessage(approved ? 'Product listing approved.' : 'Product listing rejected.')
+    await loadDashboard()
   }
 
   return (
@@ -53,6 +102,9 @@ export function AdminDashboardPage() {
           <p>Awaiting publication approval</p>
         </article>
       </section>
+
+      {error && <div className="auth-message auth-message--error">{error}</div>}
+      {message && <div className="auth-message auth-message--success">{message}</div>}
 
       <section className="admin-console-grid">
         <article className="admin-console-card admin-console-card--wide">
@@ -110,21 +162,22 @@ export function AdminDashboardPage() {
             </div>
             <Link to="/admin/kyc" className="admin-btn admin-btn--ghost">Open KYC queue</Link>
           </div>
-          {workflow.kycStatus === 'pending' ? (
+          {priorityKyc ? (
             <div className="admin-approval-card">
-              <strong>{workflow.productName || 'Seller submission'}</strong>
-              <p>KYC ID: {workflow.kycId}</p>
-              <p>Documents: PAN, GST, bank proof, address proof</p>
+              <strong>{priorityKyc.businessName}</strong>
+              <p>KYC ID: {priorityKyc.kycId}</p>
+              <p>Seller: {priorityKyc.sellerEmail}</p>
+              <p>Documents: Photo, Address proof, Tax ID proof</p>
               <p>Status: Pending review</p>
               <div className="admin-approval-card__actions">
-                <button type="button" className="admin-accept" onClick={() => handleKycDecision(true)}>Approve KYC</button>
-                <button type="button" className="admin-reject" onClick={() => handleKycDecision(false)}>Reject KYC</button>
+                <button type="button" className="admin-accept" onClick={() => void handleKycDecision(true)}>Approve KYC</button>
+                <button type="button" className="admin-reject" onClick={() => void handleKycDecision(false)}>Reject KYC</button>
               </div>
             </div>
           ) : (
             <div className="admin-empty-state">
-              <strong>No pending KYC in active workflow</strong>
-              <p>Current status: {workflow.kycStatus.replace('_', ' ')}</p>
+              <strong>No pending KYC submissions</strong>
+              <p>Seller verification requests will appear here.</p>
               <Link to="/admin/kyc">View all KYC requests</Link>
             </div>
           )}
@@ -138,20 +191,21 @@ export function AdminDashboardPage() {
             </div>
             <Link to="/admin/products" className="admin-btn admin-btn--ghost">Open product queue</Link>
           </div>
-          {workflow.productApprovalStatus === 'pending' ? (
+          {priorityProduct ? (
             <div className="admin-approval-card">
-              <strong>{workflow.productName}</strong>
-              <p>Category: Marketplace listing</p>
+              <strong>{priorityProduct.productName}</strong>
+              <p>SKU: {priorityProduct.sku}</p>
+              <p>Seller: {priorityProduct.sellerEmail}</p>
               <p>Visibility: Hidden until approved</p>
               <div className="admin-approval-card__actions">
-                <button type="button" className="admin-accept" onClick={() => handleProductDecision(true)}>Approve listing</button>
-                <button type="button" className="admin-reject" onClick={() => handleProductDecision(false)}>Reject listing</button>
+                <button type="button" className="admin-accept" onClick={() => void handleProductDecision(true)}>Approve listing</button>
+                <button type="button" className="admin-reject" onClick={() => void handleProductDecision(false)}>Reject listing</button>
               </div>
             </div>
           ) : (
             <div className="admin-empty-state">
-              <strong>No pending listing in active workflow</strong>
-              <p>Current status: {workflow.productApprovalStatus}</p>
+              <strong>No pending product listings</strong>
+              <p>Seller submissions will appear here for review.</p>
               <Link to="/admin/products">View all product submissions</Link>
             </div>
           )}

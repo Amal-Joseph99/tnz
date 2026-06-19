@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { sortCategoryNames } from './categoryDisplay'
 
 export type CategoryTaxonomyRow = {
   id: number
@@ -100,13 +101,12 @@ export async function fetchStorefrontCategoryNames(): Promise<string[]> {
   const { data, error } = await supabase
     .from('storefront_categories')
     .select('category_name')
-    .order('category_name')
 
   if (error) {
     throw new Error(error.message)
   }
 
-  return (data ?? []).map((row) => row.category_name as string)
+  return sortCategoryNames((data ?? []).map((row) => row.category_name as string))
 }
 
 export async function createCategoryTaxonomy(input: CategoryTaxonomyInput): Promise<MutationResult> {
