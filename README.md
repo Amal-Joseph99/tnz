@@ -15,40 +15,45 @@ npm run dev
 npm run build
 ```
 
-## Vercel Deployment (recommended)
+## AWS Amplify Deployment
 
-1. Go to [vercel.com](https://vercel.com) → **Add New** → **Project**
-2. Import GitHub repo **`Amal-Joseph99/tnz`**
-3. Vercel auto-detects **Vite** — confirm:
+This repo includes `amplify.yml`. Connect GitHub in the Amplify console.
+
+1. [AWS Amplify Console](https://ap-southeast-1.console.aws.amazon.com/amplify/home?region=ap-southeast-1) → **Create new app** → **Host web app** → GitHub → **`Amal-Joseph99/tnz`** → branch **`main`**
+2. Amplify reads `amplify.yml` automatically:
 
 | Setting | Value |
 |---------|-------|
-| Build command | `npm run build` |
-| Output directory | `dist` |
+| Build | `npm ci` → `npm run build` |
+| Output | `dist` |
 
-4. **Environment variables** (Production):
+3. **Environment variables** (Amplify → App settings → Environment variables):
 
 ```env
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_SITE_URL=https://www.shopncart.store
+VITE_SITE_URL=https://store.shopncart.store
 ```
 
-5. Click **Deploy** — every push to `main` auto-deploys.
+4. **SPA rewrite** (Amplify → App settings → Rewrites and redirects):
 
-6. **Custom domain** (Vercel → Project → **Settings** → **Domains**):
-   - Add `www.shopncart.store`
-   - Add `shopncart.store` (Vercel redirects apex → www)
+| Source | Target | Type |
+|--------|--------|------|
+| `</^[^.]+$\|\.(?!(css\|gif\|ico\|jpg\|js\|png\|txt\|svg\|woff\|woff2\|ttf\|map\|json\|webp)$)([^.]+$)/>` | `/index.html` | 200 (Rewrite) |
 
-7. **Hostinger DNS** (switch nameservers back to **Hostinger default** if you moved to Cloudflare):
+Or simpler rule already used on this app:
 
-| Type | Name | Value |
-|------|------|-------|
-| CNAME | `www` | `cname.vercel-dns.com` (Vercel shows exact target) |
+| Source | Target | Type |
+|--------|--------|------|
+| `/<*>` | `/index.html` | 404-200 |
 
-For apex `shopncart.store`, use the A record Vercel provides, or redirect at Hostinger to `www`.
+5. **Custom domain** (Amplify → Hosting → Custom domains):
+   - Use **`store.shopncart.store`** (works on your AWS account)
+   - `www.shopncart.store` is blocked by another AWS account’s CloudFront — use **Hostinger redirect** `www` → `store.shopncart.store` until that is cleared
 
-SPA routing is handled by `vercel.json`.
+6. **Live URLs**
+   - Default: `https://main.d13h6a6205mdyf.amplifyapp.com`
+   - Custom: `https://store.shopncart.store` (after DNS is connected)
 
 ## Environment Variables
 
