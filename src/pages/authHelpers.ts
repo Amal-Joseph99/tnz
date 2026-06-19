@@ -1,14 +1,3 @@
-export const countries = [
-  'India',
-  'United Arab Emirates',
-  'United States',
-  'United Kingdom',
-  'Canada',
-  'Australia',
-  'Saudi Arabia',
-  'Singapore',
-]
-
 export const OTP_LENGTH = 6
 
 export function isValidEmail(email: string) {

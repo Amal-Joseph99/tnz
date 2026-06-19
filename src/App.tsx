@@ -1,7 +1,15 @@
+import { RequireAdminAuth, RequireBuyerAuth, RequireSellerAuth } from './components/AuthGate'
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
 import { CurrencyProvider } from './context/CurrencyContext'
+import { AdminCustomersPage } from './pages/AdminCustomersPage'
 import { AdminDashboardPage } from './pages/AdminDashboardPage'
+import { AdminKycPage } from './pages/AdminKycPage'
+import { AdminNotificationsPage } from './pages/AdminNotificationsPage'
+import { AdminOrdersPage } from './pages/AdminOrdersPage'
+import { AdminProductsPage } from './pages/AdminProductsPage'
+import { AdminSellersPage } from './pages/AdminSellersPage'
+import { AdminSettingsPage } from './pages/AdminSettingsPage'
 import { AboutUsPage } from './pages/AboutUsPage'
 import { BestSellersPage } from './pages/BestSellersPage'
 import { BuyerForgotOtpVerificationPage } from './pages/BuyerForgotOtpVerificationPage'
@@ -10,6 +18,10 @@ import { BuyerOtpVerificationPage } from './pages/BuyerOtpVerificationPage'
 import { BuyerResetPasswordPage } from './pages/BuyerResetPasswordPage'
 import { CareersPage } from './pages/CareersPage'
 import { CartPage } from './pages/CartPage'
+import { CheckoutAddressPage } from './pages/CheckoutAddressPage'
+import { CheckoutConfirmationPage } from './pages/CheckoutConfirmationPage'
+import { CheckoutPaymentPage } from './pages/CheckoutPaymentPage'
+import { CheckoutReviewPage } from './pages/CheckoutReviewPage'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { CategoryProductsPage } from './pages/CategoryProductsPage'
 import { ContactUsPage } from './pages/ContactUsPage'
@@ -63,15 +75,19 @@ function AppContent() {
               <Route path="/" element={<HomePage />} />
               <Route path="/search" element={<SearchResultsPage />} />
               <Route path="/cart" element={<CartPage />} />
+              <Route path="/checkout" element={<CheckoutAddressPage />} />
+              <Route path="/checkout/payment" element={<CheckoutPaymentPage />} />
+              <Route path="/checkout/review" element={<CheckoutReviewPage />} />
+              <Route path="/checkout/confirmation" element={<CheckoutConfirmationPage />} />
               <Route path="/categories" element={<CategoriesPage />} />
               <Route path="/category/:categorySlug" element={<CategoryProductsPage />} />
               <Route path="/product/:productId" element={<ProductDetailsPage />} />
               <Route path="/new-arrivals" element={<NewArrivalsPage />} />
               <Route path="/best-sellers" element={<BestSellersPage />} />
               <Route path="/sale" element={<SalePage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/orders" element={<OrdersPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/profile" element={<RequireBuyerAuth><ProfilePage /></RequireBuyerAuth>} />
+              <Route path="/orders" element={<RequireBuyerAuth><OrdersPage /></RequireBuyerAuth>} />
+              <Route path="/notifications" element={<RequireBuyerAuth><NotificationsPage /></RequireBuyerAuth>} />
               <Route path="/buyer/signin" element={<SignInPage />} />
               <Route path="/buyer/signup" element={<SignUpPage />} />
               <Route path="/buyer/verify-email" element={<BuyerOtpVerificationPage />} />
@@ -98,16 +114,23 @@ function AppContent() {
               <Route path="/seller/forgot-password" element={<SellerForgotPasswordPage />} />
               <Route path="/seller/forgot-password/verify" element={<SellerForgotOtpVerificationPage />} />
               <Route path="/seller/reset-password" element={<SellerResetPasswordPage />} />
-              <Route path="/seller/dashboard" element={<SellerDashboardPage />} />
-              <Route path="/seller/profile" element={<SellerProfilePage />} />
-              <Route path="/seller/warehouse" element={<SellerWarehousePage />} />
-              <Route path="/seller/products" element={<SellerProductsPage />} />
-              <Route path="/seller/orders" element={<SellerOrdersPage />} />
-              <Route path="/seller/wallet" element={<SellerWalletPage />} />
-              <Route path="/seller/help" element={<SellerHelpPage />} />
-              <Route path="/seller/terms-policies" element={<SellerTermsPoliciesPage />} />
-              <Route path="/seller/notifications" element={<SellerNotificationsPage />} />
-              <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+              <Route path="/seller/dashboard" element={<RequireSellerAuth><SellerDashboardPage /></RequireSellerAuth>} />
+              <Route path="/seller/profile" element={<RequireSellerAuth><SellerProfilePage /></RequireSellerAuth>} />
+              <Route path="/seller/warehouse" element={<RequireSellerAuth><SellerWarehousePage /></RequireSellerAuth>} />
+              <Route path="/seller/products" element={<RequireSellerAuth><SellerProductsPage /></RequireSellerAuth>} />
+              <Route path="/seller/orders" element={<RequireSellerAuth><SellerOrdersPage /></RequireSellerAuth>} />
+              <Route path="/seller/wallet" element={<RequireSellerAuth><SellerWalletPage /></RequireSellerAuth>} />
+              <Route path="/seller/help" element={<RequireSellerAuth><SellerHelpPage /></RequireSellerAuth>} />
+              <Route path="/seller/terms-policies" element={<RequireSellerAuth><SellerTermsPoliciesPage /></RequireSellerAuth>} />
+              <Route path="/seller/notifications" element={<RequireSellerAuth><SellerNotificationsPage /></RequireSellerAuth>} />
+              <Route path="/admin/dashboard" element={<RequireAdminAuth><AdminDashboardPage /></RequireAdminAuth>} />
+              <Route path="/admin/sellers" element={<RequireAdminAuth><AdminSellersPage /></RequireAdminAuth>} />
+              <Route path="/admin/kyc" element={<RequireAdminAuth><AdminKycPage /></RequireAdminAuth>} />
+              <Route path="/admin/products" element={<RequireAdminAuth><AdminProductsPage /></RequireAdminAuth>} />
+              <Route path="/admin/orders" element={<RequireAdminAuth><AdminOrdersPage /></RequireAdminAuth>} />
+              <Route path="/admin/customers" element={<RequireAdminAuth><AdminCustomersPage /></RequireAdminAuth>} />
+              <Route path="/admin/notifications" element={<RequireAdminAuth><AdminNotificationsPage /></RequireAdminAuth>} />
+              <Route path="/admin/settings" element={<RequireAdminAuth><AdminSettingsPage /></RequireAdminAuth>} />
               <Route path="/sellerslogin" element={<Navigate to="/seller/signin" replace />} />
               <Route path="/sellerssignup" element={<Navigate to="/seller/signup" replace />} />
               <Route path="/seller-email-otp-verification" element={<Navigate to="/seller/verify-email" replace />} />

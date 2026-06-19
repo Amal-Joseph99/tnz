@@ -51,7 +51,7 @@ export function SellersLoginPage() {
           <div className="seller-login__header">
             <p>Sell on AGTRENZ</p>
             <h1>Seller Login</h1>
-            <span>Access is verified securely after login. Admin accounts are routed by backend role.</span>
+            <span>Seller and admin login. Buyers must use <Link to="/buyer/signin">Buyer login</Link>. Admin accounts are created in Supabase backend only.</span>
           </div>
 
           {error && <div className="auth-message auth-message--error">{error}</div>}
@@ -59,7 +59,7 @@ export function SellersLoginPage() {
 
           <form className="seller-login__form" onSubmit={(event) => {
             event.preventDefault()
-            handleSubmit()
+            void handleSubmit()
           }}>
             <label>
               Email address

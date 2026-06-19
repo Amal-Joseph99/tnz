@@ -1,0 +1,43 @@
+{
+  "Comment": "Remove stale Amplify/CloudFront DNS before fresh domain association",
+  "Changes": [
+    {
+      "Action": "DELETE",
+      "ResourceRecordSet": {
+        "Name": "shopncart.store.",
+        "Type": "A",
+        "AliasTarget": {
+          "HostedZoneId": "Z2FDTNDATAQYW2",
+          "DNSName": "d2bjldnuz0ur44.cloudfront.net.",
+          "EvaluateTargetHealth": false
+        }
+      }
+    },
+    {
+      "Action": "DELETE",
+      "ResourceRecordSet": {
+        "Name": "www.shopncart.store.",
+        "Type": "CNAME",
+        "TTL": 500,
+        "ResourceRecords": [
+          {
+            "Value": "d2bjldnuz0ur44.cloudfront.net"
+          }
+        ]
+      }
+    },
+    {
+      "Action": "DELETE",
+      "ResourceRecordSet": {
+        "Name": "_b52e68cba551ca84be090f78117936b4.shopncart.store.",
+        "Type": "CNAME",
+        "TTL": 500,
+        "ResourceRecords": [
+          {
+            "Value": "_7d80a77e96a38fa6f740023957b226d7.jkddzztszm.acm-validations.aws."
+          }
+        ]
+      }
+    }
+  ]
+}

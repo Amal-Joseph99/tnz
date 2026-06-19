@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import { signUpBuyer } from '../lib/buyerAuth'
 import { isValidEmail, isValidPassword } from './authHelpers'
 
 export function SignUpPage() {
@@ -10,8 +11,9 @@ export function SignUpPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError('')
     setSuccess('')
 
@@ -30,7 +32,16 @@ export function SignUpPage() {
       return
     }
 
-    setSuccess('Buyer account details accepted. Email OTP has been sent.')
+    setLoading(true)
+    const result = await signUpBuyer(name, email, password)
+    setLoading(false)
+
+    if (!result.ok) {
+      setError(result.message)
+      return
+    }
+
+    setSuccess('Buyer account created. Verify your email to continue.')
     window.setTimeout(() => navigate('/buyer/verify-email'), 600)
   }
 
@@ -40,8 +51,8 @@ export function SignUpPage() {
         <div className="seller-login__card">
           <div className="seller-login__header">
             <p>Buyer account</p>
-            <h1>Create account</h1>
-            <span>Sign up to shop faster, track orders, and manage your AGTRENZ profile.</span>
+            <h1>Create buyer account</h1>
+            <span>Buyer registration only. Sellers register at <Link to="/seller/signup">Seller signup</Link>. Admin accounts are backend-only.</span>
           </div>
 
           {error && <div className="auth-message auth-message--error">{error}</div>}
@@ -49,7 +60,7 @@ export function SignUpPage() {
 
           <form className="seller-login__form" onSubmit={(event) => {
             event.preventDefault()
-            handleSubmit()
+            void handleSubmit()
           }}>
             <label>
               Full name
@@ -57,13 +68,15 @@ export function SignUpPage() {
             </label>
             <label>
               Email address
-              <input value={email} type="email" placeholder="you@example.com" onChange={(event) => setEmail(event.target.value)} />
+              <input value={email} type="email" placeholder="you@example.com" autoComplete="email" onChange={(event) => setEmail(event.target.value)} />
             </label>
             <label>
               Password
-              <input value={password} type="password" placeholder="Minimum 8 characters" onChange={(event) => setPassword(event.target.value)} />
+              <input value={password} type="password" placeholder="Minimum 8 characters" autoComplete="new-password" onChange={(event) => setPassword(event.target.value)} />
             </label>
-            <button type="submit" className="seller-login__submit">Create buyer account</button>
+            <button type="submit" className="seller-login__submit" disabled={loading}>
+              {loading ? 'Creating account...' : 'Create buyer account'}
+            </button>
           </form>
 
           <p className="seller-login__signup">

@@ -1,7 +1,12 @@
+import { useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { CartIcon, StarIcon } from '../components/Icons'
+import { PageMeta } from '../components/PageMeta'
 import { useCurrency } from '../context/CurrencyContext'
 import { featuredProducts, trendingProducts } from '../data/products'
+import { shareProduct } from '../lib/productShare'
+import { absoluteUrl } from '../lib/site'
+import { ogImageUrl } from '../lib/sharePages'
 
 const allProducts = [...featuredProducts, ...trendingProducts]
 
@@ -38,10 +43,29 @@ const specifications = [
 export function ProductDetailsPage() {
   const { productId } = useParams()
   const { formatPrice } = useCurrency()
+  const [shareMessage, setShareMessage] = useState<string | null>(null)
   const product = allProducts.find((item) => item.id === productId)
 
   if (!product) {
     return <Navigate to="/" replace />
+  }
+
+  const productDescription = `${product.title} by ${product.brand}. Shop on AGTRENZ.`
+  const productImage = ogImageUrl(product.image)
+
+  const handleShare = async () => {
+    try {
+      const result = await shareProduct(product)
+      if (result === 'copied') {
+        setShareMessage('Share link copied with image preview.')
+      } else if (result === 'shared') {
+        setShareMessage('Product shared.')
+      } else {
+        setShareMessage(null)
+      }
+    } catch {
+      setShareMessage('Unable to share this product right now.')
+    }
   }
 
   const galleryImages = [
@@ -54,6 +78,13 @@ export function ProductDetailsPage() {
 
   return (
     <section className="product-detail-page">
+      <PageMeta
+        title={`${product.title} | AGTRENZ`}
+        description={productDescription}
+        image={productImage}
+        url={absoluteUrl(`/product/${product.id}`)}
+        type="product"
+      />
       <div className="container product-detail">
         <nav className="product-detail__breadcrumb" aria-label="Breadcrumb">
           <Link to="/">Home</Link>
@@ -140,8 +171,12 @@ export function ProductDetailsPage() {
                 Add to Cart
               </button>
               <button type="button" className="product-detail__buy">Buy Now</button>
-              <button type="button" className="product-detail__share">Share</button>
+              <button type="button" className="product-detail__share" onClick={() => void handleShare()}>
+                Share
+              </button>
             </div>
+
+            {shareMessage && <p className="product-detail__share-message">{shareMessage}</p>}
 
             <div className="product-detail__notice">
               <span>Delivery details available at checkout.</span>

@@ -1,0 +1,43 @@
+{
+  "Comment": "Amplify shopncart.store domain records - fresh association",
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "_b52e68cba551ca84be090f78117936b4.shopncart.store.",
+        "Type": "CNAME",
+        "TTL": 500,
+        "ResourceRecords": [
+          {
+            "Value": "_7d80a77e96a38fa6f740023957b226d7.jkddzztszm.acm-validations.aws."
+          }
+        ]
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "www.shopncart.store.",
+        "Type": "CNAME",
+        "TTL": 500,
+        "ResourceRecords": [
+          {
+            "Value": "d3np64483yp1qw.cloudfront.net"
+          }
+        ]
+      }
+    },
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "shopncart.store.",
+        "Type": "A",
+        "AliasTarget": {
+          "HostedZoneId": "Z2FDTNDATAQYW2",
+          "DNSName": "d3np64483yp1qw.cloudfront.net.",
+          "EvaluateTargetHealth": false
+        }
+      }
+    }
+  ]
+}
