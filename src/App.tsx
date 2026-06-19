@@ -2,6 +2,7 @@ import { RequireAdminAuth, RequireBuyerAuth, RequireSellerAuth } from './compone
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
 import { CurrencyProvider } from './context/CurrencyContext'
+import { AdminCategoriesPage } from './pages/AdminCategoriesPage'
 import { AdminCustomersPage } from './pages/AdminCustomersPage'
 import { AdminDashboardPage } from './pages/AdminDashboardPage'
 import { AdminKycPage } from './pages/AdminKycPage'
@@ -127,6 +128,7 @@ function AppContent() {
               <Route path="/admin/sellers" element={<RequireAdminAuth><AdminSellersPage /></RequireAdminAuth>} />
               <Route path="/admin/kyc" element={<RequireAdminAuth><AdminKycPage /></RequireAdminAuth>} />
               <Route path="/admin/products" element={<RequireAdminAuth><AdminProductsPage /></RequireAdminAuth>} />
+              <Route path="/admin/categories" element={<RequireAdminAuth><AdminCategoriesPage /></RequireAdminAuth>} />
               <Route path="/admin/orders" element={<RequireAdminAuth><AdminOrdersPage /></RequireAdminAuth>} />
               <Route path="/admin/customers" element={<RequireAdminAuth><AdminCustomersPage /></RequireAdminAuth>} />
               <Route path="/admin/notifications" element={<RequireAdminAuth><AdminNotificationsPage /></RequireAdminAuth>} />

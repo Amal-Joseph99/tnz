@@ -1,29 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { PanelEmptyState } from '../components/PanelEmptyState'
 import { SellerDashboardShell } from '../components/SellerDashboardShell'
+import {
+  buildCategoryTree,
+  fetchCategoryTaxonomy,
+  getHsnFromTree,
+  type CategoryTree,
+} from '../lib/catalogCategories'
 import { getSellerWorkflow, updateSellerWorkflow } from '../lib/sellerWorkflow'
-
-const hsnCodes: Record<string, string> = {
-  'Electronics|Audio|Wireless Headphones': '85183000',
-  'Electronics|Wearables|Smart Watch Strap': '91139090',
-  'Fashion|Accessories|Travel Organizer': '42029200',
-  'Home|Storage|Organizer Set': '39249090',
-}
-
-const categories: Record<string, Record<string, string[]>> = {
-  Electronics: {
-    Audio: ['Wireless Headphones', 'Bluetooth Speaker'],
-    Wearables: ['Smart Watch Strap', 'Fitness Band'],
-  },
-  Fashion: {
-    Accessories: ['Travel Organizer', 'Wallet'],
-    Footwear: ['Sneakers', 'Sandals'],
-  },
-  Home: {
-    Storage: ['Organizer Set', 'Storage Box'],
-    Kitchen: ['Cookware', 'Dining Set'],
-  },
-}
 
 const uploadTiles = [
   { label: 'Image 1', progress: 100 },
@@ -52,20 +36,65 @@ function createVariantId(size: string, color: string, index: number) {
 
 export function SellerProductsPage() {
   const [workflow, setWorkflow] = useState(getSellerWorkflow)
-  const [productName, setProductName] = useState('Premium wireless headphones')
-  const [category, setCategory] = useState('Electronics')
-  const [subCategory, setSubCategory] = useState('Audio')
-  const [productType, setProductType] = useState('Wireless Headphones')
-  const [brandName, setBrandName] = useState('AGTRENZ Select')
+  const [categoryTree, setCategoryTree] = useState<CategoryTree>({})
+  const [loadingCategories, setLoadingCategories] = useState(true)
+  const [productName, setProductName] = useState('')
+  const [category, setCategory] = useState('')
+  const [subCategory, setSubCategory] = useState('')
+  const [productType, setProductType] = useState('')
+  const [brandName, setBrandName] = useState('')
   const [sku, setSku] = useState('')
   const [sizeMode, setSizeMode] = useState('Free Size')
   const [colorMode, setColorMode] = useState('Black')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
-  const hsnCode = hsnCodes[`${category}|${subCategory}|${productType}`] ?? '00000000'
-  const subCategories = Object.keys(categories[category])
-  const productTypes = categories[category][subCategory]
+  useEffect(() => {
+    let active = true
+
+    fetchCategoryTaxonomy()
+      .then((rows) => {
+        if (!active) return
+        const tree = buildCategoryTree(rows)
+        setCategoryTree(tree)
+
+        const firstCategory = Object.keys(tree)[0]
+        if (!firstCategory) {
+          setCategory('')
+          setSubCategory('')
+          setProductType('')
+          return
+        }
+
+        const firstSubCategory = Object.keys(tree[firstCategory])[0]
+        const firstProductType = tree[firstCategory][firstSubCategory]?.productTypes[0] ?? ''
+
+        setCategory(firstCategory)
+        setSubCategory(firstSubCategory)
+        setProductType(firstProductType)
+      })
+      .catch(() => {
+        if (active) setCategoryTree({})
+      })
+      .finally(() => {
+        if (active) setLoadingCategories(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const categoryNames = useMemo(() => Object.keys(categoryTree), [categoryTree])
+  const subCategories = useMemo(
+    () => (category ? Object.keys(categoryTree[category] ?? {}) : []),
+    [category, categoryTree],
+  )
+  const productTypes = useMemo(
+    () => (category && subCategory ? categoryTree[category]?.[subCategory]?.productTypes ?? [] : []),
+    [category, subCategory, categoryTree],
+  )
+  const hsnCode = getHsnFromTree(categoryTree, category, subCategory, productType)
   const variantRows = [
     { size: sizeMode, color: colorMode, mrp: '$149.00', selling: '$128.40', stock: '42' },
     ...(sizeMode === 'Free Size'
@@ -138,17 +167,26 @@ export function SellerProductsPage() {
 
         <form className="seller-console-form">
           <label>Product name<input value={productName} onChange={(event) => setProductName(event.target.value)} /></label>
+          {loadingCategories ? (
+            <p>Loading category taxonomy...</p>
+          ) : categoryNames.length === 0 ? (
+            <PanelEmptyState
+              title="No categories configured"
+              message="Ask an administrator to add category, sub category, product type, and HSN mappings before listing products."
+            />
+          ) : (
+            <>
           <label>
             Category
             <select value={category} onChange={(event) => {
               const nextCategory = event.target.value
-              const nextSubCategory = Object.keys(categories[nextCategory])[0]
-              const nextProductType = categories[nextCategory][nextSubCategory][0]
+              const nextSubCategory = Object.keys(categoryTree[nextCategory] ?? {})[0] ?? ''
+              const nextProductType = categoryTree[nextCategory]?.[nextSubCategory]?.productTypes[0] ?? ''
               setCategory(nextCategory)
               setSubCategory(nextSubCategory)
               setProductType(nextProductType)
             }}>
-              {Object.keys(categories).map((categoryName) => <option key={categoryName}>{categoryName}</option>)}
+              {categoryNames.map((categoryName) => <option key={categoryName} value={categoryName}>{categoryName}</option>)}
             </select>
           </label>
           <label>
@@ -156,20 +194,22 @@ export function SellerProductsPage() {
             <select value={subCategory} onChange={(event) => {
               const nextSubCategory = event.target.value
               setSubCategory(nextSubCategory)
-              setProductType(categories[category][nextSubCategory][0])
+              setProductType(categoryTree[category]?.[nextSubCategory]?.productTypes[0] ?? '')
             }}>
-              {subCategories.map((subCategoryName) => <option key={subCategoryName}>{subCategoryName}</option>)}
+              {subCategories.map((subCategoryName) => <option key={subCategoryName} value={subCategoryName}>{subCategoryName}</option>)}
             </select>
           </label>
           <label>
             Product type
             <select value={productType} onChange={(event) => setProductType(event.target.value)}>
-              {productTypes.map((type) => <option key={type}>{type}</option>)}
+              {productTypes.map((type) => <option key={type} value={type}>{type}</option>)}
             </select>
           </label>
           <label>HSN code<input value={hsnCode} readOnly aria-label="Readonly 8 digit HSN code" /></label>
+            </>
+          )}
           <label>Brand name<input value={brandName} onChange={(event) => setBrandName(event.target.value)} /></label>
-          <label className="seller-console-form__full">Short description<textarea defaultValue="Professional quality wireless headphones with travel case." maxLength={250} /></label>
+          <label className="seller-console-form__full">Short description<textarea placeholder="Short product summary" maxLength={250} /></label>
         </form>
 
         <div className="product-listing-block">

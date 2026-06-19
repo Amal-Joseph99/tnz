@@ -14,14 +14,3 @@ export type Product = {
 export const featuredProducts: Product[] = []
 
 export const trendingProducts: Product[] = []
-
-export const categories = [
-  { label: 'Luggage', icon: 'luggage' },
-  { label: 'Home', icon: 'home' },
-  { label: 'Fashion', icon: 'fashion' },
-  { label: 'Beauty', icon: 'beauty' },
-  { label: 'Electronics', icon: 'electronics' },
-  { label: 'Combo', icon: 'combo' },
-  { label: 'Others', icon: 'others' },
-  { label: 'Grocery', icon: 'grocery' },
-]

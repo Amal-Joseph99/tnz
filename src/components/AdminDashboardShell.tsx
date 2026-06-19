@@ -6,6 +6,7 @@ const adminNavItems = [
   { label: 'Sellers', to: '/admin/sellers' },
   { label: 'KYC Approvals', to: '/admin/kyc' },
   { label: 'Products', to: '/admin/products' },
+  { label: 'Category management', to: '/admin/categories' },
   { label: 'Orders', to: '/admin/orders' },
   { label: 'Customers', to: '/admin/customers' },
   { label: 'Notifications', to: '/admin/notifications' },
@@ -51,7 +52,7 @@ export function AdminDashboardShell({ title, subtitle, children }: AdminDashboar
           <div className="admin-console__header-actions">
             <Link to="/admin/notifications" className="admin-console__notification">
               Alerts
-              <strong>4</strong>
+              <strong>0</strong>
             </Link>
             <div className="admin-console__account">
               <strong>Platform Administrator</strong>

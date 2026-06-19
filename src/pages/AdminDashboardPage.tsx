@@ -94,6 +94,7 @@ export function AdminDashboardPage() {
           <div className="admin-action-list">
             <Link to="/admin/kyc">Review {pendingKyc} KYC submission{pendingKyc !== 1 ? 's' : ''}</Link>
             <Link to="/admin/products">Approve {pendingProducts} product listing{pendingProducts !== 1 ? 's' : ''}</Link>
+            <Link to="/admin/categories">Category management</Link>
             <Link to="/admin/orders">View order operations</Link>
             <Link to="/admin/sellers">View seller directory</Link>
           </div>
