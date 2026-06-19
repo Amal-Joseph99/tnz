@@ -49,7 +49,7 @@ VITE_SITE_URL=https://www.shopncart.store
 | CNAME | `www` | `<your-project>.pages.dev` (Cloudflare shows exact target) |
 | Redirect | `@` | `https://www.shopncart.store` |
 
-SPA routing is handled by `public/_redirects` (copied to `dist` on build).
+SPA routing is handled by `wrangler.toml` (`not_found_handling = "single-page-application"`). Do not add `public/_redirects` — it breaks Workers deploy.
 
 ### Cloudflare build settings (important)
 
