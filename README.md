@@ -15,21 +15,18 @@ npm run dev
 npm run build
 ```
 
-The production output is generated in `dist`.
+## Vercel Deployment (recommended)
 
-## Cloudflare Pages Deployment
-
-1. [Cloudflare Dashboard](https://dash.cloudflare.com) → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**
-2. Select this repository and use:
+1. Go to [vercel.com](https://vercel.com) → **Add New** → **Project**
+2. Import GitHub repo **`Amal-Joseph99/tnz`**
+3. Vercel auto-detects **Vite** — confirm:
 
 | Setting | Value |
 |---------|-------|
-| Framework preset | Vite |
 | Build command | `npm run build` |
-| Build output directory | `dist` |
-| Node.js version | 20 (or latest LTS) |
+| Output directory | `dist` |
 
-3. **Environment variables** (Production):
+4. **Environment variables** (Production):
 
 ```env
 VITE_SUPABASE_URL=your_supabase_project_url
@@ -37,58 +34,25 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_SITE_URL=https://www.shopncart.store
 ```
 
-4. **Custom domains** (Pages → your project → **Custom domains**):
+5. Click **Deploy** — every push to `main` auto-deploys.
 
-- `www.shopncart.store`
-- `shopncart.store` (redirect to `www` in Cloudflare if offered)
+6. **Custom domain** (Vercel → Project → **Settings** → **Domains**):
+   - Add `www.shopncart.store`
+   - Add `shopncart.store` (Vercel redirects apex → www)
 
-5. **DNS** (Hostinger nameservers → Cloudflare, or DNS only in Cloudflare):
+7. **Hostinger DNS** (switch nameservers back to **Hostinger default** if you moved to Cloudflare):
 
-| Type | Name | Content |
-|------|------|---------|
-| CNAME | `www` | `<your-project>.pages.dev` (Cloudflare shows exact target) |
-| Redirect | `@` | `https://www.shopncart.store` |
+| Type | Name | Value |
+|------|------|-------|
+| CNAME | `www` | `cname.vercel-dns.com` (Vercel shows exact target) |
 
-SPA routing is handled by `wrangler.toml` (`not_found_handling = "single-page-application"`). Do not add `public/_redirects` — it breaks Workers deploy.
+For apex `shopncart.store`, use the A record Vercel provides, or redirect at Hostinger to `www`.
 
-### Cloudflare build settings (important)
-
-Your Cloudflare **Workers Builds** job may still be using the old deploy command. That makes every push **build** but **fail on deploy**.
-
-In Cloudflare → **Workers & Pages** → **tnz** → **Settings** → **Build**:
-
-| Setting | Correct value |
-|---------|----------------|
-| Production branch | `main` |
-| Build command | `npm run build` |
-| Deploy command | `npm run deploy` |
-
-**Delete** the environment variable `CLOUDFLARE_API_TOKEN` from Cloudflare project settings if you added it manually — it breaks deploy auth.
-
-### GitHub Actions auto-deploy (recommended)
-
-This repo includes `.github/workflows/deploy-cloudflare.yml`. Add these **GitHub repository secrets** (Settings → Secrets → Actions):
-
-| Secret | Value |
-|--------|-------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with **Workers Scripts:Edit** |
-| `CLOUDFLARE_ACCOUNT_ID` | `57cfd6f54a4c2fe8358748a00e679a2f` |
-| `VITE_SUPABASE_URL` | your Supabase URL |
-| `VITE_SUPABASE_ANON_KEY` | your Supabase anon key |
-
-Create token: [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens) → Create Token → **Edit Cloudflare Workers** template.
-
-After secrets are saved, every push to `main` deploys automatically via GitHub Actions.
+SPA routing is handled by `vercel.json`.
 
 ## Environment Variables
 
 Use `.env.example` as the local template.
-
-```env
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_SITE_URL=https://www.shopncart.store
-```
 
 ## Supabase Note
 
