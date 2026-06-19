@@ -61,17 +61,18 @@ SPA routing is handled by `public/_redirects` (copied to `dist` on build).
 | Build output directory | `dist` |
 | Deploy command | *(leave empty)* |
 
-**Option B — if Cloudflare requires a deploy command:**
+**Option B — Workers Builds (use this if deploy command is required):**
 
 | Setting | Value |
 |---------|-------|
 | Build command | `npm run build` |
-| Deploy command | `npm run pages:deploy` |
+| Deploy command | `npm run deploy` |
 
-`wrangler.toml` must be committed (`name = "agtrenz"` must match your Pages project name in Cloudflare).
+Uses Workers static assets (`wrangler deploy`) — not `wrangler pages deploy`.
 
-If deploy fails with "Missing Pages project name", either push `wrangler.toml` or use:
-`npx wrangler pages deploy dist --project-name agtrenz`
+**Important:** In Cloudflare → Settings → Environment variables, **delete `CLOUDFLARE_API_TOKEN`** if you added one manually. It overrides the build token and causes auth errors.
+
+`wrangler.toml` must match your Worker/Pages project name (`agtrenz`).
 
 ## Environment Variables
 
