@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "deploy": "wrangler deploy",
-    "pages:deploy": "wrangler deploy",
+    "pages:deploy": "wrangler pages deploy dist",
     "lint": "eslint .",
     "preview": "vite preview"
   },
