@@ -55,7 +55,7 @@ SPA routing is handled by `public/_redirects` (copied to `dist` on build).
 
 Your Cloudflare **Workers Builds** job may still be using the old deploy command. That makes every push **build** but **fail on deploy**.
 
-In Cloudflare → **Workers & Pages** → **agtrenz** → **Settings** → **Build**:
+In Cloudflare → **Workers & Pages** → **tnz** → **Settings** → **Build**:
 
 | Setting | Correct value |
 |---------|----------------|
