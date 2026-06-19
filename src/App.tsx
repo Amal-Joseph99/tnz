@@ -11,6 +11,7 @@ import { AdminOrdersPage } from './pages/AdminOrdersPage'
 import { AdminProductsPage } from './pages/AdminProductsPage'
 import { AdminSellersPage } from './pages/AdminSellersPage'
 import { AdminSettingsPage } from './pages/AdminSettingsPage'
+import { AdminStorefrontSectionsPage } from './pages/AdminStorefrontSectionsPage'
 import { AboutUsPage } from './pages/AboutUsPage'
 import { BestSellersPage } from './pages/BestSellersPage'
 import { BuyerForgotOtpVerificationPage } from './pages/BuyerForgotOtpVerificationPage'
@@ -82,6 +83,7 @@ function AppContent() {
               <Route path="/checkout/confirmation" element={<CheckoutConfirmationPage />} />
               <Route path="/categories" element={<CategoriesPage />} />
               <Route path="/category/:categorySlug" element={<CategoryProductsPage />} />
+              <Route path="/category/:categorySlug/:subCategorySlug" element={<CategoryProductsPage />} />
               <Route path="/product/:productId" element={<ProductDetailsPage />} />
               <Route path="/new-arrivals" element={<NewArrivalsPage />} />
               <Route path="/best-sellers" element={<BestSellersPage />} />
@@ -129,6 +131,7 @@ function AppContent() {
               <Route path="/admin/kyc" element={<RequireAdminAuth><AdminKycPage /></RequireAdminAuth>} />
               <Route path="/admin/products" element={<RequireAdminAuth><AdminProductsPage /></RequireAdminAuth>} />
               <Route path="/admin/categories" element={<RequireAdminAuth><AdminCategoriesPage /></RequireAdminAuth>} />
+              <Route path="/admin/homepage-sections" element={<RequireAdminAuth><AdminStorefrontSectionsPage /></RequireAdminAuth>} />
               <Route path="/admin/orders" element={<RequireAdminAuth><AdminOrdersPage /></RequireAdminAuth>} />
               <Route path="/admin/customers" element={<RequireAdminAuth><AdminCustomersPage /></RequireAdminAuth>} />
               <Route path="/admin/notifications" element={<RequireAdminAuth><AdminNotificationsPage /></RequireAdminAuth>} />

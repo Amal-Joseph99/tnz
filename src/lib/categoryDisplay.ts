@@ -37,3 +37,13 @@ export function getCategoryIconName(categoryName: string) {
 export function getCategorySlug(categoryName: string) {
   return categoryName.toLowerCase().replaceAll(' ', '-')
 }
+
+export function getSubcategorySlug(subCategoryName: string) {
+  return subCategoryName.toLowerCase().replaceAll(' ', '-')
+}
+
+export function resolveNameFromSlug(names: string[], slug: string) {
+  return names.find((name) => getCategorySlug(name) === slug)
+    ?? names.find((name) => getSubcategorySlug(name) === slug)
+    ?? null
+}

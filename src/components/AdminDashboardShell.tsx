@@ -7,6 +7,7 @@ const adminNavItems = [
   { label: 'KYC Approvals', to: '/admin/kyc' },
   { label: 'Products', to: '/admin/products' },
   { label: 'Category management', to: '/admin/categories' },
+  { label: 'Homepage sections', to: '/admin/homepage-sections' },
   { label: 'Orders', to: '/admin/orders' },
   { label: 'Customers', to: '/admin/customers' },
   { label: 'Notifications', to: '/admin/notifications' },

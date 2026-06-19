@@ -1,57 +1,80 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { CartIcon, StarIcon } from '../components/Icons'
 import { PageMeta } from '../components/PageMeta'
 import { useCurrency } from '../context/CurrencyContext'
-import { featuredProducts, trendingProducts } from '../data/products'
 import { shareProduct } from '../lib/productShare'
 import { absoluteUrl } from '../lib/site'
 import { ogImageUrl } from '../lib/sharePages'
-
-const allProducts = [...featuredProducts, ...trendingProducts]
-
-const detailDefaults = {
-  category: 'Electronics',
-  subCategory: 'Audio',
-  productType: 'Wireless Headphones',
-  sku: 'AGT-PWH-2401',
-  variantId: 'AGT-DEFAULT-VAR',
-  sizeVariants: ['Free Size'],
-  colourVariants: ['Black', 'Blue', 'White', 'Gold'],
-  stock: 'In Stock',
-  packingType: 'Box',
-  totalWeight: '0.85 kg',
-  packageLength: '24 cm',
-  packageWidth: '18 cm',
-  packageHeight: '9 cm',
-  manufacturerName: 'AGTRENZ Manufacturing Partner',
-  manufacturerCountry: 'India',
-  originCountry: 'India',
-  usageNote: 'Use as directed and store in a clean, dry place.',
-  ingredients: '--',
-}
-
-const specifications = [
-  ['Brand', 'AGTRENZ Select'],
-  ['Category', detailDefaults.category],
-  ['Sub Category', detailDefaults.subCategory],
-  ['Product Type', detailDefaults.productType],
-  ['Model', 'AGT-AUDIO-2401'],
-  ['Compatibility', 'Android, iOS, Windows'],
-]
+import { buildCategoryBrowsePath, fetchStorefrontProductById } from '../lib/storefrontCatalog'
+import type { Product } from '../data/products'
 
 export function ProductDetailsPage() {
   const { productId } = useParams()
   const { formatPrice } = useCurrency()
+  const [product, setProduct] = useState<Product | null>(null)
+  const [detail, setDetail] = useState<Awaited<ReturnType<typeof fetchStorefrontProductById>>>(null)
+  const [loading, setLoading] = useState(true)
   const [shareMessage, setShareMessage] = useState<string | null>(null)
-  const product = allProducts.find((item) => item.id === productId)
 
-  if (!product) {
-    return <Navigate to="/" replace />
+  useEffect(() => {
+    let active = true
+    const numericId = Number(productId)
+
+    if (!Number.isFinite(numericId)) {
+      setLoading(false)
+      return
+    }
+
+    fetchStorefrontProductById(numericId)
+      .then((result) => {
+        if (!active) return
+        if (result) {
+          setProduct(result.card)
+          setDetail(result)
+        } else {
+          setProduct(null)
+          setDetail(null)
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [productId])
+
+  if (loading) {
+    return (
+      <section className="product-detail-page">
+        <div className="container"><p>Loading product...</p></div>
+      </section>
+    )
   }
 
-  const productDescription = `${product.title} by ${product.brand}. Shop on AGTRENZ.`
+  if (!product || !detail) {
+    return <Navigate to="/categories" replace />
+  }
+
+  const productDescription = detail.detail.short_description
+    || `${product.title} by ${product.brand}. Shop on AGTRENZ.`
   const productImage = ogImageUrl(product.image)
+  const galleryImages = detail.detail.media.length > 0 ? detail.detail.media : [product.image]
+  const sizeVariants = [...new Set(detail.detail.variants.map((variant) => variant.size))]
+  const colourVariants = [...new Set(detail.detail.variants.map((variant) => variant.color))]
+  const primaryVariant = detail.detail.variants[0]
+  const totalStock = detail.detail.variants.reduce((sum, variant) => sum + (variant.stock ?? 0), 0)
+  const stockLabel = totalStock > 0 ? 'In Stock' : 'Out of Stock'
+
+  const specifications = [
+    ['Brand', product.brand],
+    ['Category', detail.detail.category_name],
+    ['Sub Category', detail.detail.sub_category_name],
+    ['Product Type', detail.detail.product_type_name],
+    ...detail.detail.specifications.map((spec) => [spec.attribute_name, spec.attribute_value]),
+  ]
 
   const handleShare = async () => {
     try {
@@ -68,14 +91,6 @@ export function ProductDetailsPage() {
     }
   }
 
-  const galleryImages = [
-    product.image,
-    product.image,
-    product.image,
-    product.image,
-    product.image,
-  ]
-
   return (
     <section className="product-detail-page">
       <PageMeta
@@ -89,17 +104,19 @@ export function ProductDetailsPage() {
         <nav className="product-detail__breadcrumb" aria-label="Breadcrumb">
           <Link to="/">Home</Link>
           <span>/</span>
-          <Link to="/categories">{detailDefaults.category}</Link>
+          <Link to={buildCategoryBrowsePath(detail.detail.category_name)}>{detail.detail.category_name}</Link>
           <span>/</span>
-          <span>{detailDefaults.subCategory}</span>
+          <Link to={buildCategoryBrowsePath(detail.detail.category_name, detail.detail.sub_category_name)}>
+            {detail.detail.sub_category_name}
+          </Link>
           <span>/</span>
-          <strong>{detailDefaults.productType}</strong>
+          <strong>{detail.detail.product_type_name}</strong>
         </nav>
 
         <div className="product-detail__hero">
           <section className="product-detail__gallery">
             <div className="product-detail__main-image">
-              <img src={product.image} alt={product.title} />
+              <img src={galleryImages[0]} alt={product.title} />
             </div>
             <div className="product-detail__thumbs">
               {galleryImages.map((image, index) => (
@@ -111,27 +128,25 @@ export function ProductDetailsPage() {
                   <img src={image} alt={`${product.title} thumbnail ${index + 1}`} />
                 </button>
               ))}
-              <button type="button" className="product-detail__thumb product-detail__video">Video</button>
             </div>
           </section>
 
           <section className="product-detail__summary">
-            {product.badge && <span className="product-detail__badge">{product.badge}</span>}
             <h1>{product.title}</h1>
             <Link to={`/search?brand=${product.brand}`} className="product-detail__brand">
               {product.brand}
             </Link>
-            <p className="product-detail__short">
-              {product.title} from {product.brand}. Professional quality product with marketplace-approved listing details.
-            </p>
+            <p className="product-detail__short">{productDescription}</p>
 
-            <div className="product-detail__rating">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <StarIcon key={`rating-${index + 1}`} className={index < product.rating ? 'star filled' : 'star'} />
-              ))}
-              <span>{product.rating}.0</span>
-              <span>{product.reviews} reviews</span>
-            </div>
+            {product.reviews > 0 && (
+              <div className="product-detail__rating">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <StarIcon key={`rating-${index + 1}`} className={index < product.rating ? 'star filled' : 'star'} />
+                ))}
+                <span>{product.rating}.0</span>
+                <span>{product.reviews} reviews</span>
+              </div>
+            )}
 
             <div className="product-detail__price-block">
               {product.originalPrice && <span>MRP: <s>{formatPrice(product.originalPrice)}</s></span>}
@@ -143,13 +158,13 @@ export function ProductDetailsPage() {
             <div className="product-detail__variant-block">
               <div className="product-detail__option-row">
                 <span>Size</span>
-                {detailDefaults.sizeVariants.map((size) => (
-                  <button type="button" className="product-detail__chip product-detail__chip--active" key={size}>{size}</button>
+                {sizeVariants.map((size, index) => (
+                  <button type="button" className={index === 0 ? 'product-detail__chip product-detail__chip--active' : 'product-detail__chip'} key={size}>{size}</button>
                 ))}
               </div>
               <div className="product-detail__option-row">
                 <span>Colour</span>
-                {detailDefaults.colourVariants.map((colour, index) => (
+                {colourVariants.map((colour, index) => (
                   <button
                     type="button"
                     className={index === 0 ? 'product-detail__chip product-detail__chip--active' : 'product-detail__chip'}
@@ -160,8 +175,8 @@ export function ProductDetailsPage() {
                 ))}
               </div>
               <div className="product-detail__variant-meta">
-                <span>Variant ID: {detailDefaults.variantId}</span>
-                <strong>{detailDefaults.stock}</strong>
+                <span>Variant ID: {primaryVariant?.variant_id ?? '—'}</span>
+                <strong>{stockLabel}</strong>
               </div>
             </div>
 
@@ -184,29 +199,19 @@ export function ProductDetailsPage() {
           </section>
         </div>
 
-        <div className="product-detail__tabs" role="tablist" aria-label="Product details">
-          <button type="button" className="product-detail__tab product-detail__tab--active">About Product</button>
-          <button type="button" className="product-detail__tab">Specifications</button>
-          <button type="button" className="product-detail__tab">Reviews</button>
-        </div>
-
         <section className="product-detail__info-grid">
           <article className="product-detail__panel product-detail__about">
             <h2>About Product</h2>
-            <ul>
-              <li>{product.title} by {product.brand}.</li>
-              <li>Short description and full description are based on seller listing inputs.</li>
-              <li>Selected variant controls price, stock, and add-to-cart behavior.</li>
-            </ul>
+            <p>{detail.detail.full_description || productDescription}</p>
           </article>
 
           <article className="product-detail__panel">
             <h2>Specifications</h2>
             <div className="product-detail__table">
-              {specifications.map(([label, value]) => (
-                <div key={label}>
+              {specifications.map(([label, value], index) => (
+                <div key={`${label}-${index}`}>
                   <span>{label}</span>
-                  <strong>{label === 'Brand' ? product.brand : value}</strong>
+                  <strong>{value}</strong>
                 </div>
               ))}
             </div>
@@ -215,20 +220,21 @@ export function ProductDetailsPage() {
           <article className="product-detail__panel">
             <h2>Item Details</h2>
             <div className="product-detail__table">
-              <div><span>SKU</span><strong>{detailDefaults.sku}</strong></div>
+              <div><span>SKU</span><strong>{detail.detail.sku}</strong></div>
+              <div><span>HSN</span><strong>{detail.detail.hsn_code}</strong></div>
               <div><span>Brand</span><strong>{product.brand}</strong></div>
-              <div><span>Category</span><strong>{detailDefaults.category}</strong></div>
-              <div><span>Sub Category</span><strong>{detailDefaults.subCategory}</strong></div>
-              <div><span>Product Type</span><strong>{detailDefaults.productType}</strong></div>
-              <div><span>Stock</span><strong>{detailDefaults.stock}</strong></div>
-              <div><span>Manufacturer Name</span><strong>{detailDefaults.manufacturerName}</strong></div>
-              <div><span>Manufacturer Country</span><strong>{detailDefaults.manufacturerCountry}</strong></div>
-              <div><span>Origin Country</span><strong>{detailDefaults.originCountry}</strong></div>
-              <div><span>Total Weight</span><strong>{detailDefaults.totalWeight}</strong></div>
-              <div><span>Package</span><strong>{`${detailDefaults.packageLength} x ${detailDefaults.packageWidth} x ${detailDefaults.packageHeight}`}</strong></div>
-              <div><span>Type of Packing</span><strong>{detailDefaults.packingType}</strong></div>
-              <div><span>Usage Note</span><strong>{detailDefaults.usageNote}</strong></div>
-              <div><span>Ingredients</span><strong>{detailDefaults.ingredients}</strong></div>
+              <div><span>Category</span><strong>{detail.detail.category_name}</strong></div>
+              <div><span>Sub Category</span><strong>{detail.detail.sub_category_name}</strong></div>
+              <div><span>Product Type</span><strong>{detail.detail.product_type_name}</strong></div>
+              <div><span>Stock</span><strong>{stockLabel}</strong></div>
+              <div><span>Manufacturer Name</span><strong>{detail.detail.manufacturer_name}</strong></div>
+              <div><span>Manufacturer Country</span><strong>{detail.detail.manufacturer_country}</strong></div>
+              <div><span>Origin Country</span><strong>{detail.detail.origin_country}</strong></div>
+              <div><span>Total Weight</span><strong>{detail.detail.weight_kg} kg</strong></div>
+              <div><span>Package</span><strong>{`${detail.detail.package_length_cm} x ${detail.detail.package_width_cm} x ${detail.detail.package_height_cm} cm`}</strong></div>
+              <div><span>Type of Packing</span><strong>{detail.detail.packing_type}</strong></div>
+              {detail.detail.usage_note && <div><span>Usage Note</span><strong>{detail.detail.usage_note}</strong></div>}
+              {detail.detail.ingredients && <div><span>Ingredients</span><strong>{detail.detail.ingredients}</strong></div>}
             </div>
           </article>
         </section>
@@ -236,12 +242,6 @@ export function ProductDetailsPage() {
         <section className="product-detail__reviews">
           <h2>Customer reviews</h2>
           <p>No reviews yet. Be the first to review.</p>
-          <div className="product-detail__review-stars">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <StarIcon key={`empty-review-${index + 1}`} className="star" />
-            ))}
-            <span>0 out of 5</span>
-          </div>
         </section>
       </div>
     </section>
