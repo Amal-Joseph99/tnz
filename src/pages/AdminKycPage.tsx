@@ -1,11 +1,7 @@
 import { useState } from 'react'
 import { AdminDashboardShell } from '../components/AdminDashboardShell'
+import { PanelEmptyState } from '../components/PanelEmptyState'
 import { getSellerWorkflow, updateSellerWorkflow } from '../lib/sellerWorkflow'
-
-const kycQueue = [
-  { id: 'KYC-882104', seller: 'Northline Essentials', submitted: 'Jun 18, 2026', docs: 'PAN, GST, Bank', status: 'Pending' },
-  { id: 'KYC-881902', seller: 'CraftHub Kerala', submitted: 'Jun 17, 2026', docs: 'PAN, GST, Bank', status: 'Under review' },
-]
 
 export function AdminKycPage() {
   const [workflow, setWorkflow] = useState(getSellerWorkflow)
@@ -30,7 +26,7 @@ export function AdminKycPage() {
             <p>Active submission from logged seller workflow.</p>
           </div>
           <div className="admin-approval-card">
-            <strong>AGTRENZ Partner Store</strong>
+            <strong>Seller submission</strong>
             <p>KYC ID: {workflow.kycId}</p>
             <p>Documents: PAN, GST certificate, cancelled cheque, address proof</p>
             <div className="admin-approval-card__actions">
@@ -53,23 +49,10 @@ export function AdminKycPage() {
             <option>Rejected</option>
           </select>
         </div>
-        <div className="admin-table">
-          <div className="admin-table__row admin-table__row--head">
-            <span>KYC ID</span><span>Seller</span><span>Submitted</span><span>Documents</span><span>Status</span><span>Actions</span>
-          </div>
-          {kycQueue.map((item) => (
-            <div key={item.id} className="admin-table__row">
-              <span>{item.id}</span>
-              <span>{item.seller}</span>
-              <span>{item.submitted}</span>
-              <span>{item.docs}</span>
-              <strong>{item.status}</strong>
-              <span className="admin-table__actions">
-                <button type="button">Review</button>
-              </span>
-            </div>
-          ))}
-        </div>
+        <PanelEmptyState
+          title="No KYC submissions in queue"
+          message="Seller verification requests will appear here for review."
+        />
       </section>
     </AdminDashboardShell>
   )

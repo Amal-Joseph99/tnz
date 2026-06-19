@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PanelEmptyState } from '../components/PanelEmptyState'
 import { SellerDashboardShell } from '../components/SellerDashboardShell'
 import { getSellerWorkflow, updateSellerWorkflow } from '../lib/sellerWorkflow'
 
@@ -365,15 +366,17 @@ export function SellerProductsPage() {
             <p>Listings are published only after admin approval.</p>
           </div>
         </div>
-        <div className="seller-table">
-          <div className="seller-table__row seller-table__row--head"><span>Product</span><span>SKU</span><span>Stock</span><span>Status</span></div>
-          {workflow.productApprovalStatus !== 'none' && (
-            <div className="seller-table__row"><span>{workflow.productName}</span><span>AGT-WH-2401</span><span>42</span><strong>{workflow.productApprovalStatus}</strong></div>
-          )}
-          <div className="seller-table__row"><span>Wireless headphones</span><span>WH-2401</span><span>42</span><strong>Approved public</strong></div>
-          <div className="seller-table__row"><span>Travel organizer</span><span>TO-1188</span><span>8</span><strong>Low stock</strong></div>
-          <div className="seller-table__row"><span>Smart watch strap</span><span>SW-7720</span><span>0</span><strong>Paused</strong></div>
-        </div>
+        {workflow.productApprovalStatus !== 'none' ? (
+          <div className="seller-table">
+            <div className="seller-table__row seller-table__row--head"><span>Product</span><span>SKU</span><span>Stock</span><span>Status</span></div>
+            <div className="seller-table__row"><span>{workflow.productName}</span><span>—</span><span>—</span><strong>{workflow.productApprovalStatus}</strong></div>
+          </div>
+        ) : (
+          <PanelEmptyState
+            title="No products in catalogue"
+            message="Create and submit a listing for admin approval to appear here."
+          />
+        )}
       </section>
     </SellerDashboardShell>
   )

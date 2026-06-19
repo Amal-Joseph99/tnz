@@ -21,10 +21,10 @@ export function BuyerAccountShell({ title, subtitle, children, action }: BuyerAc
       <div className="container buyer-account">
         <aside className="buyer-account__sidebar">
           <div className="buyer-account__user">
-            <div className="buyer-account__avatar">A</div>
+            <div className="buyer-account__avatar">•</div>
             <div>
-              <strong>Akhil P</strong>
-              <span>akhil@example.com</span>
+              <strong>Your account</strong>
+              <span>Sign in to view profile details</span>
             </div>
           </div>
           <nav className="buyer-account__nav">

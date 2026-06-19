@@ -16,15 +16,15 @@ export function CheckoutAddressPage() {
         <form className="checkout-form checkout-form--grid" onSubmit={(event) => event.preventDefault()}>
           <label>
             Full name
-            <input type="text" defaultValue="Akhil P" required />
+            <input type="text" placeholder="Enter your full name" required />
           </label>
           <label>
             Phone number
-            <input type="tel" defaultValue="+91 98765 43210" required />
+            <input type="tel" placeholder="Enter your phone number" required />
           </label>
           <label className="checkout-form__full">
             Address line 1
-            <input type="text" defaultValue="12 Market Road" required />
+            <input type="text" placeholder="Street address" required />
           </label>
           <label className="checkout-form__full">
             Address line 2
@@ -32,19 +32,20 @@ export function CheckoutAddressPage() {
           </label>
           <label>
             City
-            <input type="text" defaultValue="Taliparamba" required />
+            <input type="text" placeholder="City" required />
           </label>
           <label>
             State
-            <input type="text" defaultValue="Kerala" required />
+            <input type="text" placeholder="State or province" required />
           </label>
           <label>
             PIN code
-            <input type="text" defaultValue="670141" required />
+            <input type="text" placeholder="Postal code" required />
           </label>
           <label>
             Country
-            <select defaultValue="IN">
+            <select defaultValue="">
+              <option value="" disabled>Select country</option>
               <option value="IN">India</option>
               <option value="US">United States</option>
               <option value="GB">United Kingdom</option>

@@ -1,11 +1,5 @@
 import { AdminDashboardShell } from '../components/AdminDashboardShell'
-
-const sellers = [
-  { id: 'SLR-1042', name: 'AGTRENZ Partner Store', email: 'partner@agtrenz.com', kyc: 'Approved', products: 24, orders: 312, status: 'Active' },
-  { id: 'SLR-1038', name: 'Northline Essentials', email: 'ops@northline.in', kyc: 'Pending', products: 0, orders: 0, status: 'Onboarding' },
-  { id: 'SLR-1021', name: 'UrbanCraft India', email: 'hello@urbancraft.in', kyc: 'Approved', products: 58, orders: 891, status: 'Active' },
-  { id: 'SLR-0994', name: 'GreenLeaf Organics', email: 'support@greenleaf.in', kyc: 'Rejected', products: 0, orders: 14, status: 'Suspended' },
-]
+import { PanelEmptyState } from '../components/PanelEmptyState'
 
 export function AdminSellersPage() {
   return (
@@ -29,28 +23,10 @@ export function AdminSellersPage() {
             </select>
           </div>
         </div>
-
-        <div className="admin-table">
-          <div className="admin-table__row admin-table__row--head">
-            <span>Seller</span><span>KYC</span><span>Products</span><span>Orders</span><span>Status</span><span>Actions</span>
-          </div>
-          {sellers.map((seller) => (
-            <div key={seller.id} className="admin-table__row">
-              <span>
-                <strong>{seller.name}</strong>
-                <small>{seller.id} · {seller.email}</small>
-              </span>
-              <span>{seller.kyc}</span>
-              <span>{seller.products}</span>
-              <span>{seller.orders}</span>
-              <strong>{seller.status}</strong>
-              <span className="admin-table__actions">
-                <button type="button">View</button>
-                <button type="button">Message</button>
-              </span>
-            </div>
-          ))}
-        </div>
+        <PanelEmptyState
+          title="No sellers yet"
+          message="Seller accounts will appear here after registration and onboarding."
+        />
       </section>
     </AdminDashboardShell>
   )

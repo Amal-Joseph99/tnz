@@ -1,4 +1,5 @@
 import { BuyerAccountShell } from '../components/BuyerAccountShell'
+import { PanelEmptyState } from '../components/PanelEmptyState'
 
 export function ProfilePage() {
   return (
@@ -15,19 +16,19 @@ export function ProfilePage() {
         <form className="buyer-form buyer-form--grid" onSubmit={(event) => event.preventDefault()}>
           <label>
             Full name
-            <input type="text" defaultValue="Akhil P" />
+            <input type="text" placeholder="Enter your full name" />
           </label>
           <label>
             Email address
-            <input type="email" defaultValue="akhil@example.com" />
+            <input type="email" placeholder="you@example.com" />
           </label>
           <label>
             Phone number
-            <input type="tel" defaultValue="+91 98765 43210" />
+            <input type="tel" placeholder="Enter your phone number" />
           </label>
           <label>
             Date of birth
-            <input type="date" defaultValue="1995-06-12" />
+            <input type="date" />
           </label>
         </form>
       </section>
@@ -38,13 +39,10 @@ export function ProfilePage() {
             <h2>Default address</h2>
             <p>Used for delivery estimates and checkout.</p>
           </div>
-          <div className="buyer-address-card">
-            <strong>Akhil P</strong>
-            <span>12 Market Road, Taliparamba</span>
-            <span>Kannur, Kerala 670141</span>
-            <span>+91 98765 43210</span>
-            <button type="button">Edit address</button>
-          </div>
+          <PanelEmptyState
+            title="No saved address"
+            message="Add a delivery address during checkout or here in your profile."
+          />
         </section>
 
         <section className="buyer-panel">
@@ -59,7 +57,7 @@ export function ProfilePage() {
             </div>
             <div>
               <span>Email verification</span>
-              <strong className="buyer-status buyer-status--success">Verified</strong>
+              <strong className="buyer-status">Pending</strong>
             </div>
             <div>
               <span>Two-factor authentication</span>

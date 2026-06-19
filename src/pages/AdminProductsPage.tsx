@@ -1,11 +1,7 @@
 import { useState } from 'react'
 import { AdminDashboardShell } from '../components/AdminDashboardShell'
+import { PanelEmptyState } from '../components/PanelEmptyState'
 import { getSellerWorkflow, updateSellerWorkflow } from '../lib/sellerWorkflow'
-
-const productQueue = [
-  { id: 'PRD-5521', name: 'Stainless steel kitchen organizer', seller: 'UrbanCraft India', category: 'Home', submitted: 'Jun 17', status: 'Pending' },
-  { id: 'PRD-5518', name: 'Cotton crew neck t-shirt pack', seller: 'AGTRENZ Partner Store', category: 'Fashion', submitted: 'Jun 16', status: 'Pending' },
-]
 
 export function AdminProductsPage() {
   const [workflow, setWorkflow] = useState(getSellerWorkflow)
@@ -30,7 +26,6 @@ export function AdminProductsPage() {
           </div>
           <div className="admin-approval-card">
             <strong>{workflow.productName}</strong>
-            <p>Seller: AGTRENZ Partner Store</p>
             <p>Status: Awaiting admin approval before public listing</p>
             <div className="admin-approval-card__actions">
               <button type="button" className="admin-accept" onClick={() => handleDecision(true)}>Approve listing</button>
@@ -48,21 +43,10 @@ export function AdminProductsPage() {
           </div>
           <input type="search" placeholder="Search products..." aria-label="Search products" />
         </div>
-        <div className="admin-table">
-          <div className="admin-table__row admin-table__row--head">
-            <span>Product ID</span><span>Listing</span><span>Seller</span><span>Category</span><span>Submitted</span><span>Status</span>
-          </div>
-          {productQueue.map((item) => (
-            <div key={item.id} className="admin-table__row">
-              <span>{item.id}</span>
-              <span>{item.name}</span>
-              <span>{item.seller}</span>
-              <span>{item.category}</span>
-              <span>{item.submitted}</span>
-              <strong>{item.status}</strong>
-            </div>
-          ))}
-        </div>
+        <PanelEmptyState
+          title="No product submissions"
+          message="Seller listings awaiting review will appear in this queue."
+        />
       </section>
     </AdminDashboardShell>
   )

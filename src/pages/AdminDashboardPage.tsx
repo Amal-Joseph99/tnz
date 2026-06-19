@@ -1,14 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminDashboardShell } from '../components/AdminDashboardShell'
+import { PanelEmptyState } from '../components/PanelEmptyState'
 import { getSellerWorkflow, updateSellerWorkflow } from '../lib/sellerWorkflow'
-
-const recentOrders = [
-  { id: 'AGT-20491', buyer: 'Riya Menon', seller: 'AGTRENZ Partner Store', status: 'Pack now', amount: '$428.00' },
-  { id: 'AGT-20488', buyer: 'Arjun Nair', seller: 'UrbanCraft India', status: 'Confirmed', amount: '$96.50' },
-  { id: 'AGT-20412', buyer: 'Sneha Das', seller: 'Northline Essentials', status: 'Dispute', amount: '$214.00' },
-  { id: 'AGT-20398', buyer: 'Vivek Kumar', seller: 'GreenLeaf Organics', status: 'Delivered', amount: '$52.30' },
-]
 
 export function AdminDashboardPage() {
   const [workflow, setWorkflow] = useState(getSellerWorkflow)
@@ -40,13 +34,13 @@ export function AdminDashboardPage() {
       <section className="admin-kpi-grid">
         <article>
           <span>GMV today</span>
-          <strong>$84,260</strong>
-          <p>+8.2% vs yesterday</p>
+          <strong>$0</strong>
+          <p>No marketplace volume yet</p>
         </article>
         <article>
           <span>Orders today</span>
-          <strong>142</strong>
-          <p>8 at dispatch risk</p>
+          <strong>0</strong>
+          <p>No orders recorded</p>
         </article>
         <article>
           <span>Pending KYC</span>
@@ -69,11 +63,10 @@ export function AdminDashboardPage() {
             </div>
             <Link to="/admin/orders" className="admin-btn admin-btn--ghost">View orders</Link>
           </div>
-          <div className="admin-chart-preview" aria-label="Marketplace volume chart">
-            {[52, 68, 61, 84, 76, 92, 88].map((height, index) => (
-              <span key={`gmv-bar-${index + 1}`} style={{ height: `${height}%` }} />
-            ))}
-          </div>
+          <PanelEmptyState
+            title="No marketplace volume yet"
+            message="Volume charts will appear after the first orders are placed."
+          />
         </article>
 
         <article className="admin-console-card">
@@ -86,7 +79,7 @@ export function AdminDashboardPage() {
           <div className="admin-status-list">
             <div><strong>Payment gateway</strong><span className="admin-status-pill admin-status-pill--ok">Operational</span></div>
             <div><strong>Seller onboarding</strong><span className="admin-status-pill admin-status-pill--warn">{pendingKyc} pending</span></div>
-            <div><strong>Dispute queue</strong><span className="admin-status-pill admin-status-pill--warn">5 open</span></div>
+            <div><strong>Dispute queue</strong><span className="admin-status-pill admin-status-pill--ok">0 open</span></div>
             <div><strong>Payout processing</strong><span className="admin-status-pill admin-status-pill--ok">On schedule</span></div>
           </div>
         </article>
@@ -101,8 +94,8 @@ export function AdminDashboardPage() {
           <div className="admin-action-list">
             <Link to="/admin/kyc">Review {pendingKyc} KYC submission{pendingKyc !== 1 ? 's' : ''}</Link>
             <Link to="/admin/products">Approve {pendingProducts} product listing{pendingProducts !== 1 ? 's' : ''}</Link>
-            <Link to="/admin/orders">Resolve 5 order disputes</Link>
-            <Link to="/admin/sellers">Review 2 suspended sellers</Link>
+            <Link to="/admin/orders">View order operations</Link>
+            <Link to="/admin/sellers">View seller directory</Link>
           </div>
         </article>
       </section>
@@ -118,10 +111,10 @@ export function AdminDashboardPage() {
           </div>
           {workflow.kycStatus === 'pending' ? (
             <div className="admin-approval-card">
-              <strong>AGTRENZ Partner Store</strong>
+              <strong>{workflow.productName || 'Seller submission'}</strong>
               <p>KYC ID: {workflow.kycId}</p>
               <p>Documents: PAN, GST, bank proof, address proof</p>
-              <p>Submitted today · Status: Pending review</p>
+              <p>Status: Pending review</p>
               <div className="admin-approval-card__actions">
                 <button type="button" className="admin-accept" onClick={() => handleKycDecision(true)}>Approve KYC</button>
                 <button type="button" className="admin-reject" onClick={() => handleKycDecision(false)}>Reject KYC</button>
@@ -147,7 +140,6 @@ export function AdminDashboardPage() {
           {workflow.productApprovalStatus === 'pending' ? (
             <div className="admin-approval-card">
               <strong>{workflow.productName}</strong>
-              <p>Seller: AGTRENZ Partner Store</p>
               <p>Category: Marketplace listing</p>
               <p>Visibility: Hidden until approved</p>
               <div className="admin-approval-card__actions">
@@ -173,20 +165,10 @@ export function AdminDashboardPage() {
           </div>
           <Link to="/admin/orders" className="admin-btn admin-btn--ghost">Manage orders</Link>
         </div>
-        <div className="admin-table admin-table--orders">
-          <div className="admin-table__row admin-table__row--head">
-            <span>Order</span><span>Buyer</span><span>Seller</span><span>Status</span><span>Amount</span>
-          </div>
-          {recentOrders.map((order) => (
-            <div key={order.id} className="admin-table__row">
-              <span>{order.id}</span>
-              <span>{order.buyer}</span>
-              <span>{order.seller}</span>
-              <strong>{order.status}</strong>
-              <span>{order.amount}</span>
-            </div>
-          ))}
-        </div>
+        <PanelEmptyState
+          title="No orders yet"
+          message="Marketplace orders will appear here once buyers start purchasing."
+        />
       </section>
 
       <section className="admin-panel">
@@ -195,17 +177,11 @@ export function AdminDashboardPage() {
             <h2>Recent platform activity</h2>
             <p>Audit trail of seller, order, and compliance events.</p>
           </div>
-          <button type="button" className="admin-btn admin-btn--ghost">Export audit log</button>
         </div>
-        <div className="admin-table admin-table--activity">
-          <div className="admin-table__row admin-table__row--head">
-            <span>Time</span><span>Event</span><span>Entity</span><span>Status</span>
-          </div>
-          <div className="admin-table__row"><span>Today, 9:12 AM</span><span>KYC submitted</span><span>AGTRENZ Partner Store</span><strong>Pending</strong></div>
-          <div className="admin-table__row"><span>Today, 8:40 AM</span><span>Order dispute opened</span><span>#AGT-20412</span><strong>Open</strong></div>
-          <div className="admin-table__row"><span>Yesterday</span><span>Product listing submitted</span><span>{workflow.productName || 'New listing'}</span><strong>Review</strong></div>
-          <div className="admin-table__row"><span>Yesterday</span><span>Seller payout completed</span><span>UrbanCraft India</span><strong>Processed</strong></div>
-        </div>
+        <PanelEmptyState
+          title="No platform activity yet"
+          message="Audit events will be recorded here as sellers and orders go live."
+        />
       </section>
     </AdminDashboardShell>
   )

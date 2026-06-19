@@ -5558,7 +5558,8 @@
   background: #f3f4f6;
 }
 
-.admin-empty-state {
+.admin-empty-state,
+.panel-empty-state {
   background: #f9fafb;
   border: 1px solid #eef0f3;
   border-radius: 8px;
@@ -5568,7 +5569,8 @@
   padding: 14px;
 }
 
-.admin-empty-state p {
+.admin-empty-state p,
+.panel-empty-state p {
   color: #6b7280;
   font-size: 13px;
   margin: 0;

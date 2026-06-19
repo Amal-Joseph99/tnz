@@ -1,4 +1,5 @@
 import { SellerDashboardShell } from '../components/SellerDashboardShell'
+import { PanelEmptyState } from '../components/PanelEmptyState'
 
 export function SellerDashboardPage() {
   return (
@@ -9,23 +10,23 @@ export function SellerDashboardPage() {
       <section className="seller-kpi-grid">
         <article>
           <span>Today revenue</span>
-          <strong>$4,280</strong>
-          <p>+12.4% from yesterday</p>
+          <strong>$0</strong>
+          <p>No sales recorded yet</p>
         </article>
         <article>
           <span>Open orders</span>
-          <strong>38</strong>
-          <p>9 need dispatch today</p>
+          <strong>0</strong>
+          <p>No orders awaiting action</p>
         </article>
         <article>
           <span>Active products</span>
-          <strong>246</strong>
-          <p>18 low stock alerts</p>
+          <strong>0</strong>
+          <p>No published listings</p>
         </article>
         <article>
           <span>Seller health</span>
-          <strong>96%</strong>
-          <p>Excellent account standing</p>
+          <strong>—</strong>
+          <p>Complete onboarding to activate</p>
         </article>
       </section>
 
@@ -36,13 +37,11 @@ export function SellerDashboardPage() {
               <h2>Sales performance</h2>
               <p>Revenue trend for the current week</p>
             </div>
-            <button type="button">View report</button>
           </div>
-          <div className="seller-chart-preview" aria-label="Sales chart preview">
-            {[46, 62, 54, 80, 72, 88, 96].map((height, index) => (
-              <span key={`sales-bar-${index + 1}`} style={{ height: `${height}%` }} />
-            ))}
-          </div>
+          <PanelEmptyState
+            title="No sales data yet"
+            message="Charts will appear after your first orders are placed."
+          />
         </article>
 
         <article className="seller-console-card">
@@ -53,9 +52,9 @@ export function SellerDashboardPage() {
             </div>
           </div>
           <div className="seller-status-list">
-            <div><strong>Email verified</strong><span>Complete</span></div>
-            <div><strong>Business profile</strong><span>Review pending</span></div>
-            <div><strong>Payout method</strong><span>Connected</span></div>
+            <div><strong>Email verified</strong><span>Pending</span></div>
+            <div><strong>Business profile</strong><span>Not started</span></div>
+            <div><strong>Payout method</strong><span>Not connected</span></div>
           </div>
         </article>
 
@@ -66,11 +65,10 @@ export function SellerDashboardPage() {
               <p>Tasks that need attention</p>
             </div>
           </div>
-          <div className="seller-action-list">
-            <button type="button">Confirm 9 orders</button>
-            <button type="button">Restock 18 products</button>
-            <button type="button">Resolve 2 support cases</button>
-          </div>
+          <PanelEmptyState
+            title="No pending actions"
+            message="Operational tasks will show here when orders or listings need attention."
+          />
         </article>
       </section>
 
@@ -80,35 +78,11 @@ export function SellerDashboardPage() {
             <h2>Recent orders</h2>
             <p>Latest customer orders requiring seller action</p>
           </div>
-          <button type="button">Manage orders</button>
         </div>
-
-        <div className="seller-table">
-          <div className="seller-table__row seller-table__row--head">
-            <span>Order</span>
-            <span>Customer</span>
-            <span>Status</span>
-            <span>Total</span>
-          </div>
-          <div className="seller-table__row">
-            <span>#AGT-20491</span>
-            <span>Rahul Menon</span>
-            <strong>Ready to ship</strong>
-            <span>$128.40</span>
-          </div>
-          <div className="seller-table__row">
-            <span>#AGT-20488</span>
-            <span>Sara Thomas</span>
-            <strong>Payment confirmed</strong>
-            <span>$84.10</span>
-          </div>
-          <div className="seller-table__row">
-            <span>#AGT-20482</span>
-            <span>Mohammed Ali</span>
-            <strong>Dispatch today</strong>
-            <span>$212.00</span>
-          </div>
-        </div>
+        <PanelEmptyState
+          title="No orders yet"
+          message="Customer orders will appear here once your listings are live."
+        />
       </section>
     </SellerDashboardShell>
   )

@@ -1,5 +1,3 @@
-import { featuredProducts } from '../data/products'
-
 export type CartItem = {
   id: string
   title: string
@@ -10,15 +8,7 @@ export type CartItem = {
   quantity: number
 }
 
-export const defaultCartItems: CartItem[] = featuredProducts.slice(0, 2).map((product, index) => ({
-  id: product.id,
-  title: product.title,
-  brand: product.brand,
-  price: product.price,
-  originalPrice: product.originalPrice,
-  image: product.image,
-  quantity: index === 0 ? 1 : 2,
-}))
+export const defaultCartItems: CartItem[] = []
 
 export function getCartTotals(items: CartItem[]) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)

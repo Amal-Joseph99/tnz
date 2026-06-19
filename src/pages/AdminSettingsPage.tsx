@@ -15,11 +15,11 @@ export function AdminSettingsPage() {
           <form className="admin-form" onSubmit={(event) => event.preventDefault()}>
             <label>
               Default commission (%)
-              <input type="number" defaultValue={12} min={0} max={100} />
+              <input type="number" placeholder="12" min={0} max={100} />
             </label>
             <label>
               Settlement window (days)
-              <input type="number" defaultValue={7} min={1} />
+              <input type="number" placeholder="7" min={1} />
             </label>
             <button type="submit" className="admin-btn">Save fees</button>
           </form>
@@ -46,7 +46,7 @@ export function AdminSettingsPage() {
           <form className="admin-form" onSubmit={(event) => event.preventDefault()}>
             <label>
               Operations email
-              <input type="email" defaultValue="ops@agtrenz.com" />
+              <input type="email" placeholder="ops@agtrenz.com" />
             </label>
             <label><input type="checkbox" defaultChecked /> Email on new KYC submissions</label>
             <label><input type="checkbox" defaultChecked /> Email on order disputes</label>
@@ -61,8 +61,8 @@ export function AdminSettingsPage() {
           </div>
           <div className="admin-security-list">
             <div><span>Two-factor authentication</span><button type="button">Enable</button></div>
-            <div><span>Session timeout</span><strong>30 minutes</strong></div>
-            <div><span>Last admin login</span><strong>Today, 8:02 AM</strong></div>
+            <div><span>Session timeout</span><strong>Not configured</strong></div>
+            <div><span>Last admin login</span><strong>—</strong></div>
           </div>
         </section>
       </div>

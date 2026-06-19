@@ -1,14 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-
-const timeline = [
-  { label: 'Order placed', detail: 'Jun 14, 2026 · 10:42 AM', done: true },
-  { label: 'Payment confirmed', detail: 'Jun 14, 2026 · 10:43 AM', done: true },
-  { label: 'Seller preparing', detail: 'In progress at AGTRENZ Partner Store', done: true },
-  { label: 'Shipped', detail: 'Expected Jun 18', done: false },
-  { label: 'Out for delivery', detail: 'Pending', done: false },
-  { label: 'Delivered', detail: 'Estimated Jun 20', done: false },
-]
+import { PanelEmptyState } from '../components/PanelEmptyState'
 
 export function TrackOrderPage() {
   const [orderId, setOrderId] = useState('')
@@ -39,7 +31,7 @@ export function TrackOrderPage() {
                 Order ID
                 <input
                   type="text"
-                  placeholder="Example: AGT-10291"
+                  placeholder="Enter your order ID"
                   value={orderId}
                   onChange={(event) => setOrderId(event.target.value)}
                 />
@@ -59,27 +51,10 @@ export function TrackOrderPage() {
 
           {tracked && (
             <section className="track-order-result-panel">
-              <div className="track-order-result__header">
-                <div>
-                  <span>Order #AGT-10291</span>
-                  <h2>Wireless headphones and travel pouch</h2>
-                  <p>2 items · Paid online · Seller: AGTRENZ Partner Store</p>
-                </div>
-                <strong className="buyer-status buyer-status--warning">Preparing</strong>
-              </div>
-
-              <div className="track-order-timeline">
-                {timeline.map((step) => (
-                  <article key={step.label} className={step.done ? 'track-step track-step--done' : 'track-step'}>
-                    <span className="track-step__dot" />
-                    <div>
-                      <strong>{step.label}</strong>
-                      <p>{step.detail}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-
+              <PanelEmptyState
+                title="Order not found"
+                message="We could not find an order matching that ID and email. Check your details or view your orders after signing in."
+              />
               <div className="track-order-result__actions">
                 <Link to="/orders">View all orders</Link>
                 <Link to="/help">Need help?</Link>
