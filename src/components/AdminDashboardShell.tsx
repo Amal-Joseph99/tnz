@@ -14,6 +14,7 @@ const adminNavItems = [
   { label: 'Customers', to: '/admin/customers' },
   { label: 'Notifications', to: '/admin/notifications' },
   { label: 'Settings', to: '/admin/settings' },
+  { label: 'Help', to: '/admin/help' },
 ]
 
 type AdminDashboardShellProps = {

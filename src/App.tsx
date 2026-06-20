@@ -15,6 +15,7 @@ import { AdminOrdersPage } from './pages/AdminOrdersPage'
 import { AdminProductsPage } from './pages/AdminProductsPage'
 import { AdminSellersPage } from './pages/AdminSellersPage'
 import { AdminSettingsPage } from './pages/AdminSettingsPage'
+import { AdminHelpPage } from './pages/AdminHelpPage'
 import { AdminStorefrontSectionsPage } from './pages/AdminStorefrontSectionsPage'
 import { AboutUsPage } from './pages/AboutUsPage'
 import { BestSellersPage } from './pages/BestSellersPage'
@@ -146,6 +147,7 @@ function AppContent() {
               <Route path="/admin/customers" element={<RequireAdminAuth><AdminCustomersPage /></RequireAdminAuth>} />
               <Route path="/admin/notifications" element={<RequireAdminAuth><AdminNotificationsPage /></RequireAdminAuth>} />
               <Route path="/admin/settings" element={<RequireAdminAuth><AdminSettingsPage /></RequireAdminAuth>} />
+              <Route path="/admin/help" element={<RequireAdminAuth><AdminHelpPage /></RequireAdminAuth>} />
               <Route path="/sellerslogin" element={<Navigate to="/seller/signin" replace />} />
               <Route path="/sellerssignup" element={<Navigate to="/seller/signup" replace />} />
               <Route path="/seller-email-otp-verification" element={<Navigate to="/seller/verify-email" replace />} />

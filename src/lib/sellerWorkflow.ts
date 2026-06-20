@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 
 export type KycStatus = 'not_submitted' | 'pending' | 'approved' | 'rejected'
-export type ProductApprovalStatus = 'none' | 'pending' | 'approved' | 'rejected'
+export type ProductApprovalStatus = 'none' | 'draft' | 'pending' | 'approved' | 'rejected'
 
 export type SellerWorkflowState = {
   kycId: string
@@ -10,6 +10,7 @@ export type SellerWorkflowState = {
   productApprovalStatus: ProductApprovalStatus
   productName: string
   productId: number
+  rejectionReason: string
 }
 
 export const defaultWorkflowState: SellerWorkflowState = {
@@ -19,6 +20,7 @@ export const defaultWorkflowState: SellerWorkflowState = {
   productApprovalStatus: 'none',
   productName: '',
   productId: 0,
+  rejectionReason: '',
 }
 
 export async function fetchSellerWorkflow(): Promise<SellerWorkflowState> {
@@ -38,5 +40,6 @@ export async function fetchSellerWorkflow(): Promise<SellerWorkflowState> {
     productApprovalStatus: (data.productApprovalStatus ?? 'none') as ProductApprovalStatus,
     productName: String(data.productName ?? ''),
     productId: Number(data.productId ?? 0),
+    rejectionReason: String(data.rejectionReason ?? ''),
   }
 }

@@ -7,6 +7,7 @@ export type ProductSpecificationInput = {
 }
 
 export type ProductVariantInput = {
+  id?: number
   variantId: string
   size: string
   color: string
@@ -59,6 +60,39 @@ export type SellerProductCatalogueRow = {
   sku: string
   stock: number
   approvalStatus: string
+}
+
+export type SellerProductListingDetail = {
+  productId: number
+  sku: string
+  productName: string
+  categoryName: string
+  subCategoryName: string
+  productTypeName: string
+  hsnCode: string
+  brandName: string
+  shortDescription: string
+  fullDescription: string
+  packingType: string
+  weightKg: number
+  packageLengthCm: number
+  packageWidthCm: number
+  packageHeightCm: number
+  manufacturerName: string
+  manufacturerCountry: string
+  originCountry: string
+  usageNote: string
+  ingredients: string
+  approvalStatus: string
+  specifications: ProductSpecificationInput[]
+  variants: ProductVariantInput[]
+  media: ProductMediaInput[]
+}
+
+export type ProductListingFieldOptions = {
+  packingType: string[]
+  sizePreset: string[]
+  colorPreset: string[]
 }
 
 type MutationResult = { ok: true; productId: number } | { ok: false; message: string }
@@ -129,6 +163,118 @@ export async function saveSellerProductListing(
   return { ok: true, productId: Number(data) }
 }
 
+export async function fetchProductListingFieldOptions(): Promise<ProductListingFieldOptions> {
+  const defaults: ProductListingFieldOptions = {
+    packingType: [],
+    sizePreset: [],
+    colorPreset: [],
+  }
+
+  if (!supabase) return defaults
+
+  const { data, error } = await supabase.rpc('list_product_listing_field_options')
+  if (error || !data) return defaults
+
+  return {
+    packingType: Array.isArray(data.packing_type) ? data.packing_type.map(String) : [],
+    sizePreset: Array.isArray(data.size_preset) ? data.size_preset.map(String) : [],
+    colorPreset: Array.isArray(data.color_preset) ? data.color_preset.map(String) : [],
+  }
+}
+
+function mapListingDetail(payload: Record<string, unknown>): SellerProductListingDetail {
+  const product = payload.product as Record<string, unknown>
+  const specifications = Array.isArray(payload.specifications) ? payload.specifications : []
+  const variants = Array.isArray(payload.variants) ? payload.variants : []
+  const media = Array.isArray(payload.media) ? payload.media : []
+
+  return {
+    productId: Number(product.id),
+    sku: String(product.sku ?? ''),
+    productName: String(product.product_name ?? ''),
+    categoryName: String(product.category_name ?? ''),
+    subCategoryName: String(product.sub_category_name ?? ''),
+    productTypeName: String(product.product_type_name ?? ''),
+    hsnCode: String(product.hsn_code ?? ''),
+    brandName: String(product.brand_name ?? ''),
+    shortDescription: String(product.short_description ?? ''),
+    fullDescription: String(product.full_description ?? ''),
+    packingType: String(product.packing_type ?? ''),
+    weightKg: Number(product.weight_kg ?? 0),
+    packageLengthCm: Number(product.package_length_cm ?? 0),
+    packageWidthCm: Number(product.package_width_cm ?? 0),
+    packageHeightCm: Number(product.package_height_cm ?? 0),
+    manufacturerName: String(product.manufacturer_name ?? ''),
+    manufacturerCountry: String(product.manufacturer_country ?? ''),
+    originCountry: String(product.origin_country ?? ''),
+    usageNote: String(product.usage_note ?? ''),
+    ingredients: String(product.ingredients ?? ''),
+    approvalStatus: String(product.approval_status ?? 'draft'),
+    specifications: specifications.map((row, index) => {
+      const spec = row as Record<string, unknown>
+      return {
+        attributeName: String(spec.attributeName ?? ''),
+        attributeValue: String(spec.attributeValue ?? ''),
+        sortOrder: Number(spec.sortOrder ?? index),
+      }
+    }),
+    variants: variants.map((row, index) => {
+      const variant = row as Record<string, unknown>
+      return {
+        id: variant.id ? Number(variant.id) : undefined,
+        variantId: String(variant.variantId ?? ''),
+        size: String(variant.size ?? ''),
+        color: String(variant.color ?? ''),
+        mrp: Number(variant.mrp ?? 0),
+        sellingPrice: Number(variant.sellingPrice ?? 0),
+        stock: Number(variant.stock ?? 0),
+        imageStoragePath: variant.imageStoragePath ? String(variant.imageStoragePath) : undefined,
+        sortOrder: Number(variant.sortOrder ?? index),
+      }
+    }),
+    media: media.map((row, index) => {
+      const item = row as Record<string, unknown>
+      return {
+        mediaType: item.mediaType as ProductMediaInput['mediaType'],
+        storagePath: String(item.storagePath ?? ''),
+        fileName: String(item.fileName ?? ''),
+        mimeType: item.mimeType ? String(item.mimeType) : undefined,
+        slotIndex: item.slotIndex != null ? Number(item.slotIndex) : undefined,
+        sortOrder: Number(item.sortOrder ?? index),
+      }
+    }),
+  }
+}
+
+export async function fetchSellerProductListing(productId: number): Promise<SellerProductListingDetail | null> {
+  if (!supabase) return null
+
+  const { data, error } = await supabase.rpc('get_seller_product_listing', { p_product_id: productId })
+  if (error || !data) return null
+
+  return mapListingDetail(data as Record<string, unknown>)
+}
+
+export async function updateSellerProductStock(
+  productId: number,
+  variants: Array<{ id: number; stock: number }>,
+): Promise<{ ok: true; listing: SellerProductListingDetail } | { ok: false; message: string }> {
+  if (!supabase) {
+    return { ok: false, message: 'Supabase is not configured.' }
+  }
+
+  const { data, error } = await supabase.rpc('update_seller_product_stock', {
+    p_product_id: productId,
+    p_variants: variants.map((variant) => ({ id: variant.id, stock: variant.stock })),
+  })
+
+  if (error) {
+    return { ok: false, message: error.message }
+  }
+
+  return { ok: true, listing: mapListingDetail(data as Record<string, unknown>) }
+}
+
 export async function fetchSellerProductCatalogue(): Promise<SellerProductCatalogueRow[]> {
   if (!supabase) return []
 
@@ -140,7 +286,6 @@ export async function fetchSellerProductCatalogue(): Promise<SellerProductCatalo
     .from('seller_products')
     .select('id, product_name, sku, approval_status')
     .eq('user_id', user.id)
-    .neq('approval_status', 'draft')
     .order('updated_at', { ascending: false })
 
   if (error || !products) return []

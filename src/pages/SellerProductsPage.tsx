@@ -11,20 +11,27 @@ import { sortCategoryNames } from '../lib/categoryDisplay'
 import {
   createSku,
   createVariantId,
+  fetchProductListingFieldOptions,
   fetchSellerProductCatalogue,
+  fetchSellerProductListing,
   parseMoneyInput,
   saveSellerProductListing,
+  updateSellerProductStock,
+  type ProductListingFieldOptions,
   type ProductMediaInput,
   type ProductSpecificationInput,
   type ProductVariantInput,
   type SellerProductCatalogueRow,
+  type SellerProductListingDetail,
 } from '../lib/sellerProducts'
 import { uploadProductMediaFile } from '../lib/sellerStorage'
 import { fetchSellerAccountProfile } from '../lib/sellerKyc'
+import { fetchSellerCountryOptions, type SellerCountryOption } from '../lib/sellerCountries'
 import { fetchSellerWorkflow, type SellerWorkflowState } from '../lib/sellerWorkflow'
 
 type SpecRow = { attributeName: string; attributeValue: string }
 type VariantRow = {
+  id?: number
   size: string
   color: string
   mrp: string
@@ -34,21 +41,29 @@ type VariantRow = {
   imageFileName?: string
 }
 
-const defaultSpecs: SpecRow[] = [
-  { attributeName: 'Material', attributeValue: 'ABS plastic and memory foam' },
-  { attributeName: 'Warranty', attributeValue: '1 year manufacturer warranty' },
-  { attributeName: 'Model', attributeValue: 'AGT-AUDIO-2401' },
-  { attributeName: 'Compatibility', attributeValue: 'Android, iOS, Windows' },
-]
-
 const imageSlots = [1, 2, 3, 4, 5]
+const emptySpecRow = (): SpecRow => ({ attributeName: '', attributeValue: '' })
+const emptyVariantRow = (): VariantRow => ({
+  size: '',
+  color: '',
+  mrp: '',
+  selling: '',
+  stock: '',
+})
 
 export function SellerProductsPage() {
   const [workflow, setWorkflow] = useState<SellerWorkflowState | null>(null)
   const [catalogue, setCatalogue] = useState<SellerProductCatalogueRow[]>([])
   const [categoryTree, setCategoryTree] = useState<CategoryTree>({})
+  const [fieldOptions, setFieldOptions] = useState<ProductListingFieldOptions>({
+    packingType: [],
+    sizePreset: [],
+    colorPreset: [],
+  })
+  const [countryOptions, setCountryOptions] = useState<SellerCountryOption[]>([])
   const [loadingCategories, setLoadingCategories] = useState(true)
   const [productId, setProductId] = useState<number | undefined>()
+  const [approvalStatus, setApprovalStatus] = useState('')
   const [productName, setProductName] = useState('')
   const [category, setCategory] = useState('')
   const [subCategory, setSubCategory] = useState('')
@@ -56,20 +71,18 @@ export function SellerProductsPage() {
   const [brandName, setBrandName] = useState('')
   const [shortDescription, setShortDescription] = useState('')
   const [fullDescription, setFullDescription] = useState('')
-  const [specs, setSpecs] = useState<SpecRow[]>(defaultSpecs)
+  const [specs, setSpecs] = useState<SpecRow[]>([emptySpecRow()])
   const [sku, setSku] = useState('')
-  const [sizeMode, setSizeMode] = useState('Free Size')
-  const [colorMode, setColorMode] = useState('Black')
-  const [variantRows, setVariantRows] = useState<VariantRow[]>([
-    { size: 'Free Size', color: 'Black', mrp: '149.00', selling: '128.40', stock: '42' },
-  ])
-  const [packingType, setPackingType] = useState('Box')
-  const [weightKg, setWeightKg] = useState('0.85')
-  const [packageLengthCm, setPackageLengthCm] = useState('24')
-  const [packageWidthCm, setPackageWidthCm] = useState('18')
-  const [packageHeightCm, setPackageHeightCm] = useState('9')
-  const [manufacturerName, setManufacturerName] = useState('AGTRENZ Manufacturing Partner')
-  const [manufacturerCountry, setManufacturerCountry] = useState('India')
+  const [sizeMode, setSizeMode] = useState('')
+  const [colorMode, setColorMode] = useState('')
+  const [variantRows, setVariantRows] = useState<VariantRow[]>([emptyVariantRow()])
+  const [packingType, setPackingType] = useState('')
+  const [weightKg, setWeightKg] = useState('')
+  const [packageLengthCm, setPackageLengthCm] = useState('')
+  const [packageWidthCm, setPackageWidthCm] = useState('')
+  const [packageHeightCm, setPackageHeightCm] = useState('')
+  const [manufacturerName, setManufacturerName] = useState('')
+  const [manufacturerCountry, setManufacturerCountry] = useState('')
   const [originCountry, setOriginCountry] = useState('India')
   const [usageNote, setUsageNote] = useState('')
   const [ingredients, setIngredients] = useState('')
@@ -78,8 +91,89 @@ export function SellerProductsPage() {
   const [productVideo, setProductVideo] = useState<ProductMediaInput | null>(null)
   const [imageProgress, setImageProgress] = useState<Record<number, number>>({})
   const [saving, setSaving] = useState(false)
+  const [stockSaving, setStockSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+
+  const isStockOnly = approvalStatus === 'approved'
+  const isReadOnly = approvalStatus === 'pending'
+  const isFormEditable = !isStockOnly && !isReadOnly
+
+  const applyListingToForm = (listing: SellerProductListingDetail) => {
+    setProductId(listing.productId)
+    setApprovalStatus(listing.approvalStatus)
+    setSku(listing.sku)
+    setProductName(listing.productName)
+    setCategory(listing.categoryName)
+    setSubCategory(listing.subCategoryName)
+    setProductType(listing.productTypeName)
+    setBrandName(listing.brandName)
+    setShortDescription(listing.shortDescription)
+    setFullDescription(listing.fullDescription)
+    setSpecs(
+      listing.specifications.length > 0
+        ? listing.specifications.map((row) => ({
+            attributeName: row.attributeName,
+            attributeValue: row.attributeValue,
+          }))
+        : [emptySpecRow()],
+    )
+    setVariantRows(
+      listing.variants.length > 0
+        ? listing.variants.map((variant) => ({
+            id: variant.id,
+            size: variant.size,
+            color: variant.color,
+            mrp: String(variant.mrp),
+            selling: String(variant.sellingPrice),
+            stock: String(variant.stock),
+            imageStoragePath: variant.imageStoragePath,
+            imageFileName: variant.imageStoragePath?.split('/').pop(),
+          }))
+        : [emptyVariantRow()],
+    )
+    setSizeMode(listing.variants[0]?.size ?? '')
+    setColorMode(listing.variants[0]?.color ?? '')
+    setPackingType(listing.packingType)
+    setWeightKg(String(listing.weightKg || ''))
+    setPackageLengthCm(String(listing.packageLengthCm || ''))
+    setPackageWidthCm(String(listing.packageWidthCm || ''))
+    setPackageHeightCm(String(listing.packageHeightCm || ''))
+    setManufacturerName(listing.manufacturerName)
+    setManufacturerCountry(listing.manufacturerCountry)
+    setOriginCountry(listing.originCountry)
+    setUsageNote(listing.usageNote)
+    setIngredients(listing.ingredients)
+
+    const nextImages: Record<number, ProductMediaInput> = {}
+    const nextDescriptionImages: ProductMediaInput[] = []
+    let nextVideo: ProductMediaInput | null = null
+
+    for (const item of listing.media) {
+      if (item.mediaType === 'product_image' && item.slotIndex) {
+        nextImages[item.slotIndex] = item
+      } else if (item.mediaType === 'description_image') {
+        nextDescriptionImages.push(item)
+      } else if (item.mediaType === 'product_video') {
+        nextVideo = item
+      }
+    }
+
+    setProductImages(nextImages)
+    setDescriptionImages(nextDescriptionImages)
+    setProductVideo(nextVideo)
+  }
+
+  const loadProductById = async (id: number) => {
+    const listing = await fetchSellerProductListing(id)
+    if (!listing) {
+      setError('Could not load product listing from database.')
+      return
+    }
+    applyListingToForm(listing)
+    setMessage(`Loaded ${listing.productName} from database.`)
+    setError('')
+  }
 
   const refreshWorkflow = async () => {
     const [workflowState, rows] = await Promise.all([
@@ -98,14 +192,28 @@ export function SellerProductsPage() {
       fetchSellerProductCatalogue(),
       fetchCategoryTaxonomy(),
       fetchSellerAccountProfile(),
+      fetchProductListingFieldOptions(),
+      fetchSellerCountryOptions().catch(() => []),
     ])
-      .then(([workflowState, rows, taxonomyRows, accountProfile]) => {
+      .then(async ([workflowState, rows, taxonomyRows, accountProfile, listingOptions, countries]) => {
         if (!active) return
 
         setWorkflow(workflowState)
         setCatalogue(rows)
+        setFieldOptions(listingOptions)
+        setCountryOptions(countries)
         if (accountProfile) {
           setOriginCountry(accountProfile.countryName)
+          setManufacturerCountry((current) => current || accountProfile.countryName)
+        }
+        if (listingOptions.packingType[0]) {
+          setPackingType((current) => current || listingOptions.packingType[0])
+        }
+        if (listingOptions.sizePreset[0]) {
+          setSizeMode((current) => current || listingOptions.sizePreset[0])
+        }
+        if (listingOptions.colorPreset[0]) {
+          setColorMode((current) => current || listingOptions.colorPreset[0])
         }
 
         const tree = buildCategoryTree(taxonomyRows)
@@ -113,11 +221,21 @@ export function SellerProductsPage() {
 
         const firstCategory = sortCategoryNames(Object.keys(tree))[0]
         if (firstCategory) {
-          const firstSubCategory = Object.keys(tree[firstCategory])[0]
-          const firstProductType = tree[firstCategory][firstSubCategory]?.productTypes[0] ?? ''
-          setCategory(firstCategory)
-          setSubCategory(firstSubCategory)
-          setProductType(firstProductType)
+          setCategory((current) => {
+            if (current) return current
+            const firstSubCategory = Object.keys(tree[firstCategory])[0]
+            const firstProductType = tree[firstCategory][firstSubCategory]?.productTypes[0] ?? ''
+            setSubCategory(firstSubCategory)
+            setProductType(firstProductType)
+            return firstCategory
+          })
+        }
+
+        if (workflowState.productId > 0) {
+          const listing = await fetchSellerProductListing(workflowState.productId)
+          if (active && listing) {
+            applyListingToForm(listing)
+          }
         }
       })
       .finally(() => {
@@ -151,6 +269,7 @@ export function SellerProductsPage() {
       }))
 
     const variants: ProductVariantInput[] = variantRows.map((row, index) => ({
+      id: row.id,
       variantId: createVariantId(row.size, row.color, index),
       size: row.size,
       color: row.color,
@@ -229,6 +348,7 @@ export function SellerProductsPage() {
     }
 
     setProductId(result.productId)
+    setApprovalStatus('draft')
     setMessage(`Product information saved to DB. SKU generated: ${generatedSku}.`)
     await refreshWorkflow()
   }
@@ -257,6 +377,7 @@ export function SellerProductsPage() {
     }
 
     setProductId(result.productId)
+    setApprovalStatus('pending')
     setMessage('Product listing saved and submitted for admin approval. It will not be public until admin approves it.')
     await refreshWorkflow()
   }
@@ -264,12 +385,54 @@ export function SellerProductsPage() {
   const handleVariantSelectorsChange = (nextSize: string, nextColor: string) => {
     setSizeMode(nextSize)
     setColorMode(nextColor)
-    setVariantRows([
-      { size: nextSize, color: nextColor, mrp: '149.00', selling: '128.40', stock: '42' },
-      ...(nextSize === 'Free Size'
-        ? []
-        : [{ size: 'L', color: 'Blue', mrp: '159.00', selling: '139.00', stock: '24' }]),
-    ])
+    setVariantRows([{ size: nextSize, color: nextColor, mrp: '', selling: '', stock: '' }])
+  }
+
+  const handleStockUpdate = async () => {
+    if (!productId) {
+      setError('Select an approved product first.')
+      return
+    }
+
+    setStockSaving(true)
+    setError('')
+    setMessage('')
+
+    const variants = variantRows
+      .filter((row) => row.id)
+      .map((row) => ({
+        id: row.id as number,
+        stock: Number.parseInt(row.stock, 10) || 0,
+      }))
+
+    const result = await updateSellerProductStock(productId, variants)
+    setStockSaving(false)
+
+    if (!result.ok) {
+      setError(result.message)
+      return
+    }
+
+    applyListingToForm(result.listing)
+    setMessage('Stock updated in database.')
+    await refreshWorkflow()
+  }
+
+  const handleNewListing = () => {
+    setProductId(undefined)
+    setApprovalStatus('')
+    setSku('')
+    setProductName('')
+    setBrandName('')
+    setShortDescription('')
+    setFullDescription('')
+    setSpecs([emptySpecRow()])
+    setVariantRows([emptyVariantRow()])
+    setProductImages({})
+    setDescriptionImages([])
+    setProductVideo(null)
+    setMessage('')
+    setError('')
   }
 
   const handleProductImageUpload = async (slot: number, file: File) => {
@@ -320,6 +483,18 @@ export function SellerProductsPage() {
 
   return (
     <SellerDashboardShell title="Products" subtitle="Create listings, manage pricing, stock, and marketplace visibility.">
+      {(isReadOnly || isStockOnly) && (
+        <section className="seller-console-card seller-gate-card">
+          <h2>{isStockOnly ? 'Approved listing' : 'Pending admin review'}</h2>
+          <p>
+            {isStockOnly
+              ? 'This listing is approved. Update stock below without resubmitting the full product form.'
+              : 'This listing is pending admin review and cannot be edited until a decision is made.'}
+          </p>
+          {workflow.rejectionReason && <p>Previous rejection reason: {workflow.rejectionReason}</p>}
+        </section>
+      )}
+
       <section className="seller-console-card">
         <div className="seller-console-card__header">
           <div>
@@ -330,7 +505,7 @@ export function SellerProductsPage() {
         </div>
 
         <form className="seller-console-form">
-          <label>Product name<input value={productName} onChange={(event) => setProductName(event.target.value)} /></label>
+          <label>Product name<input value={productName} disabled={!isFormEditable} onChange={(event) => setProductName(event.target.value)} /></label>
           {loadingCategories ? (
             <p>Loading category taxonomy...</p>
           ) : categoryNames.length === 0 ? (
@@ -342,7 +517,7 @@ export function SellerProductsPage() {
             <>
               <label>
                 Category
-                <select value={category} onChange={(event) => {
+                <select value={category} disabled={!isFormEditable} onChange={(event) => {
                   const nextCategory = event.target.value
                   const nextSubCategory = Object.keys(categoryTree[nextCategory] ?? {})[0] ?? ''
                   const nextProductType = categoryTree[nextCategory]?.[nextSubCategory]?.productTypes[0] ?? ''
@@ -355,7 +530,7 @@ export function SellerProductsPage() {
               </label>
               <label>
                 Sub category
-                <select value={subCategory} onChange={(event) => {
+                <select value={subCategory} disabled={!isFormEditable} onChange={(event) => {
                   const nextSubCategory = event.target.value
                   setSubCategory(nextSubCategory)
                   setProductType(categoryTree[category]?.[nextSubCategory]?.productTypes[0] ?? '')
@@ -365,15 +540,15 @@ export function SellerProductsPage() {
               </label>
               <label>
                 Product type
-                <select value={productType} onChange={(event) => setProductType(event.target.value)}>
+                <select value={productType} disabled={!isFormEditable} onChange={(event) => setProductType(event.target.value)}>
                   {productTypes.map((type) => <option key={type} value={type}>{type}</option>)}
                 </select>
               </label>
               <label>HSN code<input value={hsnCode} readOnly aria-label="Readonly 8 digit HSN code" /></label>
             </>
           )}
-          <label>Brand name<input value={brandName} onChange={(event) => setBrandName(event.target.value)} /></label>
-          <label className="seller-console-form__full">Short description<textarea value={shortDescription} onChange={(event) => setShortDescription(event.target.value)} placeholder="Short product summary" maxLength={250} /></label>
+          <label>Brand name<input value={brandName} disabled={!isFormEditable} onChange={(event) => setBrandName(event.target.value)} /></label>
+          <label className="seller-console-form__full">Short description<textarea value={shortDescription} disabled={!isFormEditable} onChange={(event) => setShortDescription(event.target.value)} placeholder="Short product summary" maxLength={250} /></label>
         </form>
 
         <div className="product-listing-block">
@@ -382,20 +557,22 @@ export function SellerProductsPage() {
             <div className="spec-table__row spec-table__row--head"><span>Attribute</span><span>Value</span></div>
             {specs.map((row, index) => (
               <div className="spec-table__row" key={`spec-${index}`}>
-                <input value={row.attributeName} onChange={(event) => setSpecs((current) => current.map((item, i) => i === index ? { ...item, attributeName: event.target.value } : item))} />
-                <input value={row.attributeValue} onChange={(event) => setSpecs((current) => current.map((item, i) => i === index ? { ...item, attributeValue: event.target.value } : item))} />
+                <input value={row.attributeName} disabled={!isFormEditable} onChange={(event) => setSpecs((current) => current.map((item, i) => i === index ? { ...item, attributeName: event.target.value } : item))} />
+                <input value={row.attributeValue} disabled={!isFormEditable} onChange={(event) => setSpecs((current) => current.map((item, i) => i === index ? { ...item, attributeValue: event.target.value } : item))} />
               </div>
             ))}
           </div>
-          <button type="button" className="seller-secondary-action" onClick={() => setSpecs((current) => [...current, { attributeName: '', attributeValue: '' }])}>
-            Add specification row
-          </button>
+          {isFormEditable && (
+            <button type="button" className="seller-secondary-action" onClick={() => setSpecs((current) => [...current, emptySpecRow()])}>
+              Add specification row
+            </button>
+          )}
         </div>
 
         <div className="product-listing-block">
           <h3>Full description</h3>
           <div className="description-editor">
-            <textarea value={fullDescription} onChange={(event) => setFullDescription(event.target.value)} placeholder="Type the complete product description here, including features, care instructions, warranty notes, and customer-facing product details." />
+            <textarea value={fullDescription} disabled={!isFormEditable} onChange={(event) => setFullDescription(event.target.value)} placeholder="Type the complete product description here, including features, care instructions, warranty notes, and customer-facing product details." />
             <div className="description-upload">
               <strong>Upload description images</strong>
               <span>Optional JPG/PNG gallery for rich product details</span>
@@ -435,9 +612,11 @@ export function SellerProductsPage() {
 
         <div className="seller-form-actions">
           {sku && <span className="sku-preview">Generated SKU: {sku}</span>}
-          <button type="button" className="seller-primary-action" disabled={saving} onClick={() => void handleProductInfoSave()}>
-            {saving ? 'Saving...' : 'Save to DB & Generate SKU'}
-          </button>
+          {isFormEditable && (
+            <button type="button" className="seller-primary-action" disabled={saving} onClick={() => void handleProductInfoSave()}>
+              {saving ? 'Saving...' : 'Save to DB & Generate SKU'}
+            </button>
+          )}
         </div>
       </section>
 
@@ -505,7 +684,7 @@ export function SellerProductsPage() {
           <div className="seller-status-list">
             <div><strong>SKU</strong><span>{sku || 'Not generated'}</span></div>
             <div><strong>HSN</strong><span>{hsnCode}</span></div>
-            <div><strong>Approval</strong><span>{workflow.productApprovalStatus}</span></div>
+            <div><strong>Approval</strong><span>{approvalStatus || workflow.productApprovalStatus}</span></div>
           </div>
         </article>
       </section>
@@ -516,32 +695,29 @@ export function SellerProductsPage() {
             <h2>Variant section</h2>
             <p>Each non-free-size variant gets a unique variant ID. Free Size uses the default variant ID.</p>
           </div>
-          <button type="button" onClick={() => setVariantRows((current) => [...current, { size: 'M', color: 'White', mrp: '149.00', selling: '129.00', stock: '10' }])}>
-            Add variant
-          </button>
+          {isFormEditable && (
+            <button type="button" onClick={() => setVariantRows((current) => [...current, emptyVariantRow()])}>
+              Add variant
+            </button>
+          )}
         </div>
 
-        <form className="seller-console-form">
-          <label>
-            Size variant
-            <select value={sizeMode} onChange={(event) => handleVariantSelectorsChange(event.target.value, colorMode)}>
-              <option>Free Size</option>
-              <option>S</option>
-              <option>M</option>
-              <option>L</option>
-              <option>XL</option>
-            </select>
-          </label>
-          <label>
-            Colour variant
-            <select value={colorMode} onChange={(event) => handleVariantSelectorsChange(sizeMode, event.target.value)}>
-              <option>Black</option>
-              <option>Blue</option>
-              <option>White</option>
-              <option>Gold</option>
-            </select>
-          </label>
-        </form>
+        {isFormEditable && (
+          <form className="seller-console-form">
+            <label>
+              Size variant
+              <select value={sizeMode} onChange={(event) => handleVariantSelectorsChange(event.target.value, colorMode)}>
+                {fieldOptions.sizePreset.map((option) => <option key={option}>{option}</option>)}
+              </select>
+            </label>
+            <label>
+              Colour variant
+              <select value={colorMode} onChange={(event) => handleVariantSelectorsChange(sizeMode, event.target.value)}>
+                {fieldOptions.colorPreset.map((option) => <option key={option}>{option}</option>)}
+              </select>
+            </label>
+          </form>
+        )}
 
         <div className="variant-table">
           <div className="variant-table__row variant-table__row--head">
@@ -552,9 +728,9 @@ export function SellerProductsPage() {
               <span>{createVariantId(variant.size, variant.color, index)}</span>
               <span>{variant.size}</span>
               <span>{variant.color}</span>
-              <input value={variant.mrp} onChange={(event) => setVariantRows((current) => current.map((row, i) => i === index ? { ...row, mrp: event.target.value } : row))} />
-              <input value={variant.selling} onChange={(event) => setVariantRows((current) => current.map((row, i) => i === index ? { ...row, selling: event.target.value } : row))} />
-              <input value={variant.stock} onChange={(event) => setVariantRows((current) => current.map((row, i) => i === index ? { ...row, stock: event.target.value } : row))} />
+              <input value={variant.mrp} disabled={!isFormEditable} onChange={(event) => setVariantRows((current) => current.map((row, i) => i === index ? { ...row, mrp: event.target.value } : row))} />
+              <input value={variant.selling} disabled={!isFormEditable} onChange={(event) => setVariantRows((current) => current.map((row, i) => i === index ? { ...row, selling: event.target.value } : row))} />
+              <input value={variant.stock} disabled={isReadOnly} onChange={(event) => setVariantRows((current) => current.map((row, i) => i === index ? { ...row, stock: event.target.value } : row))} />
               <label>
                 Optional upload
                 <input type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(event) => {
@@ -589,17 +765,14 @@ export function SellerProductsPage() {
           <form className="seller-console-form">
             <label>
               Type of packing
-              <select value={packingType} onChange={(event) => setPackingType(event.target.value)}>
-                <option>Box</option>
-                <option>Poly mailer</option>
-                <option>Tube</option>
-                <option>Crate</option>
+              <select value={packingType} disabled={!isFormEditable} onChange={(event) => setPackingType(event.target.value)}>
+                {fieldOptions.packingType.map((option) => <option key={option}>{option}</option>)}
               </select>
             </label>
-            <label>Total weight (kg)<input value={weightKg} onChange={(event) => setWeightKg(event.target.value)} /></label>
-            <label>Package length (cm)<input value={packageLengthCm} onChange={(event) => setPackageLengthCm(event.target.value)} /></label>
-            <label>Package width (cm)<input value={packageWidthCm} onChange={(event) => setPackageWidthCm(event.target.value)} /></label>
-            <label>Package height (cm)<input value={packageHeightCm} onChange={(event) => setPackageHeightCm(event.target.value)} /></label>
+            <label>Total weight (kg)<input value={weightKg} disabled={!isFormEditable} onChange={(event) => setWeightKg(event.target.value)} /></label>
+            <label>Package length (cm)<input value={packageLengthCm} disabled={!isFormEditable} onChange={(event) => setPackageLengthCm(event.target.value)} /></label>
+            <label>Package width (cm)<input value={packageWidthCm} disabled={!isFormEditable} onChange={(event) => setPackageWidthCm(event.target.value)} /></label>
+            <label>Package height (cm)<input value={packageHeightCm} disabled={!isFormEditable} onChange={(event) => setPackageHeightCm(event.target.value)} /></label>
           </form>
         </article>
 
@@ -611,20 +784,18 @@ export function SellerProductsPage() {
             </div>
           </div>
           <form className="seller-console-form seller-console-form--single">
-            <label>Manufacturer name<input value={manufacturerName} onChange={(event) => setManufacturerName(event.target.value)} /></label>
+            <label>Manufacturer name<input value={manufacturerName} disabled={!isFormEditable} onChange={(event) => setManufacturerName(event.target.value)} /></label>
             <label>
               Manufacturer country
-              <select value={manufacturerCountry} onChange={(event) => setManufacturerCountry(event.target.value)}>
-                <option>India</option>
-                <option>United Arab Emirates</option>
-                <option>United States</option>
-                <option>United Kingdom</option>
-                <option>China</option>
+              <select value={manufacturerCountry} disabled={!isFormEditable} onChange={(event) => setManufacturerCountry(event.target.value)}>
+                {countryOptions.map((option) => (
+                  <option key={option.id} value={option.country_name}>{option.country_name}</option>
+                ))}
               </select>
             </label>
             <label>Origin country<input value={originCountry} readOnly /></label>
-            <label>Usage note (optional)<textarea value={usageNote} onChange={(event) => setUsageNote(event.target.value)} placeholder="Add usage notes if applicable" /></label>
-            <label>Ingredients (optional)<textarea value={ingredients} onChange={(event) => setIngredients(event.target.value)} placeholder="Required only for applicable categories" /></label>
+            <label>Usage note (optional)<textarea value={usageNote} disabled={!isFormEditable} onChange={(event) => setUsageNote(event.target.value)} placeholder="Add usage notes if applicable" /></label>
+            <label>Ingredients (optional)<textarea value={ingredients} disabled={!isFormEditable} onChange={(event) => setIngredients(event.target.value)} placeholder="Required only for applicable categories" /></label>
           </form>
         </article>
       </section>
@@ -638,27 +809,38 @@ export function SellerProductsPage() {
         </div>
         {error && <div className="auth-message auth-message--error">{error}</div>}
         {message && <div className="auth-message auth-message--success">{message}</div>}
-        <button type="button" className="seller-primary-action" disabled={saving} onClick={() => void handleSubmitProduct()}>
-          {saving ? 'Submitting...' : 'Save to DB & Submit for Admin Approval'}
-        </button>
+        {isFormEditable && (
+          <button type="button" className="seller-primary-action" disabled={saving} onClick={() => void handleSubmitProduct()}>
+            {saving ? 'Submitting...' : 'Save to DB & Submit for Admin Approval'}
+          </button>
+        )}
+        {isStockOnly && (
+          <button type="button" className="seller-primary-action" disabled={stockSaving} onClick={() => void handleStockUpdate()}>
+            {stockSaving ? 'Updating stock...' : 'Update stock in DB'}
+          </button>
+        )}
       </section>
 
       <section className="seller-console-card">
         <div className="seller-console-card__header">
           <div>
             <h2>Product catalogue</h2>
-            <p>Listings are published only after admin approval.</p>
+            <p>Listings are published only after admin approval. Select a row to edit or update stock.</p>
           </div>
+          <button type="button" className="seller-secondary-action" onClick={handleNewListing}>New listing</button>
         </div>
         {catalogue.length > 0 ? (
           <div className="seller-table">
-            <div className="seller-table__row seller-table__row--head"><span>Product</span><span>SKU</span><span>Stock</span><span>Status</span></div>
+            <div className="seller-table__row seller-table__row--head"><span>Product</span><span>SKU</span><span>Stock</span><span>Status</span><span>Action</span></div>
             {catalogue.map((row) => (
               <div className="seller-table__row" key={row.id}>
                 <span>{row.productName}</span>
                 <span>{row.sku}</span>
                 <span>{row.stock}</span>
                 <strong>{row.approvalStatus}</strong>
+                <button type="button" className="seller-secondary-action" onClick={() => void loadProductById(row.id)}>
+                  Open
+                </button>
               </div>
             ))}
           </div>

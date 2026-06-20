@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react'
 import { AdminDashboardShell } from '../components/AdminDashboardShell'
 import { PanelEmptyState } from '../components/PanelEmptyState'
+import { RejectionReasonDialog } from '../components/RejectionReasonDialog'
 import {
+  fetchAdminProductDetail,
   fetchProductQueue,
   reviewSellerProduct,
+  type AdminProductDetail,
   type ProductQueueItem,
 } from '../lib/adminApprovals'
+import { getSignedStorageUrl } from '../lib/sellerStorage'
 
 export function AdminProductsPage() {
   const [queue, setQueue] = useState<ProductQueueItem[]>([])
@@ -13,6 +17,10 @@ export function AdminProductsPage() {
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null)
+  const [detail, setDetail] = useState<AdminProductDetail | null>(null)
+  const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({})
+  const [rejectTarget, setRejectTarget] = useState<number | null>(null)
 
   const loadQueue = async (status: string) => {
     setLoading(true)
@@ -25,18 +33,42 @@ export function AdminProductsPage() {
     void loadQueue(filter)
   }, [filter])
 
+  useEffect(() => {
+    if (!selectedProductId) {
+      setDetail(null)
+      setMediaUrls({})
+      return
+    }
+
+    void fetchAdminProductDetail(selectedProductId).then(async (nextDetail) => {
+      setDetail(nextDetail)
+      if (!nextDetail) return
+
+      const urls: Record<string, string> = {}
+      await Promise.all(
+        nextDetail.media.map(async (item) => {
+          const url = await getSignedStorageUrl('seller-products', item.storagePath)
+          if (url) urls[item.storagePath] = url
+        }),
+      )
+      setMediaUrls(urls)
+    })
+  }, [selectedProductId])
+
   const pending = queue.filter((item) => item.approvalStatus === 'pending')
   const priority = pending[0]
 
-  const handleDecision = async (productId: number, approved: boolean) => {
+  useEffect(() => {
+    if (priority) {
+      setSelectedProductId(priority.id)
+    }
+  }, [priority?.id])
+
+  const handleDecision = async (productId: number, approved: boolean, rejectionReason?: string) => {
     setError('')
     setMessage('')
 
-    const result = await reviewSellerProduct(
-      productId,
-      approved,
-      approved ? undefined : 'Listing did not meet marketplace compliance requirements.',
-    )
+    const result = await reviewSellerProduct(productId, approved, rejectionReason)
 
     if (!result.ok) {
       setError(result.message)
@@ -44,8 +76,74 @@ export function AdminProductsPage() {
     }
 
     setMessage(approved ? 'Product listing approved.' : 'Product listing rejected.')
+    setRejectTarget(null)
+    if (selectedProductId === productId) {
+      setSelectedProductId(null)
+    }
     await loadQueue(filter)
   }
+
+  const renderDetail = (item: ProductQueueItem, detailData: AdminProductDetail | null) => (
+    <div className="admin-approval-card">
+      <strong>{item.productName}</strong>
+      <p>SKU: {item.sku} · HSN: {item.hsnCode}</p>
+      <p>Seller: {item.sellerEmail} · {item.sellerBusinessName}</p>
+      <p>Category: {item.categoryName} / {item.subCategoryName} / {item.productTypeName}</p>
+      {detailData && (
+        <>
+          <p>Brand: {String(detailData.product.brand_name ?? '')}</p>
+          <p>{String(detailData.product.short_description ?? '')}</p>
+          <div className="spec-table">
+            <div className="spec-table__row spec-table__row--head"><span>Attribute</span><span>Value</span></div>
+            {detailData.specifications.map((spec, index) => (
+              <div className="spec-table__row" key={`${spec.attributeName}-${index}`}>
+                <span>{spec.attributeName}</span>
+                <span>{spec.attributeValue}</span>
+              </div>
+            ))}
+          </div>
+          <div className="variant-table">
+            <div className="variant-table__row variant-table__row--head">
+              <span>Variant</span><span>Size</span><span>Colour</span><span>MRP</span><span>Price</span><span>Stock</span>
+            </div>
+            {detailData.variants.map((variant) => (
+              <div className="variant-table__row" key={variant.variantId}>
+                <span>{variant.variantId}</span>
+                <span>{variant.size}</span>
+                <span>{variant.color}</span>
+                <span>{variant.mrp}</span>
+                <span>{variant.sellingPrice}</span>
+                <span>{variant.stock}</span>
+              </div>
+            ))}
+          </div>
+          <div className="listing-media-grid">
+            {detailData.media.map((item) => (
+              <article key={item.storagePath} className="listing-media-card">
+                <strong>{item.mediaType}</strong>
+                <p>{item.fileName}</p>
+                {mediaUrls[item.storagePath] ? (
+                  item.mimeType.startsWith('video/') ? (
+                    <video src={mediaUrls[item.storagePath]} controls />
+                  ) : (
+                    <img src={mediaUrls[item.storagePath]} alt={item.fileName} />
+                  )
+                ) : (
+                  <span>Preview unavailable</span>
+                )}
+              </article>
+            ))}
+          </div>
+        </>
+      )}
+      {item.approvalStatus === 'pending' && (
+        <div className="admin-approval-card__actions">
+          <button type="button" className="admin-accept" onClick={() => void handleDecision(item.id, true)}>Approve listing</button>
+          <button type="button" className="admin-reject" onClick={() => setRejectTarget(item.id)}>Reject listing</button>
+        </div>
+      )}
+    </div>
+  )
 
   return (
     <AdminDashboardShell
@@ -58,17 +156,7 @@ export function AdminProductsPage() {
             <h2>Priority listing review</h2>
             <p>Active submission awaiting admin decision.</p>
           </div>
-          <div className="admin-approval-card">
-            <strong>{priority.productName}</strong>
-            <p>SKU: {priority.sku} · HSN: {priority.hsnCode}</p>
-            <p>Seller: {priority.sellerEmail} · {priority.sellerBusinessName}</p>
-            <p>Category: {priority.categoryName} / {priority.subCategoryName} / {priority.productTypeName}</p>
-            <p>Status: Awaiting admin approval before public listing</p>
-            <div className="admin-approval-card__actions">
-              <button type="button" className="admin-accept" onClick={() => void handleDecision(priority.id, true)}>Approve listing</button>
-              <button type="button" className="admin-reject" onClick={() => void handleDecision(priority.id, false)}>Reject listing</button>
-            </div>
-          </div>
+          {renderDetail(priority, selectedProductId === priority.id ? detail : null)}
         </section>
       )}
 
@@ -106,10 +194,11 @@ export function AdminProductsPage() {
                 <span>{item.sellerEmail}</span>
                 <span>{item.approvalStatus}</span>
                 <span className="admin-form__actions">
+                  <button type="button" onClick={() => setSelectedProductId(item.id)}>View</button>
                   {item.approvalStatus === 'pending' && (
                     <>
                       <button type="button" className="admin-accept" onClick={() => void handleDecision(item.id, true)}>Approve</button>
-                      <button type="button" className="admin-reject" onClick={() => void handleDecision(item.id, false)}>Reject</button>
+                      <button type="button" className="admin-reject" onClick={() => setRejectTarget(item.id)}>Reject</button>
                     </>
                   )}
                 </span>
@@ -118,6 +207,41 @@ export function AdminProductsPage() {
           </div>
         )}
       </section>
+
+      {selectedProductId && detail && (
+        <section className="admin-panel">
+          <div className="admin-panel__header">
+            <h2>Listing detail</h2>
+            <p>Specifications, variants, and media for selected product.</p>
+          </div>
+          {renderDetail(queue.find((item) => item.id === selectedProductId) ?? {
+            id: selectedProductId,
+            userId: String(detail.product.user_id ?? ''),
+            sku: String(detail.product.sku ?? ''),
+            productName: String(detail.product.product_name ?? ''),
+            categoryName: String(detail.product.category_name ?? ''),
+            subCategoryName: String(detail.product.sub_category_name ?? ''),
+            productTypeName: String(detail.product.product_type_name ?? ''),
+            hsnCode: String(detail.product.hsn_code ?? ''),
+            brandName: String(detail.product.brand_name ?? ''),
+            approvalStatus: String(detail.product.approval_status ?? ''),
+            submittedAt: null,
+            reviewedAt: null,
+            rejectionReason: null,
+            sellerEmail: String(detail.product.sellerEmail ?? ''),
+            sellerBusinessName: String(detail.product.sellerBusinessName ?? ''),
+          }, detail)}
+        </section>
+      )}
+
+      <RejectionReasonDialog
+        rejectionType="product"
+        open={rejectTarget !== null}
+        onCancel={() => setRejectTarget(null)}
+        onConfirm={(reason) => {
+          if (rejectTarget) void handleDecision(rejectTarget, false, reason)
+        }}
+      />
     </AdminDashboardShell>
   )
 }

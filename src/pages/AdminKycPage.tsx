@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react'
 import { AdminDashboardShell } from '../components/AdminDashboardShell'
 import { PanelEmptyState } from '../components/PanelEmptyState'
+import { RejectionReasonDialog } from '../components/RejectionReasonDialog'
 import {
+  fetchAdminKycDetail,
   fetchKycQueue,
   reviewSellerKyc,
+  type KycDetail,
   type KycQueueItem,
 } from '../lib/adminApprovals'
+import { getSignedStorageUrl } from '../lib/sellerStorage'
 
 export function AdminKycPage() {
   const [queue, setQueue] = useState<KycQueueItem[]>([])
@@ -13,6 +17,10 @@ export function AdminKycPage() {
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [detail, setDetail] = useState<KycDetail | null>(null)
+  const [documentUrls, setDocumentUrls] = useState<Record<string, string>>({})
+  const [rejectTarget, setRejectTarget] = useState<string | null>(null)
 
   const loadQueue = async (status: string) => {
     setLoading(true)
@@ -25,18 +33,42 @@ export function AdminKycPage() {
     void loadQueue(filter)
   }, [filter])
 
+  useEffect(() => {
+    if (!selectedUserId) {
+      setDetail(null)
+      setDocumentUrls({})
+      return
+    }
+
+    void fetchAdminKycDetail(selectedUserId).then(async (nextDetail) => {
+      setDetail(nextDetail)
+      if (!nextDetail) return
+
+      const urls: Record<string, string> = {}
+      await Promise.all(
+        nextDetail.documents.map(async (doc) => {
+          const url = await getSignedStorageUrl('seller-kyc', doc.storagePath)
+          if (url) urls[doc.documentType] = url
+        }),
+      )
+      setDocumentUrls(urls)
+    })
+  }, [selectedUserId])
+
   const pending = queue.filter((item) => item.status === 'pending')
   const priority = pending[0]
 
-  const handleDecision = async (userId: string, approved: boolean) => {
+  useEffect(() => {
+    if (priority) {
+      setSelectedUserId(priority.userId)
+    }
+  }, [priority?.userId])
+
+  const handleDecision = async (userId: string, approved: boolean, rejectionReason?: string) => {
     setError('')
     setMessage('')
 
-    const result = await reviewSellerKyc(
-      userId,
-      approved,
-      approved ? undefined : 'Documents or bank details did not pass verification.',
-    )
+    const result = await reviewSellerKyc(userId, approved, rejectionReason)
 
     if (!result.ok) {
       setError(result.message)
@@ -44,8 +76,46 @@ export function AdminKycPage() {
     }
 
     setMessage(approved ? 'KYC approved.' : 'KYC rejected.')
+    setRejectTarget(null)
+    if (selectedUserId === userId) {
+      setSelectedUserId(null)
+    }
     await loadQueue(filter)
   }
+
+  const renderDetail = (item: KycQueueItem, detailData: KycDetail | null) => (
+    <div className="admin-approval-card">
+      <strong>{item.businessName}</strong>
+      <p>KYC ID: {item.kycId}</p>
+      <p>Seller: {item.sellerEmail} · {item.countryName}</p>
+      <p>Business type: {item.businessType}</p>
+      <p>Business address: {item.businessAddress}</p>
+      <p>Tax ID: {item.taxId || 'Not provided'}</p>
+      <p>Bank: {item.bankName} · {item.accountHolderName}</p>
+      <p>Account: {item.accountNumber} · {item.ifscSwift}</p>
+      {detailData && (
+        <div className="admin-document-grid">
+          {detailData.documents.map((doc) => (
+            <article key={doc.documentType}>
+              <strong>{doc.documentType}</strong>
+              <p>{doc.fileName}</p>
+              {documentUrls[doc.documentType] ? (
+                <a href={documentUrls[doc.documentType]} target="_blank" rel="noreferrer">View document</a>
+              ) : (
+                <span>Preview unavailable</span>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
+      {item.status === 'pending' && (
+        <div className="admin-approval-card__actions">
+          <button type="button" className="admin-accept" onClick={() => void handleDecision(item.userId, true)}>Approve KYC</button>
+          <button type="button" className="admin-reject" onClick={() => setRejectTarget(item.userId)}>Reject KYC</button>
+        </div>
+      )}
+    </div>
+  )
 
   return (
     <AdminDashboardShell
@@ -58,18 +128,7 @@ export function AdminKycPage() {
             <h2>Priority review</h2>
             <p>Active submission awaiting admin decision.</p>
           </div>
-          <div className="admin-approval-card">
-            <strong>{priority.businessName}</strong>
-            <p>KYC ID: {priority.kycId}</p>
-            <p>Seller: {priority.sellerEmail} · {priority.countryName}</p>
-            <p>Business type: {priority.businessType}</p>
-            <p>Documents: Photo, Address proof, Tax ID proof</p>
-            <p>Bank: {priority.bankName} · {priority.accountHolderName}</p>
-            <div className="admin-approval-card__actions">
-              <button type="button" className="admin-accept" onClick={() => void handleDecision(priority.userId, true)}>Approve KYC</button>
-              <button type="button" className="admin-reject" onClick={() => void handleDecision(priority.userId, false)}>Reject KYC</button>
-            </div>
-          </div>
+          {renderDetail(priority, selectedUserId === priority.userId ? detail : null)}
         </section>
       )}
 
@@ -107,10 +166,11 @@ export function AdminKycPage() {
                 <span>{item.businessName}</span>
                 <span>{item.status}</span>
                 <span className="admin-form__actions">
+                  <button type="button" onClick={() => setSelectedUserId(item.userId)}>View</button>
                   {item.status === 'pending' && (
                     <>
                       <button type="button" className="admin-accept" onClick={() => void handleDecision(item.userId, true)}>Approve</button>
-                      <button type="button" className="admin-reject" onClick={() => void handleDecision(item.userId, false)}>Reject</button>
+                      <button type="button" className="admin-reject" onClick={() => setRejectTarget(item.userId)}>Reject</button>
                     </>
                   )}
                 </span>
@@ -119,6 +179,47 @@ export function AdminKycPage() {
           </div>
         )}
       </section>
+
+      {selectedUserId && detail && (
+        <section className="admin-panel">
+          <div className="admin-panel__header">
+            <h2>KYC detail</h2>
+            <p>Documents and bank verification for selected seller.</p>
+          </div>
+          {renderDetail(
+            queue.find((item) => item.userId === selectedUserId) ?? {
+              userId: selectedUserId,
+              kycId: String(detail.submission.kyc_id ?? ''),
+              status: String(detail.submission.status ?? ''),
+              businessType: String(detail.submission.business_type ?? ''),
+              businessName: String(detail.submission.business_name ?? ''),
+              businessAddress: String(detail.submission.business_address ?? ''),
+              taxId: detail.submission.tax_id ? String(detail.submission.tax_id) : null,
+              accountHolderName: String(detail.submission.account_holder_name ?? ''),
+              bankName: String(detail.submission.bank_name ?? ''),
+              accountNumber: String(detail.submission.account_number ?? ''),
+              ifscSwift: String(detail.submission.ifsc_swift ?? ''),
+              submittedAt: '',
+              reviewedAt: null,
+              rejectionReason: null,
+              sellerEmail: detail.sellerEmail,
+              signupBusinessName: detail.signupBusinessName,
+              countryName: detail.countryName,
+              phone: detail.phone,
+            },
+            detail,
+          )}
+        </section>
+      )}
+
+      <RejectionReasonDialog
+        rejectionType="kyc"
+        open={rejectTarget !== null}
+        onCancel={() => setRejectTarget(null)}
+        onConfirm={(reason) => {
+          if (rejectTarget) void handleDecision(rejectTarget, false, reason)
+        }}
+      />
     </AdminDashboardShell>
   )
 }
