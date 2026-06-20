@@ -415,3 +415,30 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 [functions.refresh-fx-rates]
 verify_jwt = false
 
+[functions.shiprocket-serviceability]
+verify_jwt = true
+
+[functions.shiprocket-admin-push-order]
+verify_jwt = true
+
+[functions.shiprocket-seller-documents]
+verify_jwt = true
+
+[functions.shiprocket-track]
+verify_jwt = false
+
+[functions.logistics-tracking-webhook]
+verify_jwt = false
+
+[functions.stripe-create-checkout]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.stripe-checkout-status]
+verify_jwt = true
+
+[functions.cancel-stale-orders]
+verify_jwt = false
+

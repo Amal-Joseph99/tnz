@@ -5,6 +5,7 @@ export type SellerWarehouse = {
   addressLine: string
   postalCode: string
   dispatchCutoffTime: string
+  shiprocketPickupLocationName: string
   isCompleted: boolean
 }
 
@@ -13,6 +14,7 @@ export type SellerWarehouseInput = {
   addressLine: string
   postalCode: string
   dispatchCutoffTime: string
+  shiprocketPickupLocationName: string
 }
 
 type MutationResult = { ok: true } | { ok: false; message: string }
@@ -26,7 +28,7 @@ export async function fetchSellerWarehouse(): Promise<SellerWarehouse | null> {
 
   const { data, error } = await supabase
     .from('seller_warehouses')
-    .select('warehouse_name, address_line, postal_code, dispatch_cutoff_time, is_completed')
+    .select('warehouse_name, address_line, postal_code, dispatch_cutoff_time, shiprocket_pickup_location_name, is_completed')
     .eq('user_id', user.id)
     .maybeSingle()
 
@@ -37,6 +39,7 @@ export async function fetchSellerWarehouse(): Promise<SellerWarehouse | null> {
     addressLine: data.address_line,
     postalCode: data.postal_code,
     dispatchCutoffTime: String(data.dispatch_cutoff_time).slice(0, 5),
+    shiprocketPickupLocationName: data.shiprocket_pickup_location_name ?? '',
     isCompleted: data.is_completed,
   }
 }
@@ -58,6 +61,7 @@ export async function saveSellerWarehouse(input: SellerWarehouseInput): Promise<
     address_line: input.addressLine.trim(),
     postal_code: input.postalCode.trim(),
     dispatch_cutoff_time: input.dispatchCutoffTime,
+    shiprocket_pickup_location_name: input.shiprocketPickupLocationName.trim() || null,
     is_completed: true,
   })
 

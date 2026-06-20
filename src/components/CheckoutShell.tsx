@@ -1,17 +1,18 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { checkoutSteps, defaultCartItems, getCartTotals, type CartItem } from '../lib/checkout'
+import { checkoutSteps, getCartTotals } from '../lib/checkout'
+import { useCheckout } from '../context/CheckoutContext'
 import { useCurrency } from '../context/CurrencyContext'
 
 type CheckoutShellProps = {
   children: ReactNode
-  items?: CartItem[]
 }
 
-export function CheckoutShell({ children, items = defaultCartItems }: CheckoutShellProps) {
+export function CheckoutShell({ children }: CheckoutShellProps) {
   const location = useLocation()
   const { formatPrice } = useCurrency()
-  const { subtotal, shipping, tax, total, itemCount } = getCartTotals(items)
+  const { items, shippingQuote } = useCheckout()
+  const { subtotal, shipping, tax, total, itemCount } = getCartTotals(items, shippingQuote)
 
   const activeIndex = checkoutSteps.findIndex((step) => step.path === location.pathname)
 
@@ -69,7 +70,7 @@ export function CheckoutShell({ children, items = defaultCartItems }: CheckoutSh
             </div>
             <div className="checkout-summary__lines">
               <div><span>Subtotal</span><strong>{formatPrice(subtotal)}</strong></div>
-              <div><span>Shipping</span><strong>{shipping === 0 ? 'Free' : formatPrice(shipping)}</strong></div>
+              <div><span>Shipping</span><strong>{shipping === 0 ? 'Calculated at address' : formatPrice(shipping)}</strong></div>
               <div><span>Estimated tax</span><strong>{formatPrice(tax)}</strong></div>
               <div className="checkout-summary__total"><span>Total</span><strong>{formatPrice(total)}</strong></div>
             </div>

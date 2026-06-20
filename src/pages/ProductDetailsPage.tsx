@@ -5,6 +5,7 @@ import { PageMeta } from '../components/PageMeta'
 import { ProductReviewsSection } from '../components/ProductReviewsSection'
 import { useCurrency } from '../context/CurrencyContext'
 import { useAddToCart } from '../hooks/useAddToCart'
+import { useCheckout } from '../context/CheckoutContext'
 import { shareProduct } from '../lib/productShare'
 import { appendSearchHistory } from '../lib/searchHistory'
 import { absoluteUrl } from '../lib/site'
@@ -16,6 +17,7 @@ export function ProductDetailsPage() {
   const { productId } = useParams()
   const { formatPrice } = useCurrency()
   const { requestAddToCart } = useAddToCart()
+  const { addItem } = useCheckout()
   const [product, setProduct] = useState<Product | null>(null)
   const [detail, setDetail] = useState<Awaited<ReturnType<typeof fetchStorefrontProductById>>>(null)
   const [loading, setLoading] = useState(true)
@@ -194,7 +196,33 @@ export function ProductDetailsPage() {
             </div>
 
             <div className="product-detail__actions">
-              <button type="button" className="product-detail__add" onClick={() => void requestAddToCart()}>
+              <button
+                type="button"
+                className="product-detail__add"
+                onClick={() => {
+                  void (async () => {
+                    const allowed = await requestAddToCart()
+                    if (!allowed || !primaryVariant) return
+
+                    const sellerUserId = (detail.detail as { user_id?: string }).user_id
+                    if (!sellerUserId) return
+
+                    addItem({
+                      id: String(product.id),
+                      productId: Number(product.id),
+                      sellerUserId,
+                      sku: detail.detail.sku,
+                      title: product.title,
+                      brand: product.brand,
+                      price: primaryVariant.selling_price,
+                      originalPrice: primaryVariant.mrp > primaryVariant.selling_price ? primaryVariant.mrp : undefined,
+                      image: product.image,
+                      quantity: 1,
+                      variantId: primaryVariant.variant_id,
+                    })
+                  })()
+                }}
+              >
                 <CartIcon />
                 Add to Cart
               </button>

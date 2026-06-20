@@ -1,29 +1,66 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { BuyerAccountShell } from '../components/BuyerAccountShell'
-import { PanelEmptyState } from '../components/PanelEmptyState'
+import { useCurrency } from '../context/CurrencyContext'
+import {
+  fetchBuyerOrders,
+  formatOrderStatus,
+  getShipmentRow,
+  type MarketplaceOrderRow,
+} from '../lib/marketplaceOrders'
+import { trackShiprocketOrder } from '../lib/shiprocketShipping'
 
 export function OrdersPage() {
-  return (
-    <BuyerAccountShell
-      title="My orders"
-      subtitle="View current orders, delivery updates, invoices, and return actions."
-    >
-      <section className="buyer-panel">
-        <div className="buyer-panel__header buyer-panel__header--toolbar">
-          <div>
-            <h2>Recent orders</h2>
-            <p>Track purchases, invoices, delivery progress, and returns.</p>
-          </div>
-          <select aria-label="Filter orders" className="buyer-select">
-            <option>Last 30 days</option>
-            <option>Last 6 months</option>
-            <option>All orders</option>
-          </select>
-        </div>
+  const { formatPrice } = useCurrency()
+  const [orders, setOrders] = useState<MarketplaceOrderRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [tracking, setTracking] = useState<Record<number, unknown>>({})
 
-        <PanelEmptyState
-          title="No orders yet"
-          message="When you place an order, it will appear here with tracking and invoice options."
-        />
+  useEffect(() => {
+    void fetchBuyerOrders()
+      .then(setOrders)
+      .finally(() => setLoading(false))
+  }, [])
+
+  const track = async (order: MarketplaceOrderRow) => {
+    const result = await trackShiprocketOrder({ orderId: order.id })
+    setTracking((current) => ({ ...current, [order.id]: result.tracking ?? result.message }))
+  }
+
+  return (
+    <BuyerAccountShell title="My orders" subtitle="Track Shiprocket delivery for India-origin orders.">
+      <section className="buyer-panel">
+        {loading ? (
+          <p>Loading orders...</p>
+        ) : orders.length === 0 ? (
+          <p>No orders yet.</p>
+        ) : (
+          <div className="admin-table">
+            {orders.map((order) => {
+              const shipment = getShipmentRow(order)
+              return (
+                <article key={order.id} className="buyer-order-row admin-table__row">
+                  <div>
+                    <strong>{order.order_number}</strong>
+                    <p>{formatOrderStatus(order.status)}</p>
+                    <p>{formatPrice(order.total_amount)}</p>
+                    <p>ETA: {order.shipping_estimated_delivery ?? '—'}</p>
+                  </div>
+                  <div>
+                    {shipment?.awb_code && <p>AWB: {shipment.awb_code}</p>}
+                    <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void track(order)}>
+                      Refresh tracking
+                    </button>
+                    {tracking[order.id] !== undefined && (
+                      <pre className="track-order-json">{JSON.stringify(tracking[order.id], null, 2)}</pre>
+                    )}
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+        )}
+        <Link to="/track-order">Track by order number</Link>
       </section>
     </BuyerAccountShell>
   )

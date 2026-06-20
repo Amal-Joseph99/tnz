@@ -8,6 +8,7 @@ export function SellerWarehousePage() {
   const [warehouseName, setWarehouseName] = useState('Main Fulfillment Center')
   const [addressLine, setAddressLine] = useState('')
   const [postalCode, setPostalCode] = useState('')
+  const [shiprocketPickupLocationName, setShiprocketPickupLocationName] = useState('')
   const [dispatchCutoffTime, setDispatchCutoffTime] = useState('17:00')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -25,6 +26,7 @@ export function SellerWarehousePage() {
           setWarehouseName(warehouse.warehouseName)
           setAddressLine(warehouse.addressLine)
           setPostalCode(warehouse.postalCode)
+          setShiprocketPickupLocationName(warehouse.shiprocketPickupLocationName)
           setDispatchCutoffTime(warehouse.dispatchCutoffTime)
         }
       })
@@ -47,6 +49,7 @@ export function SellerWarehousePage() {
       addressLine,
       postalCode,
       dispatchCutoffTime,
+      shiprocketPickupLocationName,
     })
 
     setSaving(false)
@@ -99,6 +102,7 @@ export function SellerWarehousePage() {
             <label>Warehouse name<input value={warehouseName} onChange={(event) => setWarehouseName(event.target.value)} /></label>
             <label>Address line<textarea value={addressLine} onChange={(event) => setAddressLine(event.target.value)} /></label>
             <label>Postal code<input value={postalCode} onChange={(event) => setPostalCode(event.target.value)} /></label>
+            <label>Shiprocket pickup location name<input value={shiprocketPickupLocationName} onChange={(event) => setShiprocketPickupLocationName(event.target.value)} placeholder="Exact pickup name from Shiprocket panel" /></label>
             <label>Dispatch cutoff time<input type="time" value={dispatchCutoffTime} onChange={(event) => setDispatchCutoffTime(event.target.value)} /></label>
           </form>
           {error && <div className="auth-message auth-message--error">{error}</div>}

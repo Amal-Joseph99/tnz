@@ -3,6 +3,7 @@ import { Footer } from './components/Footer'
 import { Header } from './components/Header'
 import { RouteAccessGuard } from './components/RouteAccessGuard'
 import { AuthProvider } from './context/AuthContext'
+import { CheckoutProvider } from './context/CheckoutContext'
 import { ConfirmDialogProvider } from './context/ConfirmDialogContext'
 import { CurrencyProvider } from './context/CurrencyContext'
 import { preloadDialogMessages } from './lib/appDialogs'
@@ -166,7 +167,9 @@ function App() {
     <BrowserRouter>
       <ConfirmDialogProvider>
         <AuthProvider>
-          <AppContent />
+          <CheckoutProvider>
+            <AppContent />
+          </CheckoutProvider>
         </AuthProvider>
       </ConfirmDialogProvider>
     </BrowserRouter>

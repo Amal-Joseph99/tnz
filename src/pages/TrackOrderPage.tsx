@@ -1,16 +1,26 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { PanelEmptyState } from '../components/PanelEmptyState'
+import { trackShiprocketOrder } from '../lib/shiprocketShipping'
 
 export function TrackOrderPage() {
-  const [orderId, setOrderId] = useState('')
+  const [orderNumber, setOrderNumber] = useState('')
   const [email, setEmail] = useState('')
-  const [tracked, setTracked] = useState(false)
+  const [result, setResult] = useState<Awaited<ReturnType<typeof trackShiprocketOrder>> | null>(null)
+  const [error, setError] = useState('')
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
-    if (orderId.trim() && email.trim()) {
-      setTracked(true)
+    setError('')
+    setResult(null)
+
+    try {
+      const response = await trackShiprocketOrder({
+        orderNumber: orderNumber.trim(),
+        email: email.trim(),
+      })
+      setResult(response)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to track order.')
     }
   }
 
@@ -18,46 +28,50 @@ export function TrackOrderPage() {
     <section className="track-order-page">
       <div className="container track-order-page__inner">
         <header className="track-order-page__header">
-          <span>Orders</span>
           <h1>Track order</h1>
-          <p>Enter your order ID and email address to check delivery status.</p>
         </header>
 
         <div className="track-order-layout">
           <section className="track-order-form-panel">
-            <h2>Order lookup</h2>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={(event) => void handleSubmit(event)}>
               <label>
-                Order ID
+                Order number
                 <input
                   type="text"
-                  placeholder="Enter your order ID"
-                  value={orderId}
-                  onChange={(event) => setOrderId(event.target.value)}
+                  placeholder="AGT-YYYYMMDD-000001"
+                  value={orderNumber}
+                  onChange={(event) => setOrderNumber(event.target.value)}
+                  required
                 />
               </label>
               <label>
-                Email address
+                Checkout email
                 <input
                   type="email"
                   placeholder="you@example.com"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
+                  required
                 />
               </label>
-              <button type="submit">Track order</button>
+              <button type="submit">Track</button>
             </form>
           </section>
 
-          {tracked && (
+          {error && <div className="auth-message auth-message--error">{error}</div>}
+
+          {result && (
             <section className="track-order-result-panel">
-              <PanelEmptyState
-                title="Order not found"
-                message="We could not find an order matching that ID and email. Check your details or view your orders after signing in."
-              />
+              <p><strong>{result.orderNumber}</strong></p>
+              <p>{result.status.replaceAll('_', ' ')}</p>
+              {result.awbCode && <p>AWB: {result.awbCode}</p>}
+              {result.tracking ? (
+                <pre className="track-order-json">{JSON.stringify(result.tracking, null, 2)}</pre>
+              ) : (
+                <p>{result.message ?? 'No tracking data yet.'}</p>
+              )}
               <div className="track-order-result__actions">
-                <Link to="/orders">View all orders</Link>
-                <Link to="/help">Need help?</Link>
+                <Link to="/buyer/signin">Sign in for order history</Link>
               </div>
             </section>
           )}

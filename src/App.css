@@ -6560,6 +6560,42 @@
   border-top: 1px solid #eef0f3;
   font-size: 15px;
   font-weight: 600;
+  margin-top: 8px;
+  padding-top: 10px;
+}
+
+.checkout-shipping-quote {
+  display: grid;
+  gap: 8px;
+}
+
+.checkout-shipping-quote div {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.checkout-shipping-quote span {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.track-order-json {
+  background: #f8fafc;
+  border: 1px solid #e8eaee;
+  border-radius: 8px;
+  font-size: 11px;
+  max-height: 240px;
+  overflow: auto;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+
+.checkout-summary__total {
+  border-top: 1px solid #eef0f3;
+  font-size: 15px;
+  font-weight: 600;
   padding-top: 10px;
 }
 

@@ -203,7 +203,7 @@ export async function fetchStorefrontProductById(productId: number) {
 
   const { data: product, error } = await supabase
     .from('seller_products')
-    .select('id, product_name, brand_name, category_name, sub_category_name, product_type_name, short_description, full_description, sku, hsn_code, packing_type, weight_kg, package_length_cm, package_width_cm, package_height_cm, manufacturer_name, manufacturer_country, origin_country, usage_note, ingredients')
+    .select('id, user_id, product_name, brand_name, category_name, sub_category_name, product_type_name, short_description, full_description, sku, hsn_code, packing_type, weight_kg, package_length_cm, package_width_cm, package_height_cm, manufacturer_name, manufacturer_country, origin_country, usage_note, ingredients')
     .eq('id', productId)
     .eq('approval_status', 'approved')
     .maybeSingle()
