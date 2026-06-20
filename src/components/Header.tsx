@@ -176,6 +176,9 @@ export function Header() {
         </label>
 
         <div className="header__drawer-auth">
+          <Link to="/sellerslandingpage" className="header__drawer-sell-now" onClick={() => setMenuOpen(false)}>
+            Sell Now
+          </Link>
           {isSignedIn ? (
             <button type="button" onClick={() => void signOutWithConfirm()}>
               Sign out
