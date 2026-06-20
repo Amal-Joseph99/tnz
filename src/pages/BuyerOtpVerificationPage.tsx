@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AuthPageShell } from '../components/AuthPageShell'
+import { normalizeAuthEmail, resendSignupOtp, verifySignupOtp } from '../lib/authOtp'
 import { getOtpValue, OTP_LENGTH, isValidOtp } from './authHelpers'
-import { supabase } from '../lib/supabase'
 
 type BuyerVerifyLocationState = {
   email?: string
@@ -11,7 +11,7 @@ type BuyerVerifyLocationState = {
 export function BuyerOtpVerificationPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const email = (location.state as BuyerVerifyLocationState | null)?.email?.trim() ?? ''
+  const email = normalizeAuthEmail((location.state as BuyerVerifyLocationState | null)?.email ?? '')
   const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(''))
   const [secondsLeft, setSecondsLeft] = useState(30)
   const [error, setError] = useState('')
@@ -62,21 +62,12 @@ export function BuyerOtpVerificationPage() {
       return
     }
 
-    if (!supabase) {
-      setError('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.')
-      return
-    }
-
     setVerifying(true)
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      email,
-      token: getOtpValue(otp),
-      type: 'signup',
-    })
+    const result = await verifySignupOtp(email, getOtpValue(otp))
     setVerifying(false)
 
-    if (verifyError) {
-      setError(verifyError.message)
+    if (!result.ok) {
+      setError(result.message)
       return
     }
 
@@ -90,18 +81,9 @@ export function BuyerOtpVerificationPage() {
       return
     }
 
-    if (!supabase) {
-      setError('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.')
-      return
-    }
-
-    const { error: resendError } = await supabase.auth.resend({
-      type: 'signup',
-      email,
-    })
-
-    if (resendError) {
-      setError(resendError.message)
+    const result = await resendSignupOtp(email)
+    if (!result.ok) {
+      setError(result.message)
       return
     }
 
@@ -116,7 +98,7 @@ export function BuyerOtpVerificationPage() {
     <AuthPageShell
       title="Email verification"
       subtitle="Enter the 6-digit code sent to your email."
-      backTo="/buyer/signup"
+      fallbackBack="/buyer/signup"
       otp
     >
       {message && <div className="auth-message auth-message--success">{message}</div>}

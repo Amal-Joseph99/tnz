@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AuthPageShell } from '../components/AuthPageShell'
-import { getOtpValue, OTP_LENGTH, isValidOtp } from './authHelpers'
+import { normalizeAuthEmail, resendSignupOtp, verifySignupOtp } from '../lib/authOtp'
+import { ensureSellerRegistration } from '../lib/sellerAuth'
+import { verifyLoginPortal } from '../lib/portalAuth'
 import { supabase } from '../lib/supabase'
+import { getOtpValue, OTP_LENGTH, isValidOtp } from './authHelpers'
 
 type SellerVerifyLocationState = {
   email?: string
@@ -11,7 +14,7 @@ type SellerVerifyLocationState = {
 export function SellerOtpVerificationPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const email = (location.state as SellerVerifyLocationState | null)?.email?.trim() ?? ''
+  const email = normalizeAuthEmail((location.state as SellerVerifyLocationState | null)?.email ?? '')
   const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(''))
   const [secondsLeft, setSecondsLeft] = useState(30)
   const [error, setError] = useState('')
@@ -74,18 +77,31 @@ export function SellerOtpVerificationPage() {
     }
 
     setVerifying(true)
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      email,
-      token: getOtpValue(otp),
-      type: 'signup',
-    })
-    setVerifying(false)
+    const verifyResult = await verifySignupOtp(email, getOtpValue(otp))
 
-    if (verifyError) {
-      setError(verifyError.message)
+    if (!verifyResult.ok) {
+      setVerifying(false)
+      setError(verifyResult.message)
       return
     }
 
+    const provisionResult = await ensureSellerRegistration()
+    if (!provisionResult.ok) {
+      await supabase.auth.signOut()
+      setVerifying(false)
+      setError(provisionResult.message)
+      return
+    }
+
+    const portalCheck = await verifyLoginPortal('seller')
+    if (!portalCheck.allowed) {
+      await supabase.auth.signOut()
+      setVerifying(false)
+      setError(portalCheck.message)
+      return
+    }
+
+    setVerifying(false)
     setMessage('Seller email verified successfully. Opening seller dashboard.')
     window.setTimeout(() => navigate('/seller/dashboard'), 700)
   }
@@ -96,18 +112,9 @@ export function SellerOtpVerificationPage() {
       return
     }
 
-    if (!supabase) {
-      setError('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.')
-      return
-    }
-
-    const { error: resendError } = await supabase.auth.resend({
-      type: 'signup',
-      email,
-    })
-
-    if (resendError) {
-      setError(resendError.message)
+    const result = await resendSignupOtp(email)
+    if (!result.ok) {
+      setError(result.message)
       return
     }
 
@@ -122,7 +129,7 @@ export function SellerOtpVerificationPage() {
     <AuthPageShell
       title="Email verification"
       subtitle="Enter the 6-digit code sent to your email."
-      backTo="/seller/signup"
+      fallbackBack="/seller/signup"
       otp
     >
       {message && <div className="auth-message auth-message--success" role="status">{message}</div>}

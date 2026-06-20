@@ -1,5 +1,5 @@
+import { normalizeAuthEmail } from './authOtp'
 import { supabase } from './supabase'
-import { absoluteUrl } from './site'
 import { verifyLoginPortal } from './portalAuth'
 
 export type AccountType = 'buyer' | 'seller' | 'admin' | 'unknown'
@@ -50,11 +50,25 @@ export async function signUpBuyer(fullName: string, email: string, password: str
     return { ok: false, message: 'Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.' }
   }
 
+  const normalizedEmail = normalizeAuthEmail(email)
+
+  const { data: eligibility, error: eligibilityError } = await supabase.rpc(
+    'check_portal_email_registration',
+    { p_portal: 'buyer', p_email: normalizedEmail },
+  )
+
+  if (eligibilityError) {
+    return { ok: false, message: eligibilityError.message }
+  }
+
+  if (eligibility && eligibility.allowed === false) {
+    return { ok: false, message: String(eligibility.message ?? 'This email cannot be used for buyer signup.') }
+  }
+
   const { error } = await supabase.auth.signUp({
-    email: email.trim(),
+    email: normalizedEmail,
     password,
     options: {
-      emailRedirectTo: absoluteUrl('/buyer/verify-email'),
       data: {
         account_type: 'buyer',
         full_name: fullName.trim(),

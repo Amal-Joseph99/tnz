@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { AuthPageShell } from '../components/AuthPageShell'
 import { fetchSellerCountryOptions, type SellerCountryOption } from '../lib/sellerCountries'
+import { normalizeAuthEmail } from '../lib/authOtp'
 import { signUpSeller } from '../lib/sellerAuth'
 import { isValidEmail, isValidPassword } from './authHelpers'
 
@@ -94,11 +95,11 @@ export function SellersSignupPage() {
     }
 
     setSuccess('Seller account created. Check your email for the 6-digit code.')
-    window.setTimeout(() => navigate('/seller/verify-email', { state: { email: email.trim() } }), 700)
+    window.setTimeout(() => navigate('/seller/verify-email', { state: { email: normalizeAuthEmail(email) } }), 700)
   }
 
   return (
-    <AuthPageShell title="Create account" backTo="/">
+    <AuthPageShell title="Create account" fallbackBack="/">
       {error && <div className="auth-message auth-message--error">{error}</div>}
       {success && <div className="auth-message auth-message--success">{success}</div>}
 

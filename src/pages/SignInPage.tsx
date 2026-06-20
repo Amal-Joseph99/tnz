@@ -41,7 +41,7 @@ export function SignInPage() {
   }
 
   return (
-    <AuthPageShell title="Buyer login" backTo="/">
+    <AuthPageShell title="Buyer login" fallbackBack="/">
       {error && <div className="auth-message auth-message--error">{error}</div>}
       {success && <div className="auth-message auth-message--success">{success}</div>}
 

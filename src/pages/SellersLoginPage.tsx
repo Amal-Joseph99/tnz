@@ -46,7 +46,7 @@ export function SellersLoginPage() {
   }
 
   return (
-    <AuthPageShell title="Seller login" backTo="/">
+    <AuthPageShell title="Seller login" fallbackBack="/">
       {error && <div className="auth-message auth-message--error">{error}</div>}
       {success && <div className="auth-message auth-message--success">{success}</div>}
 

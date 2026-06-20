@@ -1,23 +1,40 @@
 import { type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 type AuthPageShellProps = {
   title: string
   subtitle?: string
-  backTo: string
+  fallbackBack?: string
   children: ReactNode
   otp?: boolean
 }
 
-export function AuthPageShell({ title, subtitle, backTo, children, otp = false }: AuthPageShellProps) {
+export function AuthPageShell({
+  title,
+  subtitle,
+  fallbackBack = '/',
+  children,
+  otp = false,
+}: AuthPageShellProps) {
+  const navigate = useNavigate()
   const pageClass = otp ? 'seller-otp-page auth-page' : 'seller-login-page auth-page'
+
+  const handleBack = () => {
+    const historyState = window.history.state as { idx?: number } | null
+    if (historyState?.idx && historyState.idx > 0) {
+      navigate(-1)
+      return
+    }
+
+    navigate(fallbackBack)
+  }
 
   return (
     <section className={pageClass}>
       <div className="auth-page__wrap">
-        <Link to={backTo} className="auth-page__back">
+        <button type="button" className="auth-page__back" onClick={handleBack}>
           ← Back
-        </Link>
+        </button>
         {otp ? (
           <div className="seller-otp-card">
             <header className="seller-login__header seller-login__header--center">

@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AuthPageShell } from '../components/AuthPageShell'
+import { updateAuthenticatedPassword } from '../lib/authOtp'
+import { verifyLoginPortal } from '../lib/portalAuth'
+import { supabase } from '../lib/supabase'
 import { isValidPassword } from './authHelpers'
 
 export function SellerResetPasswordPage() {
@@ -9,8 +12,9 @@ export function SellerResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError('')
     setSuccess('')
 
@@ -24,18 +28,35 @@ export function SellerResetPasswordPage() {
       return
     }
 
+    setSubmitting(true)
+    const result = await updateAuthenticatedPassword(password)
+    if (!result.ok) {
+      setSubmitting(false)
+      setError(result.message)
+      return
+    }
+
+    const portalCheck = await verifyLoginPortal('seller')
+    if (!portalCheck.allowed) {
+      if (supabase) await supabase.auth.signOut()
+      setSubmitting(false)
+      setError(portalCheck.message)
+      return
+    }
+
+    setSubmitting(false)
     setSuccess('Seller password changed successfully. You are now signed in.')
     window.setTimeout(() => navigate('/seller/dashboard'), 700)
   }
 
   return (
-    <AuthPageShell title="Create new password" backTo="/seller/forgot-password/verify">
+    <AuthPageShell title="Create new password" fallbackBack="/seller/forgot-password/verify">
       {error && <div className="auth-message auth-message--error">{error}</div>}
       {success && <div className="auth-message auth-message--success">{success}</div>}
 
       <form className="seller-login__form" onSubmit={(event) => {
         event.preventDefault()
-        handleSubmit()
+        void handleSubmit()
       }}>
         <label>
           New password
@@ -45,7 +66,9 @@ export function SellerResetPasswordPage() {
           Confirm password
           <input value={confirmPassword} type="password" placeholder="Re-enter new password" onChange={(event) => setConfirmPassword(event.target.value)} />
         </label>
-        <button type="submit" className="seller-login__submit">Save password and sign in</button>
+        <button type="submit" className="seller-login__submit" disabled={submitting}>
+          {submitting ? 'Saving...' : 'Save password and sign in'}
+        </button>
       </form>
     </AuthPageShell>
   )

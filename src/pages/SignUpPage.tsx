@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { AuthPageShell } from '../components/AuthPageShell'
+import { normalizeAuthEmail } from '../lib/authOtp'
 import { signUpBuyer } from '../lib/buyerAuth'
 import { isValidEmail, isValidPassword } from './authHelpers'
 
@@ -43,11 +44,11 @@ export function SignUpPage() {
     }
 
     setSuccess('Buyer account created. Check your email for the 6-digit code.')
-    window.setTimeout(() => navigate('/buyer/verify-email', { state: { email: email.trim() } }), 600)
+    window.setTimeout(() => navigate('/buyer/verify-email', { state: { email: normalizeAuthEmail(email) } }), 600)
   }
 
   return (
-    <AuthPageShell title="Create account" backTo="/">
+    <AuthPageShell title="Create account" fallbackBack="/">
       {error && <div className="auth-message auth-message--error">{error}</div>}
       {success && <div className="auth-message auth-message--success">{success}</div>}
 

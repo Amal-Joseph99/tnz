@@ -1,5 +1,5 @@
+import { normalizeAuthEmail } from './authOtp'
 import { supabase } from './supabase'
-import { absoluteUrl } from './site'
 import { verifyLoginPortal } from './portalAuth'
 import type { SellerCountryOption } from './sellerCountries'
 
@@ -64,12 +64,25 @@ export async function signUpSeller(input: SellerSignUpInput): Promise<SellerSign
 
   const localDigits = input.phoneLocal.replace(/\D/g, '')
   const fullPhone = `+${input.country.isd_code}${localDigits}`
+  const email = normalizeAuthEmail(input.email)
+
+  const { data: eligibility, error: eligibilityError } = await supabase.rpc(
+    'check_portal_email_registration',
+    { p_portal: 'seller', p_email: email },
+  )
+
+  if (eligibilityError) {
+    return { ok: false, message: eligibilityError.message }
+  }
+
+  if (eligibility && eligibility.allowed === false) {
+    return { ok: false, message: String(eligibility.message ?? 'This email cannot be used for seller signup.') }
+  }
 
   const { error } = await supabase.auth.signUp({
-    email: input.email.trim(),
+    email,
     password: input.password,
     options: {
-      emailRedirectTo: absoluteUrl('/seller/verify-email'),
       data: {
         account_type: 'seller',
         business_name: input.businessName.trim(),
@@ -85,6 +98,24 @@ export async function signUpSeller(input: SellerSignUpInput): Promise<SellerSign
 
   if (error) {
     return { ok: false, message: error.message }
+  }
+
+  return { ok: true }
+}
+
+export async function ensureSellerRegistration(): Promise<SellerSignUpResult> {
+  if (!supabase) {
+    return { ok: false, message: 'Supabase is not configured.' }
+  }
+
+  const { data, error } = await supabase.rpc('ensure_seller_registration')
+
+  if (error) {
+    return { ok: false, message: error.message }
+  }
+
+  if (!data || data.ok !== true) {
+    return { ok: false, message: 'Seller account provisioning failed.' }
   }
 
   return { ok: true }
