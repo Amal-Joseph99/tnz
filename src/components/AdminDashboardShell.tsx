@@ -20,7 +20,7 @@ const adminNavItems = [
 
 type AdminDashboardShellProps = {
   title: string
-  subtitle: string
+  subtitle?: string
   children: ReactNode
 }
 
@@ -37,6 +37,22 @@ export function AdminDashboardShell({ title, subtitle, children }: AdminDashboar
   }, [drawerOpen])
 
   const closeDrawer = () => setDrawerOpen(false)
+
+  const currencySelect = (
+    <select
+      className="admin-console__currency-select"
+      value={pricingReady ? currency : ''}
+      disabled={loading || !pricingReady || adminCurrencyOptions.length === 0}
+      onChange={(event) => void setAdminCurrency(event.target.value)}
+      aria-label="Display currency"
+    >
+      {adminCurrencyOptions.map((option) => (
+        <option key={option.currencyCode} value={option.currencyCode}>
+          {option.currencyCode}
+        </option>
+      ))}
+    </select>
+  )
 
   return (
     <section className="admin-console admin-console--bento">
@@ -113,60 +129,32 @@ export function AdminDashboardShell({ title, subtitle, children }: AdminDashboar
             <MenuIcon />
           </button>
 
-          <Link to="/admin/dashboard" className="admin-console__mobile-brand">
-            <span>AG</span>TRENZ Admin
-          </Link>
+          <h1 className="admin-console__mobile-title">{title}</h1>
 
           <div className="admin-console__mobile-actions">
+            {currencySelect}
             <Link to="/admin/notifications" className="admin-console__mobile-bell" aria-label="Alerts">
               <BellIcon />
               <span>0</span>
             </Link>
-            <div className="admin-console__mobile-avatar" aria-hidden="true">
-              PA
-            </div>
           </div>
         </header>
 
         <header className="admin-console__header admin-console__header--bento">
           <div className="admin-console__header-copy">
-            <span>Admin Console</span>
             <h1>{title}</h1>
-            <p>{subtitle}</p>
+            {subtitle ? <p>{subtitle}</p> : null}
           </div>
           <div className="admin-console__header-actions">
-            <label className="admin-console__currency">
-              <span>Currency</span>
-              <select
-                value={pricingReady ? currency : ''}
-                disabled={loading || !pricingReady || adminCurrencyOptions.length === 0}
-                onChange={(event) => void setAdminCurrency(event.target.value)}
-                aria-label="Admin display currency"
-              >
-                {adminCurrencyOptions.map((option) => (
-                  <option key={option.currencyCode} value={option.currencyCode}>
-                    {option.displayLabel}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Link to="/admin/notifications" className="admin-console__notification">
-              Alerts
+            {currencySelect}
+            <Link to="/admin/notifications" className="admin-console__notification" aria-label="Alerts">
+              <BellIcon />
               <strong>0</strong>
             </Link>
-            <div className="admin-console__account">
-              <strong>Platform Administrator</strong>
-              <span>Full access</span>
-            </div>
           </div>
         </header>
 
         <main className="admin-console__content admin-console__content--bento">{children}</main>
-
-        <footer className="admin-console__footer">
-          <span>AGTRENZ Admin Console</span>
-          <span>Restricted access for authorized administrators only.</span>
-        </footer>
       </div>
     </section>
   )
