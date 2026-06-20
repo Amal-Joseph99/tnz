@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import { AuthPageShell } from '../components/AuthPageShell'
 import { signUpBuyer } from '../lib/buyerAuth'
 import { isValidEmail, isValidPassword } from './authHelpers'
 
@@ -46,66 +47,56 @@ export function SignUpPage() {
   }
 
   return (
-    <section className="seller-login-page auth-page">
-      <div className="seller-login">
-        <div className="seller-login__card">
-          <div className="seller-login__header">
-            <p>Buyer account</p>
-            <h1>Create buyer account</h1>
-            <span>Buyer registration only. Sellers register at <Link to="/seller/signup">Seller signup</Link>. Admin accounts are backend-only.</span>
-          </div>
+    <AuthPageShell title="Create account" backTo="/">
+      {error && <div className="auth-message auth-message--error">{error}</div>}
+      {success && <div className="auth-message auth-message--success">{success}</div>}
 
-          {error && <div className="auth-message auth-message--error">{error}</div>}
-          {success && <div className="auth-message auth-message--success">{success}</div>}
+      <form className="seller-login__form" onSubmit={(event) => {
+        event.preventDefault()
+        void handleSubmit()
+      }}>
+        <label>
+          Full name
+          <input
+            value={name}
+            type="text"
+            placeholder="Enter your full name"
+            autoComplete="name"
+            required
+            onChange={(event) => setName(event.target.value)}
+          />
+        </label>
+        <label>
+          Email address
+          <input
+            value={email}
+            type="email"
+            placeholder="you@example.com"
+            autoComplete="email"
+            required
+            onChange={(event) => setEmail(event.target.value)}
+          />
+        </label>
+        <label>
+          Password
+          <input
+            value={password}
+            type="password"
+            placeholder="Minimum 8 characters"
+            autoComplete="new-password"
+            minLength={8}
+            required
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        </label>
+        <button type="submit" className="seller-login__submit" disabled={loading}>
+          {loading ? 'Creating account...' : 'Create buyer account'}
+        </button>
+      </form>
 
-          <form className="seller-login__form" onSubmit={(event) => {
-            event.preventDefault()
-            void handleSubmit()
-          }}>
-            <label>
-              Full name
-              <input
-                value={name}
-                type="text"
-                placeholder="Enter your full name"
-                autoComplete="name"
-                required
-                onChange={(event) => setName(event.target.value)}
-              />
-            </label>
-            <label>
-              Email address
-              <input
-                value={email}
-                type="email"
-                placeholder="you@example.com"
-                autoComplete="email"
-                required
-                onChange={(event) => setEmail(event.target.value)}
-              />
-            </label>
-            <label>
-              Password
-              <input
-                value={password}
-                type="password"
-                placeholder="Minimum 8 characters"
-                autoComplete="new-password"
-                minLength={8}
-                required
-                onChange={(event) => setPassword(event.target.value)}
-              />
-            </label>
-            <button type="submit" className="seller-login__submit" disabled={loading}>
-              {loading ? 'Creating account...' : 'Create buyer account'}
-            </button>
-          </form>
-
-          <p className="seller-login__signup">
-            Already have an account? <Link to="/buyer/signin">Buyer login</Link>
-          </p>
-        </div>
-      </div>
-    </section>
+      <p className="seller-login__signup">
+        Already have an account? <Link to="/buyer/signin">Buyer login</Link>
+      </p>
+    </AuthPageShell>
   )
 }

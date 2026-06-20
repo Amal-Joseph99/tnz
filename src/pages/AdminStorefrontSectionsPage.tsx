@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminDashboardShell } from '../components/AdminDashboardShell'
 import { PanelEmptyState } from '../components/PanelEmptyState'
+import { useConfirmDialog } from '../context/ConfirmDialogContext'
 import {
   addProductToSection,
   fetchApprovedProductsBySeller,
@@ -28,6 +29,7 @@ const sectionOptions: Array<{ id: HighlightSection; label: string; description: 
 ]
 
 export function AdminStorefrontSectionsPage() {
+  const { confirmAction } = useConfirmDialog()
   const [activeSection, setActiveSection] = useState<HighlightSection>('featured')
   const [sellers, setSellers] = useState<Awaited<ReturnType<typeof fetchSellersWithApprovedProducts>>>([])
   const [selectedSellerId, setSelectedSellerId] = useState('')
@@ -90,7 +92,12 @@ export function AdminStorefrontSectionsPage() {
     await loadSection(activeSection)
   }
 
-  const handleRemove = async (highlightId: number) => {
+  const handleRemove = async (highlightId: number, productName: string) => {
+    const confirmed = await confirmAction('remove', {
+      placeholders: { item_label: productName },
+    })
+    if (!confirmed) return
+
     setError('')
     setMessage('')
     setSaving(true)
@@ -207,7 +214,7 @@ export function AdminStorefrontSectionsPage() {
                   />
                 </span>
                 <span className="admin-form__actions">
-                  <button type="button" className="admin-reject" disabled={saving} onClick={() => void handleRemove(entry.id)}>
+                  <button type="button" className="admin-reject" disabled={saving} onClick={() => void handleRemove(entry.id, entry.productName)}>
                     Remove
                   </button>
                 </span>

@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { absoluteUrl } from './site'
+import { verifyLoginPortal } from './portalAuth'
 
 export type AccountType = 'buyer' | 'seller' | 'admin' | 'unknown'
 
@@ -35,27 +36,10 @@ export async function signInBuyer(email: string, password: string): Promise<Buye
     return { ok: false, message: signInError.message }
   }
 
-  const { data: staffRole, error: staffError } = await supabase.rpc('get_staff_role')
-  if (staffError) {
+  const portalCheck = await verifyLoginPortal('buyer')
+  if (!portalCheck.allowed) {
     await signOutSilently()
-    return { ok: false, message: 'Unable to verify account role. Please try again.' }
-  }
-
-  if (staffRole === 'admin' || staffRole === 'seller') {
-    await signOutSilently()
-    return {
-      ok: false,
-      message: 'This account is for seller/admin access. Please use Seller login at /seller/signin.',
-    }
-  }
-
-  const { data: isBuyer, error: buyerError } = await supabase.rpc('is_buyer_account')
-  if (buyerError || !isBuyer) {
-    await signOutSilently()
-    return {
-      ok: false,
-      message: 'This account is not a buyer account. Use Seller login if you are a seller or admin.',
-    }
+    return { ok: false, message: portalCheck.message }
   }
 
   return { ok: true }

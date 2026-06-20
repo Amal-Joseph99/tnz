@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { CartIcon, StarIcon } from '../components/Icons'
 import { PageMeta } from '../components/PageMeta'
+import { ProductReviewsSection } from '../components/ProductReviewsSection'
 import { useCurrency } from '../context/CurrencyContext'
+import { useAddToCart } from '../hooks/useAddToCart'
 import { shareProduct } from '../lib/productShare'
+import { appendSearchHistory } from '../lib/searchHistory'
 import { absoluteUrl } from '../lib/site'
 import { ogImageUrl } from '../lib/sharePages'
 import { buildCategoryBrowsePath, fetchStorefrontProductById } from '../lib/storefrontCatalog'
@@ -12,10 +15,12 @@ import type { Product } from '../data/products'
 export function ProductDetailsPage() {
   const { productId } = useParams()
   const { formatPrice } = useCurrency()
+  const { requestAddToCart } = useAddToCart()
   const [product, setProduct] = useState<Product | null>(null)
   const [detail, setDetail] = useState<Awaited<ReturnType<typeof fetchStorefrontProductById>>>(null)
   const [loading, setLoading] = useState(true)
   const [shareMessage, setShareMessage] = useState<string | null>(null)
+  const [reviewSummary, setReviewSummary] = useState({ reviewCount: 0, averageRating: 0 })
 
   useEffect(() => {
     let active = true
@@ -32,6 +37,11 @@ export function ProductDetailsPage() {
         if (result) {
           setProduct(result.card)
           setDetail(result)
+          void appendSearchHistory({
+            searchInput: result.card.title,
+            productId: numericId,
+            productName: result.card.title,
+          })
         } else {
           setProduct(null)
           setDetail(null)
@@ -138,13 +148,16 @@ export function ProductDetailsPage() {
             </Link>
             <p className="product-detail__short">{productDescription}</p>
 
-            {product.reviews > 0 && (
+            {(reviewSummary.reviewCount > 0 || product.reviews > 0) && (
               <div className="product-detail__rating">
                 {Array.from({ length: 5 }).map((_, index) => (
-                  <StarIcon key={`rating-${index + 1}`} className={index < product.rating ? 'star filled' : 'star'} />
+                  <StarIcon
+                    key={`rating-${index + 1}`}
+                    className={index < Math.round(reviewSummary.averageRating || product.rating) ? 'star filled' : 'star'}
+                  />
                 ))}
-                <span>{product.rating}.0</span>
-                <span>{product.reviews} reviews</span>
+                <span>{reviewSummary.averageRating || product.rating}</span>
+                <span>{reviewSummary.reviewCount || product.reviews} reviews</span>
               </div>
             )}
 
@@ -181,7 +194,7 @@ export function ProductDetailsPage() {
             </div>
 
             <div className="product-detail__actions">
-              <button type="button" className="product-detail__add">
+              <button type="button" className="product-detail__add" onClick={() => void requestAddToCart()}>
                 <CartIcon />
                 Add to Cart
               </button>
@@ -239,10 +252,10 @@ export function ProductDetailsPage() {
           </article>
         </section>
 
-        <section className="product-detail__reviews">
-          <h2>Customer reviews</h2>
-          <p>No reviews yet. Be the first to review.</p>
-        </section>
+        <ProductReviewsSection
+          productId={Number(product.id)}
+          onSummaryChange={setReviewSummary}
+        />
       </div>
     </section>
   )

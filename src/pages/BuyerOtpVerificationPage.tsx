@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { AuthPageShell } from '../components/AuthPageShell'
 import { getOtpValue, OTP_LENGTH, isValidOtp } from './authHelpers'
 import { supabase } from '../lib/supabase'
 
@@ -112,58 +113,57 @@ export function BuyerOtpVerificationPage() {
   }
 
   return (
-    <section className="seller-otp-page">
-      <div className="seller-otp-card">
-        <span className="seller-otp-card__eyebrow">Buyer account</span>
-        <h1>Email verification</h1>
-        <p>Enter the 6-digit code sent to your registered email address.</p>
+    <AuthPageShell
+      title="Email verification"
+      subtitle="Enter the 6-digit code sent to your email."
+      backTo="/buyer/signup"
+      otp
+    >
+      {message && <div className="auth-message auth-message--success">{message}</div>}
+      {error && <div className="auth-message auth-message--error">{error}</div>}
 
-        {message && <div className="auth-message auth-message--success">{message}</div>}
-        {error && <div className="auth-message auth-message--error">{error}</div>}
-
-        <form className="seller-otp-form" onSubmit={(event) => {
-          event.preventDefault()
-          void handleVerify()
-        }}>
-          <div className="seller-otp-form__inputs" aria-label="6 digit buyer email code">
-            {otp.map((digit, index) => (
-              <input
-                key={`buyer-otp-${index + 1}`}
-                ref={(element) => {
-                  inputRefs.current[index] = element
-                }}
-                value={digit}
-                inputMode="numeric"
-                maxLength={1}
-                aria-label={`Code digit ${index + 1}`}
-                disabled={!email || verifying}
-                onChange={(event) => handleOtpChange(index, event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Backspace' && !otp[index] && index > 0) {
-                    inputRefs.current[index - 1]?.focus()
-                  }
-                }}
-              />
-            ))}
-          </div>
-
-          <button type="submit" className="seller-otp-form__verify" disabled={!email || verifying}>
-            {verifying ? 'Verifying...' : 'Verify and sign in'}
-          </button>
-        </form>
-
-        <div className="seller-otp-card__resend">
-          {secondsLeft > 0 ? (
-            <span>Resend code in {secondsLeft}s</span>
-          ) : (
-            <button type="button" onClick={() => void handleResend()} disabled={!email || verifying}>
-              Resend code
-            </button>
-          )}
+      <form className="seller-otp-form" onSubmit={(event) => {
+        event.preventDefault()
+        void handleVerify()
+      }}>
+        <div className="seller-otp-form__inputs" aria-label="6 digit buyer email code">
+          {otp.map((digit, index) => (
+            <input
+              key={`buyer-otp-${index + 1}`}
+              ref={(element) => {
+                inputRefs.current[index] = element
+              }}
+              value={digit}
+              inputMode="numeric"
+              maxLength={1}
+              aria-label={`Code digit ${index + 1}`}
+              disabled={!email || verifying}
+              onChange={(event) => handleOtpChange(index, event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Backspace' && !otp[index] && index > 0) {
+                  inputRefs.current[index - 1]?.focus()
+                }
+              }}
+            />
+          ))}
         </div>
 
-        <Link to="/buyer/signup" className="seller-otp-card__back">Change buyer details</Link>
+        <button type="submit" className="seller-otp-form__verify" disabled={!email || verifying}>
+          {verifying ? 'Verifying...' : 'Verify and sign in'}
+        </button>
+      </form>
+
+      <div className="seller-otp-card__resend">
+        {secondsLeft > 0 ? (
+          <span>Resend code in {secondsLeft}s</span>
+        ) : (
+          <button type="button" onClick={() => void handleResend()} disabled={!email || verifying}>
+            Resend code
+          </button>
+        )}
       </div>
-    </section>
+
+      <Link to="/buyer/signup" className="seller-otp-card__back">Change buyer details</Link>
+    </AuthPageShell>
   )
 }

@@ -1173,52 +1173,65 @@
   height: 24px;
 }
 
-/* Seller login page */
-.seller-login-page {
-  min-height: calc(100vh - 70px);
-  padding: 48px 24px 64px;
-  background: linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%);
-}
-
-.seller-login {
+/* Auth pages */
+.auth-page__wrap {
   width: min(100%, 420px);
   margin: 0 auto;
 }
 
+.auth-page__back {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 10px;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-page__back:hover {
+  color: #0f172a;
+}
+
+.seller-login-page {
+  min-height: calc(100vh - 70px);
+  padding: 20px 20px 40px;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%);
+}
+
+.seller-login {
+  width: 100%;
+}
+
 .seller-login__card {
-  padding: 26px;
+  padding: 22px 20px;
   border: 1px solid #d9e2ef;
   border-radius: 14px;
   background: #fff;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.09);
 }
 
-.seller-login__header p {
-  color: #b7791f;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
+.seller-login__header--center {
+  text-align: center;
 }
 
 .seller-login__header h1 {
-  margin-top: 8px;
+  margin: 0;
   color: #0f172a;
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.4px;
 }
 
-.seller-login__header span {
-  display: block;
-  margin-top: 8px;
+.seller-login__subtitle {
+  margin: 8px 0 0;
   color: #64748b;
   font-size: 14px;
-  line-height: 1.55;
+  line-height: 1.45;
 }
 
 .auth-message {
-  margin-top: 16px;
+  margin-top: 12px;
   padding: 10px 12px;
   border-radius: 8px;
   font-size: 13px;
@@ -1240,8 +1253,8 @@
 
 .seller-login__form {
   display: grid;
-  gap: 14px;
-  margin-top: 22px;
+  gap: 12px;
+  margin-top: 16px;
 }
 
 .seller-login__form label {
@@ -1277,11 +1290,6 @@
   font-size: 14px;
   padding: 32px;
   text-align: center;
-}
-
-.seller-login__header span a {
-  color: #111827;
-  font-weight: 600;
 }
 
 .seller-phone-input {
@@ -1352,8 +1360,8 @@
 }
 
 .seller-login__signup {
-  margin-top: 18px;
-  padding-top: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
   border-top: 1px solid #e5e7eb;
   color: #64748b;
   font-size: 13px;
@@ -1364,43 +1372,25 @@
 /* Seller OTP verification */
 .seller-otp-page {
   min-height: calc(100vh - 70px);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 48px 24px 64px;
+  padding: 20px 20px 40px;
   background: linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%);
 }
 
+.seller-otp-page .seller-otp-card {
+  width: 100%;
+}
+
 .seller-otp-card {
-  width: min(100%, 430px);
-  padding: 26px;
+  width: 100%;
+  padding: 22px 20px;
   border: 1px solid #d9e2ef;
   border-radius: 14px;
   background: #fff;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.09);
 }
 
-.seller-otp-card__eyebrow {
-  color: #b7791f;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-}
-
 .seller-otp-card h1 {
-  margin-top: 8px;
-  color: #0f172a;
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
-}
-
-.seller-otp-card p {
-  margin-top: 8px;
-  color: #64748b;
-  font-size: 14px;
-  line-height: 1.55;
+  margin: 0;
 }
 
 .seller-otp-card__message {
@@ -1416,8 +1406,8 @@
 
 .seller-otp-form {
   display: grid;
-  gap: 18px;
-  margin-top: 20px;
+  gap: 14px;
+  margin-top: 14px;
 }
 
 .seller-otp-form__inputs {
@@ -6628,4 +6618,288 @@
   .checkout-btn {
     width: 100%;
   }
+}
+
+.confirm-dialog__backdrop {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 20px;
+  position: fixed;
+  z-index: 2000;
+}
+
+.confirm-dialog {
+  background: #fff;
+  border: 1px solid #d9e2ef;
+  border-radius: 12px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+  max-width: 420px;
+  padding: 22px 20px;
+  width: 100%;
+}
+
+.confirm-dialog h2 {
+  color: #0f172a;
+  font-size: 20px;
+  margin: 0;
+}
+
+.confirm-dialog p {
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 10px 0 0;
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.confirm-dialog__cancel,
+.confirm-dialog__confirm {
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  min-height: 38px;
+  padding: 0 14px;
+}
+
+.confirm-dialog__cancel {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.confirm-dialog__confirm {
+  background: linear-gradient(#f7dfa5, #f0c14b);
+  border: 1px solid #a88734;
+  color: #111827;
+}
+
+.console-back-btn {
+  background: transparent;
+  border: 0;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  padding: 0;
+  text-align: left;
+}
+
+.console-back-btn:hover {
+  color: #fff;
+}
+
+.seller-console__signout,
+.admin-console__signout,
+.buyer-account__signout {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.page-shell__header--center {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.page-shell__header--center h1 {
+  margin: 0 0 6px;
+}
+
+.admin-console__currency {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-console__currency span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.admin-console__currency select {
+  min-height: 36px;
+  min-width: 110px;
+  border: 1px solid #d9e2ef;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0 10px;
+}
+
+.page-shell__header--center p {
+  color: #64748b;
+  margin: 0;
+}
+
+.product-reviews {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.product-reviews__header {
+  align-items: baseline;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.product-reviews__header h2 {
+  margin: 0;
+}
+
+.product-reviews__loading,
+.product-reviews__empty,
+.product-reviews__signin-prompt {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.product-reviews__form {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.product-reviews__form label {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.product-reviews__form textarea,
+.product-reviews__form input[type='file'] {
+  font: inherit;
+}
+
+.product-reviews__form textarea {
+  border: 1px solid #c7d0dc;
+  border-radius: 8px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.product-reviews__stars-input,
+.product-reviews__stars {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.product-reviews__star {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+
+.product-reviews__form-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.product-reviews__submit,
+.product-reviews__cancel {
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  min-height: 38px;
+  padding: 0 14px;
+}
+
+.product-reviews__submit {
+  background: linear-gradient(#f7dfa5, #f0c14b);
+  border: 1px solid #a88734;
+}
+
+.product-reviews__cancel {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+}
+
+.product-reviews__list {
+  display: grid;
+  gap: 16px;
+}
+
+.product-reviews__item {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.product-reviews__item-header {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.product-reviews__badge {
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 8px;
+  padding: 2px 8px;
+}
+
+.product-reviews__badge--general {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.product-reviews__badge--purchased {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.product-reviews__images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.product-reviews__images img {
+  border-radius: 8px;
+  height: 88px;
+  object-fit: cover;
+  width: 88px;
+}
+
+.product-reviews__item-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.product-reviews__item-actions button {
+  background: transparent;
+  border: 0;
+  color: #0059b8;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0;
 }

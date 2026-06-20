@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AdminDashboardShell } from '../components/AdminDashboardShell'
 import { PanelEmptyState } from '../components/PanelEmptyState'
+import { useConfirmDialog } from '../context/ConfirmDialogContext'
 import {
   createCategoryTaxonomy,
   deleteCategoryTaxonomy,
@@ -25,6 +26,7 @@ const emptyForm: FormState = {
 }
 
 export function AdminCategoriesPage() {
+  const { confirmAction } = useConfirmDialog()
   const [rows, setRows] = useState<CategoryTaxonomyRow[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -106,9 +108,11 @@ export function AdminCategoriesPage() {
   }
 
   const handleDelete = async (row: CategoryTaxonomyRow) => {
-    const confirmed = window.confirm(
-      `Delete ${row.category_name} / ${row.sub_category_name} / ${row.product_type_name}?`,
-    )
+    const confirmed = await confirmAction('delete', {
+      placeholders: {
+        item_label: `${row.category_name} / ${row.sub_category_name} / ${row.product_type_name}`,
+      },
+    })
     if (!confirmed) return
 
     setError('')

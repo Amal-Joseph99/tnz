@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AuthPageShell } from '../components/AuthPageShell'
 import { isValidPassword } from './authHelpers'
 
 export function SellerResetPasswordPage() {
@@ -28,34 +29,24 @@ export function SellerResetPasswordPage() {
   }
 
   return (
-    <section className="seller-login-page">
-      <div className="seller-login">
-        <div className="seller-login__card">
-          <div className="seller-login__header">
-            <p>Seller Central</p>
-            <h1>Create new password</h1>
-            <span>Set a secure new password for your seller account.</span>
-          </div>
+    <AuthPageShell title="Create new password" backTo="/seller/forgot-password/verify">
+      {error && <div className="auth-message auth-message--error">{error}</div>}
+      {success && <div className="auth-message auth-message--success">{success}</div>}
 
-          {error && <div className="auth-message auth-message--error">{error}</div>}
-          {success && <div className="auth-message auth-message--success">{success}</div>}
-
-          <form className="seller-login__form" onSubmit={(event) => {
-            event.preventDefault()
-            handleSubmit()
-          }}>
-            <label>
-              New password
-              <input value={password} type="password" placeholder="Minimum 8 characters" onChange={(event) => setPassword(event.target.value)} />
-            </label>
-            <label>
-              Confirm password
-              <input value={confirmPassword} type="password" placeholder="Re-enter new password" onChange={(event) => setConfirmPassword(event.target.value)} />
-            </label>
-            <button type="submit" className="seller-login__submit">Save password and sign in</button>
-          </form>
-        </div>
-      </div>
-    </section>
+      <form className="seller-login__form" onSubmit={(event) => {
+        event.preventDefault()
+        handleSubmit()
+      }}>
+        <label>
+          New password
+          <input value={password} type="password" placeholder="Minimum 8 characters" onChange={(event) => setPassword(event.target.value)} />
+        </label>
+        <label>
+          Confirm password
+          <input value={confirmPassword} type="password" placeholder="Re-enter new password" onChange={(event) => setConfirmPassword(event.target.value)} />
+        </label>
+        <button type="submit" className="seller-login__submit">Save password and sign in</button>
+      </form>
+    </AuthPageShell>
   )
 }

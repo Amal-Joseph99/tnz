@@ -4,103 +4,20 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
-
-const BASE_CURRENCY = 'USD'
-
-const COUNTRY_CURRENCY: Record<string, string> = {
-  US: 'USD',
-  GB: 'GBP',
-  CA: 'CAD',
-  AU: 'AUD',
-  IN: 'INR',
-  JP: 'JPY',
-  CN: 'CNY',
-  KR: 'KRW',
-  DE: 'EUR',
-  FR: 'EUR',
-  IT: 'EUR',
-  ES: 'EUR',
-  NL: 'EUR',
-  BE: 'EUR',
-  AT: 'EUR',
-  PT: 'EUR',
-  IE: 'EUR',
-  FI: 'EUR',
-  GR: 'EUR',
-  MX: 'MXN',
-  BR: 'BRL',
-  AE: 'AED',
-  SA: 'SAR',
-  SG: 'SGD',
-  MY: 'MYR',
-  TH: 'THB',
-  PH: 'PHP',
-  ID: 'IDR',
-  NZ: 'NZD',
-  CH: 'CHF',
-  SE: 'SEK',
-  NO: 'NOK',
-  DK: 'DKK',
-  PL: 'PLN',
-  TR: 'TRY',
-  ZA: 'ZAR',
-  NG: 'NGN',
-  EG: 'EGP',
-  PK: 'PKR',
-  BD: 'BDT',
-  VN: 'VND',
-  HK: 'HKD',
-  TW: 'TWD',
-  IL: 'ILS',
-  RU: 'RUB',
-  AR: 'ARS',
-  CL: 'CLP',
-  CO: 'COP',
-}
-
-const CURRENCY_SYMBOL: Record<string, string> = {
-  USD: '$',
-  EUR: '€',
-  GBP: '£',
-  INR: '₹',
-  JPY: '¥',
-  CNY: '¥',
-  KRW: '₩',
-  CAD: 'CA$',
-  AUD: 'A$',
-  MXN: 'MX$',
-  BRL: 'R$',
-  AED: 'AED ',
-  SAR: 'SAR ',
-  SGD: 'S$',
-  MYR: 'RM',
-  THB: '฿',
-  PHP: '₱',
-  IDR: 'Rp',
-  NZD: 'NZ$',
-  CHF: 'CHF ',
-  SEK: 'kr',
-  NOK: 'kr',
-  DKK: 'kr',
-  PLN: 'zł',
-  TRY: '₺',
-  ZAR: 'R',
-  NGN: '₦',
-  EGP: 'E£',
-  PKR: '₨',
-  BDT: '৳',
-  VND: '₫',
-  HKD: 'HK$',
-  TWD: 'NT$',
-  ILS: '₪',
-  RUB: '₽',
-  ARS: 'AR$',
-  CLP: 'CL$',
-  COP: 'COL$',
-}
+import { useAuth } from './AuthContext'
+import { detectLocationWithOpenCage } from '../lib/opencage'
+import {
+  fetchAdminCurrencyOptions,
+  resolveSessionDisplayCurrency,
+  setAdminCurrencyPreference,
+  type AdminCurrencyOption,
+  type CurrencyPackage,
+} from '../lib/currencyConfig'
+import { readStoredLocation, writeStoredLocation, type StoredLocation } from '../lib/userLocation'
 
 type CurrencyContextValue = {
   currency: string
@@ -108,128 +25,238 @@ type CurrencyContextValue = {
   rate: number
   locationLabel: string
   loading: boolean
+  pricingReady: boolean
+  pricingError: string
+  hasStoredLocation: boolean
+  adminCurrencyOptions: AdminCurrencyOption[]
   formatPrice: (usdAmount: number) => string
-  refreshLocation: () => void
+  refreshLocation: () => Promise<void>
+  ensureHomepageLocation: () => Promise<void>
+  setAdminCurrency: (currencyCode: string) => Promise<void>
 }
 
 const CurrencyContext = createContext<CurrencyContextValue | null>(null)
 
-async function fetchCountryFromCoords(lat: number, lon: number): Promise<string | null> {
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
-      { headers: { 'Accept-Language': 'en' } },
-    )
-    if (!res.ok) return null
-    const data = await res.json()
-    return data.address?.country_code?.toUpperCase() ?? null
-  } catch {
-    return null
-  }
-}
-
-async function fetchCountryFromIp(): Promise<{ country: string; city?: string } | null> {
-  try {
-    const res = await fetch('https://ipapi.co/json/')
-    if (!res.ok) return null
-    const data = await res.json()
-    return { country: data.country_code, city: data.city }
-  } catch {
-    return null
-  }
-}
-
-async function fetchExchangeRate(target: string): Promise<number> {
-  if (target === BASE_CURRENCY) return 1
-  try {
-    const res = await fetch(
-      `https://api.frankfurter.app/latest?from=${BASE_CURRENCY}&to=${target}`,
-    )
-    if (!res.ok) return 1
-    const data = await res.json()
-    return data.rates?.[target] ?? 1
-  } catch {
-    return 1
-  }
+function applyCurrencyPackage(
+  pkg: CurrencyPackage,
+  setters: {
+    setCurrency: (value: string) => void
+    setRate: (value: number) => void
+    setSymbol: (value: string) => void
+    setDecimalPlaces: (value: number) => void
+  },
+) {
+  setters.setCurrency(pkg.currencyCode)
+  setters.setRate(pkg.fxRateUsd)
+  setters.setSymbol(pkg.symbol)
+  setters.setDecimalPlaces(pkg.decimalPlaces)
 }
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
-  const [currency, setCurrency] = useState(BASE_CURRENCY)
-  const [rate, setRate] = useState(1)
+  const { accountType, loading: authLoading } = useAuth()
+  const [currency, setCurrency] = useState('')
+  const [rate, setRate] = useState(0)
+  const [symbol, setSymbol] = useState('')
+  const [decimalPlaces, setDecimalPlaces] = useState(2)
   const [locationLabel, setLocationLabel] = useState('Detecting location…')
   const [loading, setLoading] = useState(true)
+  const [pricingReady, setPricingReady] = useState(false)
+  const [pricingError, setPricingError] = useState('')
+  const [hasStoredLocation, setHasStoredLocation] = useState(false)
+  const [adminCurrencyOptions, setAdminCurrencyOptions] = useState<AdminCurrencyOption[]>([])
+  const [countryCode, setCountryCode] = useState<string | null>(null)
+  const resolvingRef = useRef(0)
 
-  const detectLocation = useCallback(async () => {
+  const currencySetters = useMemo(
+    () => ({
+      setCurrency,
+      setRate,
+      setSymbol,
+      setDecimalPlaces,
+    }),
+    [],
+  )
+
+  const resolvePricing = useCallback(async (nextCountryCode?: string | null) => {
+    const requestId = ++resolvingRef.current
+    setLoading(true)
+    setPricingReady(false)
+    setPricingError('')
+
+    try {
+      const pkg = await resolveSessionDisplayCurrency(nextCountryCode)
+      if (requestId !== resolvingRef.current) return
+
+      applyCurrencyPackage(pkg, currencySetters)
+      setPricingReady(true)
+    } catch (error) {
+      if (requestId !== resolvingRef.current) return
+      setPricingError(error instanceof Error ? error.message : 'Unable to load pricing.')
+      setPricingReady(false)
+    } finally {
+      if (requestId === resolvingRef.current) {
+        setLoading(false)
+      }
+    }
+  }, [currencySetters])
+
+  const applyLocation = useCallback(async (location: StoredLocation) => {
+    setLocationLabel(location.locationLabel)
+    setCountryCode(location.countryCode)
+    setHasStoredLocation(true)
+    await resolvePricing(location.countryCode)
+  }, [resolvePricing])
+
+  const fetchAndPersistLocation = useCallback(async () => {
     setLoading(true)
     setLocationLabel('Detecting location…')
 
-    let countryCode: string | null = null
-    let cityLabel = ''
-
-    if (navigator.geolocation) {
-      try {
-        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            timeout: 8000,
-            maximumAge: 300000,
-          })
-        })
-        countryCode = await fetchCountryFromCoords(pos.coords.latitude, pos.coords.longitude)
-        if (countryCode) cityLabel = countryCode
-      } catch {
-        /* fall through to IP */
-      }
+    const detected = await detectLocationWithOpenCage()
+    if (!detected) {
+      setLocationLabel('Location unavailable')
+      setHasStoredLocation(false)
+      setCountryCode(null)
+      await resolvePricing(null)
+      return
     }
 
-    if (!countryCode) {
-      const ipData = await fetchCountryFromIp()
-      if (ipData) {
-        countryCode = ipData.country
-        cityLabel = ipData.city ? `${ipData.city}, ${ipData.country}` : ipData.country
-      }
+    await writeStoredLocation(detected)
+    await applyLocation(detected)
+  }, [applyLocation, resolvePricing])
+
+  const refreshLocation = useCallback(async () => {
+    await fetchAndPersistLocation()
+  }, [fetchAndPersistLocation])
+
+  const ensureHomepageLocation = useCallback(async () => {
+    if (accountType === 'seller' || accountType === 'admin') {
+      return
     }
 
-    const resolvedCurrency = countryCode
-      ? (COUNTRY_CURRENCY[countryCode] ?? BASE_CURRENCY)
-      : BASE_CURRENCY
+    if (hasStoredLocation && countryCode) {
+      return
+    }
 
-    const resolvedRate = await fetchExchangeRate(resolvedCurrency)
+    const stored = await readStoredLocation()
+    if (stored) {
+      await applyLocation(stored)
+      return
+    }
 
-    setCurrency(resolvedCurrency)
-    setRate(resolvedRate)
-    setLocationLabel(cityLabel || countryCode || 'United States')
-    setLoading(false)
-  }, [])
+    await fetchAndPersistLocation()
+  }, [accountType, applyLocation, countryCode, fetchAndPersistLocation, hasStoredLocation])
+
+  const setAdminCurrency = useCallback(async (nextCurrencyCode: string) => {
+    setLoading(true)
+    setPricingReady(false)
+    setPricingError('')
+
+    try {
+      const pkg = await setAdminCurrencyPreference(nextCurrencyCode)
+      applyCurrencyPackage(pkg, currencySetters)
+      setPricingReady(true)
+    } catch (error) {
+      setPricingError(error instanceof Error ? error.message : 'Unable to update admin currency.')
+      setPricingReady(false)
+    } finally {
+      setLoading(false)
+    }
+  }, [currencySetters])
 
   useEffect(() => {
-    detectLocation()
-  }, [detectLocation])
+    if (accountType !== 'admin') {
+      setAdminCurrencyOptions([])
+      return
+    }
 
-  const symbol = CURRENCY_SYMBOL[currency] ?? `${currency} `
+    void fetchAdminCurrencyOptions()
+      .then(setAdminCurrencyOptions)
+      .catch((error: Error) => {
+        setPricingError(error.message)
+      })
+  }, [accountType])
+
+  useEffect(() => {
+    if (authLoading) return
+
+    let active = true
+
+    async function bootstrap() {
+      if (accountType === 'seller' || accountType === 'admin') {
+        await resolvePricing(null)
+        if (active) {
+          setLocationLabel(accountType === 'admin' ? 'Admin console' : 'Seller console')
+        }
+        return
+      }
+
+      const stored = await readStoredLocation()
+      if (!active) return
+
+      if (stored) {
+        await applyLocation(stored)
+        return
+      }
+
+      await resolvePricing(null)
+      if (active) {
+        setLocationLabel('Detecting location…')
+      }
+    }
+
+    void bootstrap()
+
+    return () => {
+      active = false
+    }
+  }, [accountType, applyLocation, authLoading, resolvePricing])
 
   const formatPrice = useCallback(
     (usdAmount: number) => {
+      if (!pricingReady) {
+        return '…'
+      }
+
       const converted = usdAmount * rate
-      const decimals = ['JPY', 'KRW', 'VND', 'IDR'].includes(currency) ? 0 : 2
       return `${symbol}${converted.toLocaleString(undefined, {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals,
+        minimumFractionDigits: decimalPlaces,
+        maximumFractionDigits: decimalPlaces,
       })}`
     },
-    [currency, rate, symbol],
+    [decimalPlaces, pricingReady, rate, symbol],
   )
 
   const value = useMemo(
     () => ({
-      currency,
+      currency: pricingReady ? currency : '…',
       symbol,
       rate,
       locationLabel,
       loading,
+      pricingReady,
+      pricingError,
+      hasStoredLocation,
+      adminCurrencyOptions,
       formatPrice,
-      refreshLocation: detectLocation,
+      refreshLocation,
+      ensureHomepageLocation,
+      setAdminCurrency,
     }),
-    [currency, symbol, rate, locationLabel, loading, formatPrice, detectLocation],
+    [
+      adminCurrencyOptions,
+      currency,
+      formatPrice,
+      hasStoredLocation,
+      loading,
+      locationLabel,
+      pricingError,
+      pricingReady,
+      rate,
+      refreshLocation,
+      ensureHomepageLocation,
+      setAdminCurrency,
+      symbol,
+    ],
   )
 
   return <CurrencyContext.Provider value={value}>{children}</CurrencyContext.Provider>

@@ -254,3 +254,63 @@ export function buildCategoryBrowsePath(categoryName: string, subCategoryName?: 
   if (!subCategoryName) return base
   return `${base}/${getSubcategorySlug(subCategoryName)}`
 }
+
+export async function searchStorefrontProducts(query: string): Promise<Product[]> {
+  if (!supabase) return []
+
+  const term = query.trim()
+  if (!term) return []
+
+  const pattern = `%${term.replace(/[%_]/g, '')}%`
+
+  const { data: products, error } = await supabase
+    .from('seller_products')
+    .select('id, product_name, brand_name, category_name, sub_category_name, product_type_name, short_description')
+    .eq('approval_status', 'approved')
+    .or(`product_name.ilike."${pattern}",brand_name.ilike."${pattern}"`)
+    .order('updated_at', { ascending: false })
+    .limit(48)
+
+  if (error || !products?.length) return []
+
+  const productIds = products.map((product) => product.id)
+
+  const [{ data: variants }, { data: media }] = await Promise.all([
+    supabase
+      .from('seller_product_variants')
+      .select('product_id, mrp, selling_price')
+      .in('product_id', productIds),
+    supabase
+      .from('seller_product_media')
+      .select('product_id, storage_path, slot_index')
+      .in('product_id', productIds)
+      .eq('media_type', 'product_image')
+      .order('slot_index', { ascending: true }),
+  ])
+
+  const variantByProduct = new Map<number, VariantRow>()
+  for (const variant of variants ?? []) {
+    const existing = variantByProduct.get(variant.product_id)
+    if (!existing || variant.selling_price < existing.selling_price) {
+      variantByProduct.set(variant.product_id, {
+        mrp: variant.mrp,
+        selling_price: variant.selling_price,
+      })
+    }
+  }
+
+  const imageByProduct = new Map<number, string>()
+  for (const item of media ?? []) {
+    if (!imageByProduct.has(item.product_id)) {
+      imageByProduct.set(item.product_id, item.storage_path)
+    }
+  }
+
+  return (products as SellerProductRow[]).map((product) =>
+    mapToProductCard(
+      product,
+      variantByProduct.get(product.id),
+      imageByProduct.get(product.id),
+    ),
+  )
+}

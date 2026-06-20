@@ -1,7 +1,11 @@
 import { RequireAdminAuth, RequireBuyerAuth, RequireSellerAuth } from './components/AuthGate'
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
+import { RouteAccessGuard } from './components/RouteAccessGuard'
+import { AuthProvider } from './context/AuthContext'
+import { ConfirmDialogProvider } from './context/ConfirmDialogContext'
 import { CurrencyProvider } from './context/CurrencyContext'
+import { preloadDialogMessages } from './lib/appDialogs'
 import { AdminCategoriesPage } from './pages/AdminCategoriesPage'
 import { AdminCustomersPage } from './pages/AdminCustomersPage'
 import { AdminDashboardPage } from './pages/AdminDashboardPage'
@@ -62,18 +66,24 @@ import { SustainabilityPage } from './pages/SustainabilityPage'
 import { TermsOfServicePage } from './pages/TermsOfServicePage'
 import { TrackOrderPage } from './pages/TrackOrderPage'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import './App.css'
 
 function AppContent() {
   const location = useLocation()
   const isRestrictedConsole = location.pathname.startsWith('/seller/') || location.pathname.startsWith('/admin/')
 
+  useEffect(() => {
+    void preloadDialogMessages(['sign_out', 'delete', 'remove', 'guest_add_to_cart', 'console_sign_out', 'delete_review'])
+  }, [])
+
   return (
     <CurrencyProvider>
       <div className="app">
         {!isRestrictedConsole && <Header />}
         <main>
-          <Routes>
+          <RouteAccessGuard>
+            <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/search" element={<SearchResultsPage />} />
               <Route path="/cart" element={<CartPage />} />
@@ -140,7 +150,8 @@ function AppContent() {
               <Route path="/sellerssignup" element={<Navigate to="/seller/signup" replace />} />
               <Route path="/seller-email-otp-verification" element={<Navigate to="/seller/verify-email" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+            </Routes>
+          </RouteAccessGuard>
         </main>
         {!isRestrictedConsole && <Footer />}
       </div>
@@ -151,7 +162,11 @@ function AppContent() {
 function App() {
   return (
     <BrowserRouter>
-      <AppContent />
+      <ConfirmDialogProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </ConfirmDialogProvider>
     </BrowserRouter>
   )
 }

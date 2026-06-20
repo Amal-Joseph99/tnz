@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 const sellerNavItems = [
   { label: 'Dashboard', to: '/seller/dashboard' },
@@ -25,9 +26,15 @@ export function SellerDashboardShell({
   eyebrow = 'Seller Central',
   children,
 }: SellerDashboardShellProps) {
+  const { signOutFromConsole } = useAuth()
+
   return (
     <section className="seller-console">
       <aside className="seller-console__sidebar">
+        <button type="button" className="console-back-btn" onClick={() => void signOutFromConsole()}>
+          ← Back
+        </button>
+
         <Link to="/seller/dashboard" className="seller-console__brand" aria-label="AGTRENZ Seller Central">
           <span>AG</span>TRENZ
         </Link>
@@ -45,6 +52,10 @@ export function SellerDashboardShell({
             </NavLink>
           ))}
         </nav>
+
+        <button type="button" className="seller-console__signout" onClick={() => void signOutFromConsole()}>
+          Sign out
+        </button>
       </aside>
 
       <div className="seller-console__workspace">

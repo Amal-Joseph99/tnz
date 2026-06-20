@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 const accountNav = [
   { label: 'Profile', to: '/profile' },
@@ -16,6 +17,8 @@ type BuyerAccountShellProps = {
 }
 
 export function BuyerAccountShell({ title, subtitle, children, action }: BuyerAccountShellProps) {
+  const { signOutWithConfirm } = useAuth()
+
   return (
     <section className="buyer-account-page">
       <div className="container buyer-account">
@@ -40,7 +43,9 @@ export function BuyerAccountShell({ title, subtitle, children, action }: BuyerAc
               </NavLink>
             ))}
           </nav>
-          <Link to="/buyer/signin" className="buyer-account__signout">Sign out</Link>
+          <button type="button" className="buyer-account__signout" onClick={() => void signOutWithConfirm()}>
+            Sign out
+          </button>
         </aside>
 
         <div className="buyer-account__main">

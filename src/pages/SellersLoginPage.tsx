@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { AuthPageShell } from '../components/AuthPageShell'
 import { signInSellerOrAdmin } from '../lib/sellerAuth'
 import { isValidEmail } from './authHelpers'
 
@@ -45,50 +46,40 @@ export function SellersLoginPage() {
   }
 
   return (
-    <section className="seller-login-page">
-      <div className="seller-login">
-        <div className="seller-login__card">
-          <div className="seller-login__header">
-            <p>Sell on AGTRENZ</p>
-            <h1>Seller Login</h1>
-            <span>Seller and admin login. Buyers must use <Link to="/buyer/signin">Buyer login</Link>. Admin accounts are created in Supabase backend only.</span>
-          </div>
+    <AuthPageShell title="Seller login" backTo="/">
+      {error && <div className="auth-message auth-message--error">{error}</div>}
+      {success && <div className="auth-message auth-message--success">{success}</div>}
 
-          {error && <div className="auth-message auth-message--error">{error}</div>}
-          {success && <div className="auth-message auth-message--success">{success}</div>}
+      <form className="seller-login__form" onSubmit={(event) => {
+        event.preventDefault()
+        void handleSubmit()
+      }}>
+        <label>
+          Email address
+          <input value={email} type="email" placeholder="seller@example.com" autoComplete="email" onChange={(event) => setEmail(event.target.value)} />
+        </label>
 
-          <form className="seller-login__form" onSubmit={(event) => {
-            event.preventDefault()
-            void handleSubmit()
-          }}>
-            <label>
-              Email address
-              <input value={email} type="email" placeholder="seller@example.com" autoComplete="email" onChange={(event) => setEmail(event.target.value)} />
-            </label>
+        <label>
+          Password
+          <input value={password} type="password" placeholder="Enter your password" autoComplete="current-password" onChange={(event) => setPassword(event.target.value)} />
+        </label>
 
-            <label>
-              Password
-              <input value={password} type="password" placeholder="Enter your password" autoComplete="current-password" onChange={(event) => setPassword(event.target.value)} />
-            </label>
-
-            <div className="seller-login__options">
-              <label>
-                <input type="checkbox" />
-                Remember me
-              </label>
-              <Link to="/seller/forgot-password">Forgot password?</Link>
-            </div>
-
-            <button type="submit" className="seller-login__submit" disabled={loading}>
-              {loading ? 'Checking access...' : 'Login'}
-            </button>
-          </form>
-
-          <p className="seller-login__signup">
-            New to AGTRENZ selling? <Link to="/seller/signup">Create your seller account</Link>
-          </p>
+        <div className="seller-login__options">
+          <label>
+            <input type="checkbox" />
+            Remember me
+          </label>
+          <Link to="/seller/forgot-password">Forgot password?</Link>
         </div>
-      </div>
-    </section>
+
+        <button type="submit" className="seller-login__submit" disabled={loading}>
+          {loading ? 'Checking access...' : 'Login'}
+        </button>
+      </form>
+
+      <p className="seller-login__signup">
+        New to AGTRENZ selling? <Link to="/seller/signup">Create your seller account</Link>
+      </p>
+    </AuthPageShell>
   )
 }

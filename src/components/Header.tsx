@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { useCurrency } from '../context/CurrencyContext'
+import { appendSearchHistory } from '../lib/searchHistory'
 import {
   CartIcon,
   ChevronDownIcon,
@@ -21,17 +23,27 @@ const menuLinks = [
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
-  const [signedIn, setSignedIn] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const navigate = useNavigate()
-  const { currency, locationLabel, loading, refreshLocation } = useCurrency()
+  const { currency, locationLabel, loading, pricingReady, refreshLocation } = useCurrency()
+  const { isSignedIn, signOutWithConfirm } = useAuth()
 
-  const handleAuthClick = () => {
-    setSignedIn((value) => !value)
-    setAccountOpen(false)
-  }
+  useEffect(() => {
+    if (isSignedIn) {
+      setAccountOpen(false)
+    }
+  }, [isSignedIn])
 
-  const handleSearch = () => {
-    navigate('/search')
+  const submitSearch = (query: string) => {
+    const trimmed = query.trim()
+    if (!trimmed) return
+
+    void appendSearchHistory({
+      searchInput: trimmed,
+      productName: trimmed,
+    })
+    navigate(`/search?q=${encodeURIComponent(trimmed)}`)
+    setMenuOpen(false)
   }
 
   return (
@@ -54,9 +66,15 @@ export function Header() {
 
         <form className="header__search" onSubmit={(event) => {
           event.preventDefault()
-          handleSearch()
+          submitSearch(searchQuery)
         }}>
-          <input type="search" placeholder="Search for products, brands..." aria-label="Search products" />
+          <input
+            type="search"
+            value={searchQuery}
+            placeholder="Search for products, brands..."
+            aria-label="Search products"
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
           <button type="submit" className="header__search-btn" aria-label="Search">
             <span className="header__search-text">Go</span>
             <SearchIcon />
@@ -67,7 +85,7 @@ export function Header() {
           <button
             type="button"
             className="header__location"
-            onClick={refreshLocation}
+            onClick={() => void refreshLocation()}
             title="Refresh location"
           >
             <LocationIcon />
@@ -75,7 +93,7 @@ export function Header() {
               {loading ? 'Locating…' : locationLabel}
             </span>
           </button>
-          <span className="header__currency">{currency}</span>
+          <span className="header__currency">{loading || !pricingReady ? '…' : currency}</span>
           <Link to="/sellerslandingpage" className="header__sell-now">
             Sell Now
           </Link>
@@ -106,13 +124,13 @@ export function Header() {
                 <Link to="/help" role="menuitem" onClick={() => setAccountOpen(false)}>
                   Help
                 </Link>
-                {signedIn ? (
-                  <button type="button" role="menuitem" onClick={handleAuthClick}>
-                    Signout
+                {isSignedIn ? (
+                  <button type="button" role="menuitem" onClick={() => void signOutWithConfirm()}>
+                    Sign out
                   </button>
                 ) : (
                   <Link to="/buyer/signin" role="menuitem" onClick={() => setAccountOpen(false)}>
-                    Signin
+                    Sign in
                   </Link>
                 )}
               </div>
@@ -120,7 +138,7 @@ export function Header() {
           </div>
           <Link to="/cart" className="header__cart" aria-label="Shopping cart">
             <CartIcon />
-            <span className="header__cart-badge">2</span>
+            <span className="header__cart-badge">0</span>
           </Link>
         </div>
       </div>
@@ -129,9 +147,15 @@ export function Header() {
         <div className="container">
           <form className="header__search header__search--mobile" onSubmit={(event) => {
             event.preventDefault()
-            handleSearch()
+            submitSearch(searchQuery)
           }}>
-            <input type="search" placeholder="Search products…" aria-label="Search products" />
+            <input
+              type="search"
+              value={searchQuery}
+              placeholder="Search products…"
+              aria-label="Search products"
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
             <button type="submit" className="header__search-btn" aria-label="Search">
               <span className="header__search-text">Go</span>
               <SearchIcon />
@@ -141,23 +165,26 @@ export function Header() {
       </div>
 
       <nav className={`header__drawer${menuOpen ? ' header__drawer--open' : ''}`} aria-hidden={!menuOpen}>
-        <button type="button" className="header__drawer-location" onClick={refreshLocation}>
+        <button type="button" className="header__drawer-location" onClick={() => void refreshLocation()}>
           <LocationIcon />
           <span>{loading ? 'Detecting location...' : locationLabel}</span>
         </button>
 
         <label className="header__drawer-currency">
           <span>Currency</span>
-          <strong>{currency}</strong>
+          <strong>{loading || !pricingReady ? '…' : currency}</strong>
         </label>
 
         <div className="header__drawer-auth">
-          <Link to={signedIn ? '/' : '/buyer/signin'} onClick={() => {
-            if (signedIn) handleAuthClick()
-            setMenuOpen(false)
-          }}>
-            {signedIn ? 'Signout' : 'Login'}
-          </Link>
+          {isSignedIn ? (
+            <button type="button" onClick={() => void signOutWithConfirm()}>
+              Sign out
+            </button>
+          ) : (
+            <Link to="/buyer/signin" onClick={() => setMenuOpen(false)}>
+              Login
+            </Link>
+          )}
           <Link to="/buyer/signup" onClick={() => setMenuOpen(false)}>
             Sign Up
           </Link>

@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { useCurrency } from '../context/CurrencyContext'
 
 const adminNavItems = [
   { label: 'Dashboard', to: '/admin/dashboard' },
@@ -21,9 +23,16 @@ type AdminDashboardShellProps = {
 }
 
 export function AdminDashboardShell({ title, subtitle, children }: AdminDashboardShellProps) {
+  const { signOutFromConsole } = useAuth()
+  const { adminCurrencyOptions, currency, loading, pricingReady, setAdminCurrency } = useCurrency()
+
   return (
     <section className="admin-console">
       <aside className="admin-console__sidebar">
+        <button type="button" className="console-back-btn" onClick={() => void signOutFromConsole()}>
+          ← Back
+        </button>
+
         <Link to="/admin/dashboard" className="admin-console__brand" aria-label="AGTRENZ Admin Console">
           <span>AG</span>TRENZ Admin
         </Link>
@@ -40,7 +49,9 @@ export function AdminDashboardShell({ title, subtitle, children }: AdminDashboar
             </NavLink>
           ))}
         </nav>
-        <Link to="/seller/signin" className="admin-console__signout">Sign out</Link>
+        <button type="button" className="admin-console__signout" onClick={() => void signOutFromConsole()}>
+          Sign out
+        </button>
       </aside>
 
       <div className="admin-console__workspace">
@@ -51,6 +62,21 @@ export function AdminDashboardShell({ title, subtitle, children }: AdminDashboar
             <p>{subtitle}</p>
           </div>
           <div className="admin-console__header-actions">
+            <label className="admin-console__currency">
+              <span>Currency</span>
+              <select
+                value={pricingReady ? currency : ''}
+                disabled={loading || !pricingReady || adminCurrencyOptions.length === 0}
+                onChange={(event) => void setAdminCurrency(event.target.value)}
+                aria-label="Admin display currency"
+              >
+                {adminCurrencyOptions.map((option) => (
+                  <option key={option.currencyCode} value={option.currencyCode}>
+                    {option.displayLabel}
+                  </option>
+                ))}
+              </select>
+            </label>
             <Link to="/admin/notifications" className="admin-console__notification">
               Alerts
               <strong>0</strong>

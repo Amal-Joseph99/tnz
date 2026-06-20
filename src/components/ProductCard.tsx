@@ -1,19 +1,26 @@
 import { Link } from 'react-router-dom'
 import { useCurrency } from '../context/CurrencyContext'
 import type { Product } from '../data/products'
+import { useAddToCart } from '../hooks/useAddToCart'
 import { CartIcon, EyeIcon, HeartIcon, StarIcon } from './Icons'
 
 type ProductCardProps = {
   product: Product
+  onOpen?: () => void
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, onOpen }: ProductCardProps) {
   const { formatPrice } = useCurrency()
+  const { requestAddToCart } = useAddToCart()
 
   return (
     <article className="product-card">
       <div className="product-card__image-wrap">
-        <Link to={`/product/${product.id}`} className="product-card__image-link">
+        <Link
+          to={`/product/${product.id}`}
+          className="product-card__image-link"
+          onClick={() => onOpen?.()}
+        >
           <img src={product.image} alt={product.title} className="product-card__image" />
         </Link>
         <div className="product-card__badges">
@@ -32,7 +39,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="product-card__body">
         <p className="product-card__brand">{product.brand}</p>
         <h3 className="product-card__title">
-          <Link to={`/product/${product.id}`}>{product.title}</Link>
+          <Link to={`/product/${product.id}`} onClick={() => onOpen?.()}>{product.title}</Link>
         </h3>
         <div className="product-card__rating">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -47,7 +54,11 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
             <span className="product-card__price">{formatPrice(product.price)}</span>
           </div>
-          <button type="button" className="product-card__cart-btn">
+          <button
+            type="button"
+            className="product-card__cart-btn"
+            onClick={() => void requestAddToCart()}
+          >
             <CartIcon />
             <span className="product-card__cart-label">Add to Cart</span>
           </button>

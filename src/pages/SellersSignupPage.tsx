@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
+import { AuthPageShell } from '../components/AuthPageShell'
 import { fetchSellerCountryOptions, type SellerCountryOption } from '../lib/sellerCountries'
 import { signUpSeller } from '../lib/sellerAuth'
 import { isValidEmail, isValidPassword } from './authHelpers'
@@ -97,109 +98,99 @@ export function SellersSignupPage() {
   }
 
   return (
-    <section className="seller-login-page">
-      <div className="seller-login">
-        <div className="seller-login__card">
-          <div className="seller-login__header">
-            <p>Seller Central</p>
-            <h1>Create seller account</h1>
-            <span>Seller registration only. Buyers use <Link to="/buyer/signup">Buyer signup</Link>. Admin accounts are created in Supabase backend only.</span>
+    <AuthPageShell title="Create account" backTo="/">
+      {error && <div className="auth-message auth-message--error">{error}</div>}
+      {success && <div className="auth-message auth-message--success">{success}</div>}
+
+      <form className="seller-login__form" onSubmit={(event) => {
+        event.preventDefault()
+        void handleSubmit()
+      }}>
+        <label>
+          Business name
+          <input
+            value={businessName}
+            type="text"
+            placeholder="Your store or company name"
+            autoComplete="organization"
+            required
+            onChange={(event) => setBusinessName(event.target.value)}
+          />
+        </label>
+        <label>
+          Country
+          <select
+            value={countryId}
+            disabled={loadingCountries}
+            required
+            onChange={(event) => setCountryId(event.target.value)}
+          >
+            <option value="">{loadingCountries ? 'Loading countries...' : 'Select country'}</option>
+            {countries.map((country) => (
+              <option key={country.id} value={country.id}>
+                {country.country_name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Base currency (locked)
+          <input
+            type="text"
+            value={selectedCountry ? `${selectedCountry.currency_code} · ${selectedCountry.country_name}` : 'Select a country first'}
+            readOnly
+            aria-readonly="true"
+            tabIndex={-1}
+          />
+        </label>
+        <label>
+          Seller email
+          <input
+            value={email}
+            type="email"
+            placeholder="seller@example.com"
+            autoComplete="email"
+            required
+            onChange={(event) => setEmail(event.target.value)}
+          />
+        </label>
+        <label>
+          Phone number
+          <div className="seller-phone-input">
+            <span className="seller-phone-input__prefix">
+              {selectedCountry ? `+${selectedCountry.isd_code}` : '+--'}
+            </span>
+            <input
+              value={phoneLocal}
+              type="tel"
+              placeholder="98765 43210"
+              autoComplete="tel-national"
+              required
+              disabled={!selectedCountry}
+              onChange={(event) => setPhoneLocal(event.target.value)}
+            />
           </div>
+        </label>
+        <label>
+          Password
+          <input
+            value={password}
+            type="password"
+            placeholder="Minimum 8 characters"
+            autoComplete="new-password"
+            minLength={8}
+            required
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        </label>
+        <button type="submit" className="seller-login__submit" disabled={submitting || loadingCountries}>
+          {submitting ? 'Creating account...' : 'Create seller account'}
+        </button>
+      </form>
 
-          {error && <div className="auth-message auth-message--error">{error}</div>}
-          {success && <div className="auth-message auth-message--success">{success}</div>}
-
-          <form className="seller-login__form" onSubmit={(event) => {
-            event.preventDefault()
-            void handleSubmit()
-          }}>
-            <label>
-              Business name
-              <input
-                value={businessName}
-                type="text"
-                placeholder="Your store or company name"
-                autoComplete="organization"
-                required
-                onChange={(event) => setBusinessName(event.target.value)}
-              />
-            </label>
-            <label>
-              Country
-              <select
-                value={countryId}
-                disabled={loadingCountries}
-                required
-                onChange={(event) => setCountryId(event.target.value)}
-              >
-                <option value="">{loadingCountries ? 'Loading countries...' : 'Select country'}</option>
-                {countries.map((country) => (
-                  <option key={country.id} value={country.id}>
-                    {country.country_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Base currency (locked)
-              <input
-                type="text"
-                value={selectedCountry ? `${selectedCountry.currency_code} · ${selectedCountry.country_name}` : 'Select a country first'}
-                readOnly
-                aria-readonly="true"
-                tabIndex={-1}
-              />
-            </label>
-            <label>
-              Seller email
-              <input
-                value={email}
-                type="email"
-                placeholder="seller@example.com"
-                autoComplete="email"
-                required
-                onChange={(event) => setEmail(event.target.value)}
-              />
-            </label>
-            <label>
-              Phone number
-              <div className="seller-phone-input">
-                <span className="seller-phone-input__prefix">
-                  {selectedCountry ? `+${selectedCountry.isd_code}` : '+--'}
-                </span>
-                <input
-                  value={phoneLocal}
-                  type="tel"
-                  placeholder="98765 43210"
-                  autoComplete="tel-national"
-                  required
-                  disabled={!selectedCountry}
-                  onChange={(event) => setPhoneLocal(event.target.value)}
-                />
-              </div>
-            </label>
-            <label>
-              Password
-              <input
-                value={password}
-                type="password"
-                placeholder="Minimum 8 characters"
-                autoComplete="new-password"
-                minLength={8}
-                required
-                onChange={(event) => setPassword(event.target.value)}
-              />
-            </label>
-            <button type="submit" className="seller-login__submit" disabled={submitting || loadingCountries}>
-              {submitting ? 'Creating account...' : 'Create seller account'}
-            </button>
-          </form>
-
-          <p className="seller-login__signup">
-            Already registered? <Link to="/seller/signin">Seller login</Link>
-          </p>
-        </div>
-      </div>
-    </section>
+      <p className="seller-login__signup">
+        Already registered? <Link to="/seller/signin">Seller login</Link>
+      </p>
+    </AuthPageShell>
   )
 }

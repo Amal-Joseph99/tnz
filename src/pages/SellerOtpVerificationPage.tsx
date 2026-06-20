@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { AuthPageShell } from '../components/AuthPageShell'
 import { getOtpValue, OTP_LENGTH, isValidOtp } from './authHelpers'
 import { supabase } from '../lib/supabase'
 
@@ -118,56 +119,55 @@ export function SellerOtpVerificationPage() {
   }
 
   return (
-    <section className="seller-otp-page">
-      <div className="seller-otp-card">
-        <span className="seller-otp-card__eyebrow">Seller Central</span>
-        <h1>Email verification</h1>
-        <p>Enter the 6-digit code sent to your registered seller email address.</p>
+    <AuthPageShell
+      title="Email verification"
+      subtitle="Enter the 6-digit code sent to your email."
+      backTo="/seller/signup"
+      otp
+    >
+      {message && <div className="auth-message auth-message--success" role="status">{message}</div>}
+      {error && <div className="auth-message auth-message--error" role="alert">{error}</div>}
 
-        {message && <div className="auth-message auth-message--success" role="status">{message}</div>}
-        {error && <div className="auth-message auth-message--error" role="alert">{error}</div>}
-
-        <form className="seller-otp-form" onSubmit={(event) => {
-          event.preventDefault()
-          void handleVerify()
-        }}>
-          <div className="seller-otp-form__inputs" aria-label="6 digit seller email code">
-            {otp.map((digit, index) => (
-              <input
-                key={`seller-otp-${index + 1}`}
-                ref={(element) => {
-                  inputRefs.current[index] = element
-                }}
-                value={digit}
-                inputMode="numeric"
-                maxLength={1}
-                aria-label={`Code digit ${index + 1}`}
-                disabled={!email || verifying}
-                onChange={(event) => handleOtpChange(index, event.target.value)}
-                onKeyDown={(event) => handleKeyDown(index, event.key)}
-              />
-            ))}
-          </div>
-
-          <button type="submit" className="seller-otp-form__verify" disabled={!email || verifying}>
-            {verifying ? 'Verifying...' : 'Verify and open dashboard'}
-          </button>
-        </form>
-
-        <div className="seller-otp-card__resend">
-          {secondsLeft > 0 ? (
-            <span>Resend code in {secondsLeft}s</span>
-          ) : (
-            <button type="button" onClick={() => void handleResend()} disabled={!email || verifying}>
-              Resend code
-            </button>
-          )}
+      <form className="seller-otp-form" onSubmit={(event) => {
+        event.preventDefault()
+        void handleVerify()
+      }}>
+        <div className="seller-otp-form__inputs" aria-label="6 digit seller email code">
+          {otp.map((digit, index) => (
+            <input
+              key={`seller-otp-${index + 1}`}
+              ref={(element) => {
+                inputRefs.current[index] = element
+              }}
+              value={digit}
+              inputMode="numeric"
+              maxLength={1}
+              aria-label={`Code digit ${index + 1}`}
+              disabled={!email || verifying}
+              onChange={(event) => handleOtpChange(index, event.target.value)}
+              onKeyDown={(event) => handleKeyDown(index, event.key)}
+            />
+          ))}
         </div>
 
-        <Link to="/seller/signup" className="seller-otp-card__back">
-          Change seller details
-        </Link>
+        <button type="submit" className="seller-otp-form__verify" disabled={!email || verifying}>
+          {verifying ? 'Verifying...' : 'Verify and open dashboard'}
+        </button>
+      </form>
+
+      <div className="seller-otp-card__resend">
+        {secondsLeft > 0 ? (
+          <span>Resend code in {secondsLeft}s</span>
+        ) : (
+          <button type="button" onClick={() => void handleResend()} disabled={!email || verifying}>
+            Resend code
+          </button>
+        )}
       </div>
-    </section>
+
+      <Link to="/seller/signup" className="seller-otp-card__back">
+        Change seller details
+      </Link>
+    </AuthPageShell>
   )
 }

@@ -33,6 +33,7 @@ This repo includes `amplify.yml`. Connect GitHub in the Amplify console.
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_SITE_URL=https://main.d13h6a6205mdyf.amplifyapp.com
+VITE_OPENCAGE_API_KEY=your_opencage_api_key
 ```
 
 4. **SPA rewrite** (Amplify → App settings → Rewrites and redirects):
