@@ -80,35 +80,36 @@ export function AdminDashboardPage() {
       title="Dashboard"
       subtitle="Monitor marketplace health, approvals, disputes, and operational KPIs."
     >
-      <section className="admin-kpi-grid">
-        <article>
+      {error && <div className="auth-message auth-message--error admin-bento__alert">{error}</div>}
+      {message && <div className="auth-message auth-message--success admin-bento__alert">{message}</div>}
+
+      <section className="admin-bento" aria-label="Admin dashboard overview">
+        <article className="admin-bento__cell admin-bento__cell--stat admin-bento__cell--accent-slate">
           <span>GMV today</span>
           <strong>$0</strong>
           <p>No marketplace volume yet</p>
         </article>
-        <article>
+
+        <article className="admin-bento__cell admin-bento__cell--stat admin-bento__cell--accent-blue">
           <span>Orders today</span>
           <strong>0</strong>
           <p>No orders recorded</p>
         </article>
-        <article>
+
+        <article className="admin-bento__cell admin-bento__cell--stat admin-bento__cell--accent-amber">
           <span>Pending KYC</span>
           <strong>{pendingKyc}</strong>
           <p>Seller verification queue</p>
         </article>
-        <article>
+
+        <article className="admin-bento__cell admin-bento__cell--stat admin-bento__cell--accent-violet">
           <span>Listing reviews</span>
           <strong>{pendingProducts}</strong>
           <p>Awaiting publication approval</p>
         </article>
-      </section>
 
-      {error && <div className="auth-message auth-message--error">{error}</div>}
-      {message && <div className="auth-message auth-message--success">{message}</div>}
-
-      <section className="admin-console-grid">
-        <article className="admin-console-card admin-console-card--wide">
-          <div className="admin-console-card__header">
+        <article className="admin-bento__cell admin-bento__cell--wide admin-bento__cell--tall">
+          <div className="admin-bento__head">
             <div>
               <h2>Marketplace volume</h2>
               <p>Order value trend for the current week</p>
@@ -121,8 +122,8 @@ export function AdminDashboardPage() {
           />
         </article>
 
-        <article className="admin-console-card">
-          <div className="admin-console-card__header">
+        <article className="admin-bento__cell">
+          <div className="admin-bento__head">
             <div>
               <h2>Platform health</h2>
               <p>Operational status overview</p>
@@ -136,8 +137,8 @@ export function AdminDashboardPage() {
           </div>
         </article>
 
-        <article className="admin-console-card">
-          <div className="admin-console-card__header">
+        <article className="admin-bento__cell">
+          <div className="admin-bento__head">
             <div>
               <h2>Priority actions</h2>
               <p>Tasks requiring admin attention</p>
@@ -152,11 +153,9 @@ export function AdminDashboardPage() {
             <Link to="/admin/sellers">View seller directory</Link>
           </div>
         </article>
-      </section>
 
-      <div className="admin-panel-grid">
-        <section className="admin-panel">
-          <div className="admin-panel__header admin-panel__header--toolbar">
+        <article className="admin-bento__cell admin-bento__cell--span-2">
+          <div className="admin-bento__head">
             <div>
               <h2>Seller KYC approval</h2>
               <p>Identity and business verification queue.</p>
@@ -182,10 +181,10 @@ export function AdminDashboardPage() {
               <Link to="/admin/kyc">View all KYC requests</Link>
             </div>
           )}
-        </section>
+        </article>
 
-        <section className="admin-panel">
-          <div className="admin-panel__header admin-panel__header--toolbar">
+        <article className="admin-bento__cell admin-bento__cell--span-2">
+          <div className="admin-bento__head">
             <div>
               <h2>Product listing approval</h2>
               <p>Listings blocked until admin publishes them.</p>
@@ -210,34 +209,34 @@ export function AdminDashboardPage() {
               <Link to="/admin/products">View all product submissions</Link>
             </div>
           )}
-        </section>
-      </div>
+        </article>
 
-      <section className="admin-panel">
-        <div className="admin-panel__header admin-panel__header--toolbar">
-          <div>
-            <h2>Recent orders</h2>
-            <p>Latest marketplace orders across all sellers.</p>
+        <article className="admin-bento__cell admin-bento__cell--span-3">
+          <div className="admin-bento__head">
+            <div>
+              <h2>Recent orders</h2>
+              <p>Latest marketplace orders across all sellers.</p>
+            </div>
+            <Link to="/admin/orders" className="admin-btn admin-btn--ghost">Manage orders</Link>
           </div>
-          <Link to="/admin/orders" className="admin-btn admin-btn--ghost">Manage orders</Link>
-        </div>
-        <PanelEmptyState
-          title="No orders yet"
-          message="Marketplace orders will appear here once buyers start purchasing."
-        />
-      </section>
+          <PanelEmptyState
+            title="No orders yet"
+            message="Marketplace orders will appear here once buyers start purchasing."
+          />
+        </article>
 
-      <section className="admin-panel">
-        <div className="admin-panel__header admin-panel__header--toolbar">
-          <div>
-            <h2>Recent platform activity</h2>
-            <p>Audit trail of seller, order, and compliance events.</p>
+        <article className="admin-bento__cell">
+          <div className="admin-bento__head">
+            <div>
+              <h2>Platform activity</h2>
+              <p>Audit trail of seller, order, and compliance events.</p>
+            </div>
           </div>
-        </div>
-        <PanelEmptyState
-          title="No platform activity yet"
-          message="Audit events will be recorded here as sellers and orders go live."
-        />
+          <PanelEmptyState
+            title="No platform activity yet"
+            message="Audit events will be recorded here as sellers and orders go live."
+          />
+        </article>
       </section>
     </AdminDashboardShell>
   )

@@ -1,0 +1,19 @@
+-- Manually seeded auth.users rows can leave token columns NULL, which breaks GoTrue login
+-- with "Database error querying schema". Normal signups store empty strings instead.
+
+UPDATE auth.users
+SET
+  confirmation_token = COALESCE(confirmation_token, ''),
+  recovery_token = COALESCE(recovery_token, ''),
+  email_change = COALESCE(email_change, ''),
+  email_change_token_new = COALESCE(email_change_token_new, ''),
+  phone_change = COALESCE(phone_change, ''),
+  phone_change_token = COALESCE(phone_change_token, ''),
+  reauthentication_token = COALESCE(reauthentication_token, '')
+WHERE confirmation_token IS NULL
+   OR recovery_token IS NULL
+   OR email_change IS NULL
+   OR email_change_token_new IS NULL
+   OR phone_change IS NULL
+   OR phone_change_token IS NULL
+   OR reauthentication_token IS NULL;
