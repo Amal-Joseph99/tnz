@@ -71,11 +71,12 @@ import { SustainabilityPage } from './pages/SustainabilityPage'
 import { TrackOrderPage } from './pages/TrackOrderPage'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
+import { showMarketplaceChrome } from './lib/authRoutes'
 import './App.css'
 
 function AppContent() {
   const location = useLocation()
-  const isRestrictedConsole = location.pathname.startsWith('/seller/') || location.pathname.startsWith('/admin/')
+  const marketplaceChrome = showMarketplaceChrome(location.pathname)
 
   useEffect(() => {
     void preloadDialogMessages(['sign_out', 'delete', 'remove', 'guest_add_to_cart', 'console_sign_out', 'delete_review'])
@@ -84,7 +85,7 @@ function AppContent() {
   return (
     <CurrencyProvider>
       <div className="app">
-        {!isRestrictedConsole && <Header />}
+        {marketplaceChrome && <Header />}
         <main>
           <RouteAccessGuard>
             <Routes>
@@ -172,7 +173,7 @@ function AppContent() {
             </Routes>
           </RouteAccessGuard>
         </main>
-        {!isRestrictedConsole && <Footer />}
+        {marketplaceChrome && <Footer />}
       </div>
     </CurrencyProvider>
   )

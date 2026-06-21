@@ -3,8 +3,8 @@
   background: #eef4fb;
 }
 
-.app main {
-  background: #eef4fb;
+.app main:has(.auth-page) {
+  background: transparent;
 }
 
 /* Header */
@@ -1182,29 +1182,72 @@
 }
 
 /* Auth pages */
+.auth-page {
+  min-height: 100vh;
+  padding: 28px 20px 40px;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(250, 204, 21, 0.2), transparent 30%),
+    radial-gradient(circle at 82% 0%, rgba(8, 66, 140, 0.12), transparent 34%),
+    linear-gradient(160deg, #dbe7f5 0%, #edf2f8 42%, #f4f7fb 100%);
+}
+
 .auth-page__wrap {
-  width: min(100%, 420px);
+  width: min(100%, 440px);
   margin: 0 auto;
+}
+
+.auth-page__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 20px;
+}
+
+.auth-page__logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-page__logo .site-logo {
+  height: 42px;
+  width: auto;
+}
+
+.auth-page__portal {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.auth-page__card-wrap {
+  width: 100%;
+}
+
+.auth-page__card {
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
 }
 
 .auth-page__back {
   display: inline-flex;
   align-items: center;
   margin-bottom: 10px;
-  color: #475569;
-  font-size: 14px;
-  font-weight: 600;
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
   text-decoration: none;
 }
 
 .auth-page__back:hover {
   color: #0f172a;
-}
-
-.seller-login-page {
-  min-height: calc(100vh - 70px);
-  padding: 20px 20px 40px;
-  background: linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%);
+  background: #fff;
 }
 
 .seller-login {
@@ -1386,12 +1429,6 @@
 }
 
 /* Seller OTP verification */
-.seller-otp-page {
-  min-height: calc(100vh - 70px);
-  padding: 20px 20px 40px;
-  background: linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%);
-}
-
 .seller-otp-page .seller-otp-card {
   width: 100%;
 }
@@ -5665,9 +5702,7 @@
     min-width: 480px;
   }
 
-  .seller-login-page,
-  .seller-otp-page,
-  .seller-dashboard-page {
+  .auth-page {
     padding: 24px 14px 38px;
   }
 
