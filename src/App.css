@@ -2357,7 +2357,349 @@
   margin-top: 8px;
 }
 
+/* -------------------------------------------------------------------------- */
+/* Admin KYC verification form (A4 paper layout)                                */
+/* -------------------------------------------------------------------------- */
+
+.admin-panel--kyc-form {
+  padding: 24px;
+  background: #e8edf3;
+}
+
+.kyc-verification-form {
+  width: min(100%, 794px);
+  margin: 0 auto;
+  padding: 42px 48px 36px;
+  border: 1px solid #cbd5e1;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 12px 32px rgba(15, 23, 42, 0.08);
+  color: #0f172a;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.kyc-verification-form__header {
+  margin-bottom: 28px;
+  padding-bottom: 18px;
+  border-bottom: 2px solid #0f172a;
+}
+
+.kyc-verification-form__title {
+  margin: 0 0 16px;
+  color: #0f172a;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.kyc-verification-form__meta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.kyc-verification-form__meta-left p {
+  margin: 0 0 4px;
+  color: #334155;
+  font-size: 13px;
+}
+
+.kyc-verification-form__meta-left strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.kyc-verification-form__status {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.kyc-verification-form__status--pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.kyc-verification-form__status--approved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.kyc-verification-form__status--rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.kyc-verification-form__identity {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.kyc-verification-form__photo {
+  display: grid;
+  gap: 8px;
+}
+
+.kyc-verification-form__photo-img {
+  width: 100%;
+  height: 190px;
+  object-fit: cover;
+  border: 1px solid #94a3b8;
+  background: #f8fafc;
+}
+
+.kyc-verification-form__photo-placeholder {
+  display: grid;
+  place-items: center;
+  min-height: 190px;
+  padding: 12px;
+  border: 1px dashed #94a3b8;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  text-align: center;
+}
+
+.kyc-verification-form__personal {
+  display: grid;
+  gap: 10px;
+}
+
+.kyc-form-section {
+  margin-bottom: 22px;
+  padding-top: 4px;
+}
+
+.kyc-form-section__title {
+  margin: 0 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #cbd5e1;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.kyc-form-section__label {
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.kyc-form-section__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 20px;
+}
+
+.kyc-form-field {
+  display: grid;
+  gap: 4px;
+}
+
+.kyc-form-field__label {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.kyc-form-field__value {
+  color: #0f172a;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.kyc-form-documents {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 14px;
+}
+
+.kyc-form-documents__item {
+  margin: 0;
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+}
+
+.kyc-form-documents__item figcaption {
+  margin-bottom: 8px;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.kyc-form-documents__item img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border: 1px solid #94a3b8;
+  background: #fff;
+}
+
+.kyc-form-documents__link,
+.kyc-form-documents__missing {
+  display: block;
+  font-size: 12px;
+}
+
+.kyc-form-documents__link {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.kyc-form-section--policies {
+  padding: 14px 16px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+}
+
+.kyc-form-policies {
+  display: grid;
+  gap: 10px;
+}
+
+.kyc-form-policy {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.kyc-form-policy--accepted {
+  color: #0f172a;
+}
+
+.kyc-form-policy__box {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border: 2px solid #94a3b8;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.kyc-form-policy--accepted .kyc-form-policy__box {
+  border-color: #16a34a;
+  background: #dcfce7;
+}
+
+.kyc-form-policy__date {
+  color: #64748b;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.kyc-form-policies__note {
+  margin: 12px 0 0;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.kyc-form-policies__note a {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.kyc-form-section--rejection p {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 13px;
+}
+
+.kyc-verification-form__loading {
+  margin: 0;
+  padding: 24px 0;
+  color: #64748b;
+  font-size: 14px;
+  text-align: center;
+}
+
+.kyc-verification-form__actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 2px solid #0f172a;
+}
+
+.kyc-form-btn {
+  min-width: 148px;
+  padding: 11px 18px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.kyc-form-btn--approve {
+  border-color: #16a34a;
+  background: #16a34a;
+  color: #fff;
+}
+
+.kyc-form-btn--reject {
+  border-color: #dc2626;
+  background: #fff;
+  color: #dc2626;
+}
+
+@media (max-width: 768px) {
+  .kyc-verification-form {
+    padding: 24px 18px;
+  }
+
+  .kyc-verification-form__identity,
+  .kyc-form-section__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kyc-form-policy {
+    grid-template-columns: 22px minmax(0, 1fr);
+  }
+
+  .kyc-form-policy__date {
+    grid-column: 2;
+  }
+
+  .kyc-verification-form__actions {
+    flex-direction: column;
+  }
+}
+
 .admin-approval-card__actions button {
+  min-width: 88px;
   min-height: 34px;
   padding: 0 13px;
   border: none;

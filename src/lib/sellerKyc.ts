@@ -109,6 +109,21 @@ export function formatKycDocumentLabel(documentType: string, documentSlot?: numb
   return documentSlot ? `${label} (upload ${documentSlot})` : label
 }
 
+export const KYC_POLICY_ACCEPTANCE_ITEMS = [
+  {
+    field: 'terms_accepted_at',
+    label: 'I have accepted the AGTRENZ Terms of Service and Privacy Policy.',
+  },
+  {
+    field: 'seller_agreement_accepted_at',
+    label: 'I have accepted the AGTRENZ Seller Agreement.',
+  },
+  {
+    field: 'shipping_return_policy_accepted_at',
+    label: 'I have accepted the AGTRENZ Shipping Policy and Return Policy.',
+  },
+] as const
+
 export function kycDocumentKey(documentType: KycDocumentType, documentSlot: KycDocumentSlot) {
   return `${documentType}:${documentSlot}`
 }

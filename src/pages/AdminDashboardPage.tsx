@@ -7,12 +7,13 @@ import {
   fetchProductQueue,
   reviewSellerKyc,
   reviewSellerProduct,
+  type KycQueueItem,
 } from '../lib/adminApprovals'
 
 export function AdminDashboardPage() {
   const [pendingKyc, setPendingKyc] = useState(0)
   const [pendingProducts, setPendingProducts] = useState(0)
-  const [priorityKyc, setPriorityKyc] = useState<Awaited<ReturnType<typeof fetchKycQueue>>[number] | null>(null)
+  const [priorityKyc, setPriorityKyc] = useState<KycQueueItem | null>(null)
   const [priorityProduct, setPriorityProduct] = useState<Awaited<ReturnType<typeof fetchProductQueue>>[number] | null>(null)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -26,7 +27,10 @@ export function AdminDashboardPage() {
 
     setPendingKyc(counts.pendingKyc)
     setPendingProducts(counts.pendingProducts)
-    setPriorityKyc(kycQueue[0] ?? null)
+    setPriorityKyc(kycQueue.items[0] ?? null)
+    if (kycQueue.error) {
+      setError(kycQueue.error)
+    }
     setPriorityProduct(productQueue[0] ?? null)
   }
 

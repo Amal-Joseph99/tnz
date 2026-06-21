@@ -83,16 +83,30 @@ export type AdminProductDetail = {
   }>
 }
 
-export async function fetchKycQueue(status?: string): Promise<KycQueueItem[]> {
-  if (!supabase) return []
+export type FetchKycQueueResult = {
+  items: KycQueueItem[]
+  error?: string
+}
+
+export async function fetchKycQueue(status?: string): Promise<FetchKycQueueResult> {
+  if (!supabase) {
+    return { items: [], error: 'Supabase is not configured.' }
+  }
 
   const { data, error } = await supabase.rpc('list_seller_kyc_submissions', {
     p_status: status ?? null,
   })
 
-  if (error || !data) return []
+  if (error) {
+    return { items: [], error: error.message }
+  }
 
-  return data.map((row: Record<string, unknown>) => ({
+  if (!data) {
+    return { items: [], error: 'No response from server.' }
+  }
+
+  return {
+    items: data.map((row: Record<string, unknown>) => ({
     userId: String(row.user_id),
     kycId: String(row.kyc_id),
     status: String(row.status),
@@ -111,7 +125,8 @@ export async function fetchKycQueue(status?: string): Promise<KycQueueItem[]> {
     signupBusinessName: String(row.signup_business_name),
     countryName: String(row.country_name),
     phone: String(row.phone),
-  }))
+  })),
+  }
 }
 
 export async function reviewSellerKyc(

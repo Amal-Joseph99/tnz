@@ -45,8 +45,8 @@ export function RejectionReasonDialog({
         aria-labelledby="rejection-dialog-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <h2 id="rejection-dialog-title">Rejection reason</h2>
-        <p>Select a template or enter a custom reason for the seller.</p>
+        <h2 id="rejection-dialog-title">Confirm KYC rejection</h2>
+        <p>Select a template or enter a custom reason. The seller will be notified immediately.</p>
         {loading ? (
           <p>Loading rejection templates...</p>
         ) : (
