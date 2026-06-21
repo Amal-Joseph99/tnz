@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { AuthPageShell } from '../components/AuthPageShell'
+import { PasswordField } from '../components/auth/PasswordField'
 import { normalizeAuthEmail } from '../lib/authOtp'
 import { signUpBuyer } from '../lib/buyerAuth'
 import { isValidEmail, isValidPassword } from './authHelpers'
@@ -48,7 +49,18 @@ export function SignUpPage() {
   }
 
   return (
-    <AuthPageShell title="Create account" fallbackBack="/">
+    <AuthPageShell
+      title="Create account"
+      subtitle="Create your buyer account to shop on AGTRENZ."
+      portal="buyer"
+      fallbackBack="/"
+      footer={
+        <>
+          <span />
+          <Link to="/buyer/signin">Buyer login</Link>
+        </>
+      }
+    >
       {error && <div className="auth-message auth-message--error">{error}</div>}
       {success && <div className="auth-message auth-message--success">{success}</div>}
 
@@ -78,26 +90,18 @@ export function SignUpPage() {
             onChange={(event) => setEmail(event.target.value)}
           />
         </label>
-        <label>
-          Password
-          <input
-            value={password}
-            type="password"
-            placeholder="Minimum 8 characters"
-            autoComplete="new-password"
-            minLength={8}
-            required
-            onChange={(event) => setPassword(event.target.value)}
-          />
-        </label>
+        <PasswordField
+          value={password}
+          onChange={setPassword}
+          placeholder="Minimum 8 characters"
+          autoComplete="new-password"
+          required
+          minLength={8}
+        />
         <button type="submit" className="seller-login__submit" disabled={loading}>
-          {loading ? 'Creating account...' : 'Create buyer account'}
+          {loading ? 'Creating account...' : 'Create account'}
         </button>
       </form>
-
-      <p className="seller-login__signup">
-        Already have an account? <Link to="/buyer/signin">Buyer login</Link>
-      </p>
     </AuthPageShell>
   )
 }

@@ -1184,24 +1184,74 @@
 /* Auth pages */
 .auth-page {
   min-height: 100vh;
-  padding: 28px 20px 40px;
+  padding: 28px 24px 40px;
   background:
-    radial-gradient(circle at 18% 8%, rgba(250, 204, 21, 0.2), transparent 30%),
-    radial-gradient(circle at 82% 0%, rgba(8, 66, 140, 0.12), transparent 34%),
-    linear-gradient(160deg, #dbe7f5 0%, #edf2f8 42%, #f4f7fb 100%);
+    radial-gradient(ellipse 85% 65% at 0% 0%, #c9f5ea 0%, transparent 72%),
+    radial-gradient(ellipse 75% 58% at 100% 0%, #d5d8ff 0%, transparent 70%),
+    radial-gradient(ellipse 78% 62% at 100% 100%, #d9c0f0 0%, transparent 74%),
+    radial-gradient(ellipse 72% 58% at 0% 100%, #bfe0ff 0%, transparent 72%),
+    linear-gradient(135deg, #d4f8f2 0%, #e2e8ff 42%, #ebe0fa 100%);
 }
 
-.auth-page__wrap {
-  width: min(100%, 440px);
+.auth-page__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+  align-items: center;
+  gap: clamp(24px, 5vw, 72px);
+  width: min(100%, 980px);
+  margin: 0 auto;
+}
+
+.auth-bento {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  width: min(100%, 430px);
+  margin: 0 auto;
+}
+
+.auth-bento__tile {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.auth-bento__tile--image {
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.auth-bento__tile--lavender {
+  background-color: #d8c4ef;
+}
+
+.auth-bento__tile--quote {
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: #ff6b1a;
+  color: #fff;
+  text-align: center;
+}
+
+.auth-bento__tile--quote p {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(16px, 2vw, 20px);
+  line-height: 1.35;
+}
+
+.auth-page__panel {
+  width: 100%;
+  max-width: 360px;
   margin: 0 auto;
 }
 
 .auth-page__brand {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  margin: 8px 0 20px;
+  justify-content: center;
+  margin-bottom: 8px;
 }
 
 .auth-page__logo {
@@ -1211,43 +1261,138 @@
 }
 
 .auth-page__logo .site-logo {
-  height: 42px;
+  height: 52px;
   width: auto;
 }
 
-.auth-page__portal {
-  color: #475569;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+.auth-page__title {
+  margin: 0 0 6px;
+  color: #111827;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  text-align: center;
 }
 
-.auth-page__card-wrap {
-  width: 100%;
+.auth-page__lead {
+  margin: 0 0 22px;
+  color: #8b8b8b;
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: center;
 }
 
-.auth-page__card {
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+.auth-page__content {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-page__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+  color: #8b8b8b;
+  font-size: 13px;
+}
+
+.auth-page__footer a {
+  color: #8b8b8b;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-page__footer a:hover {
+  color: #111827;
 }
 
 .auth-page__back {
   display: inline-flex;
   align-items: center;
-  margin-bottom: 10px;
-  padding: 6px 10px;
-  border: 1px solid #cbd5e1;
+  margin: 0 0 18px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.55);
   color: #334155;
   font-size: 13px;
   font-weight: 700;
-  text-decoration: none;
 }
 
 .auth-page__back:hover {
   color: #0f172a;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.auth-field {
+  display: grid;
+  gap: 8px;
+}
+
+.auth-field__label {
+  color: #4b5563;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.auth-field__password {
+  position: relative;
+}
+
+.auth-field__password input,
+.seller-login__form input[type='text'],
+.seller-login__form input[type='email'],
+.seller-login__form input[type='password'],
+.seller-login__form input[type='tel'],
+.seller-login__form select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 999px;
   background: #fff;
+  color: #111827;
+  font-size: 14px;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.auth-field__password input {
+  padding-right: 46px;
+}
+
+.auth-field__password input:focus,
+.seller-login__form input:focus,
+.seller-login__form select:focus {
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.12);
+}
+
+.auth-field__toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #6b7280;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.auth-field__toggle:hover {
+  color: #111827;
+  background: #f3f4f6;
+}
+
+.auth-field__toggle svg {
+  width: 18px;
+  height: 18px;
 }
 
 .seller-login {
@@ -1255,11 +1400,11 @@
 }
 
 .seller-login__card {
-  padding: 22px 20px;
-  border: 1px solid #d9e2ef;
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.09);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .seller-login__header--center {
@@ -1312,36 +1457,16 @@
 
 .seller-login__form {
   display: grid;
-  gap: 12px;
-  margin-top: 16px;
+  gap: 14px;
+  margin-top: 0;
 }
 
 .seller-login__form label {
   display: grid;
-  gap: 6px;
-  color: #0f172a;
+  gap: 8px;
+  color: #4b5563;
   font-size: 13px;
-  font-weight: 700;
-}
-
-.seller-login__form input[type='text'],
-.seller-login__form input[type='email'],
-.seller-login__form input[type='password'],
-.seller-login__form input[type='tel'],
-.seller-login__form select {
-  width: 100%;
-  min-height: 42px;
-  padding: 0 12px;
-  border: 1px solid #c7d0dc;
-  border-radius: 6px;
-  color: #111827;
-  font-size: 14px;
-  outline: none;
-}
-
-.seller-login__form input:focus {
-  border-color: #f0c14b;
-  box-shadow: 0 0 0 3px rgba(240, 193, 75, 0.28);
+  font-weight: 600;
 }
 
 .auth-gate-loading {
@@ -1359,15 +1484,16 @@
 
 .seller-phone-input__prefix {
   align-items: center;
-  background: #f3f4f6;
-  border: 1px solid #c7d0dc;
-  border-radius: 6px;
+  background: #fff;
+  border: none;
+  border-radius: 999px;
   color: #374151;
   display: inline-flex;
   font-size: 14px;
   font-weight: 600;
-  min-height: 42px;
-  padding: 0 12px;
+  min-height: 46px;
+  padding: 0 14px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .seller-phone-input input {
@@ -1404,18 +1530,26 @@
 }
 
 .seller-login__submit {
-  min-height: 42px;
-  border: 1px solid #a88734;
-  border-radius: 6px;
-  background: linear-gradient(#f7dfa5, #f0c14b);
-  color: #111827;
-  font-size: 14px;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 4px;
+  border: none;
+  border-radius: 999px;
+  background: #111827;
+  color: #fff;
+  font-size: 15px;
   font-weight: 700;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.16);
+  cursor: pointer;
+  box-shadow: none;
 }
 
 .seller-login__submit:hover {
-  background: linear-gradient(#f5d78e, #eeb933);
+  background: #000;
+}
+
+.seller-login__submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .seller-login__signup {
@@ -1435,11 +1569,11 @@
 
 .seller-otp-card {
   width: 100%;
-  padding: 22px 20px;
-  border: 1px solid #d9e2ef;
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.09);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .seller-otp-card h1 {
@@ -1487,14 +1621,20 @@
 }
 
 .seller-otp-form__verify {
-  min-height: 42px;
-  border: 1px solid #a88734;
-  border-radius: 6px;
-  background: linear-gradient(#f7dfa5, #f0c14b);
-  color: #111827;
-  font-size: 14px;
+  width: 100%;
+  min-height: 48px;
+  border: none;
+  border-radius: 999px;
+  background: #111827;
+  color: #fff;
+  font-size: 15px;
   font-weight: 700;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.16);
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.seller-otp-form__verify:hover {
+  background: #000;
 }
 
 .seller-otp-card__resend {
@@ -5700,6 +5840,16 @@
 
   .product-detail__table div {
     min-width: 480px;
+  }
+
+  .auth-page__layout {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .auth-bento {
+    width: min(100%, 320px);
+    gap: 10px;
   }
 
   .auth-page {

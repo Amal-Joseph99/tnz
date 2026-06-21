@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AuthPageShell } from '../components/AuthPageShell'
+import { PasswordField } from '../components/auth/PasswordField'
 import { signInSellerOrAdmin } from '../lib/sellerAuth'
 import { isValidEmail } from './authHelpers'
 
@@ -46,40 +47,47 @@ export function SellersLoginPage() {
   }
 
   return (
-    <AuthPageShell title="Seller login" fallbackBack="/">
+    <AuthPageShell
+      fallbackBack="/"
+      footer={
+        <>
+          <Link to="/seller/forgot-password">Forgot password?</Link>
+          <Link to="/seller/signup">Create account</Link>
+        </>
+      }
+    >
       {error && <div className="auth-message auth-message--error">{error}</div>}
       {success && <div className="auth-message auth-message--success">{success}</div>}
 
-      <form className="seller-login__form" onSubmit={(event) => {
-        event.preventDefault()
-        void handleSubmit()
-      }}>
+      <form
+        className="seller-login__form"
+        onSubmit={(event) => {
+          event.preventDefault()
+          void handleSubmit()
+        }}
+      >
         <label>
           Email address
-          <input value={email} type="email" placeholder="seller@example.com" autoComplete="email" onChange={(event) => setEmail(event.target.value)} />
+          <input
+            value={email}
+            type="email"
+            placeholder="you@example.com"
+            autoComplete="email"
+            onChange={(event) => setEmail(event.target.value)}
+          />
         </label>
 
-        <label>
-          Password
-          <input value={password} type="password" placeholder="Enter your password" autoComplete="current-password" onChange={(event) => setPassword(event.target.value)} />
-        </label>
-
-        <div className="seller-login__options">
-          <label>
-            <input type="checkbox" />
-            Remember me
-          </label>
-          <Link to="/seller/forgot-password">Forgot password?</Link>
-        </div>
+        <PasswordField
+          value={password}
+          onChange={setPassword}
+          placeholder="Enter your password"
+          autoComplete="current-password"
+        />
 
         <button type="submit" className="seller-login__submit" disabled={loading}>
           {loading ? 'Checking access...' : 'Login'}
         </button>
       </form>
-
-      <p className="seller-login__signup">
-        New to AGTRENZ selling? <Link to="/seller/signup">Create your seller account</Link>
-      </p>
     </AuthPageShell>
   )
 }

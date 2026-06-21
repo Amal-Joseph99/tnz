@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AuthPageShell } from '../components/AuthPageShell'
+import { PasswordField } from '../components/auth/PasswordField'
 import { updateAuthenticatedPassword } from '../lib/authOtp'
 import { verifyLoginPortal } from '../lib/portalAuth'
 import { supabase } from '../lib/supabase'
@@ -58,14 +59,20 @@ export function SellerResetPasswordPage() {
         event.preventDefault()
         void handleSubmit()
       }}>
-        <label>
-          New password
-          <input value={password} type="password" placeholder="Minimum 8 characters" onChange={(event) => setPassword(event.target.value)} />
-        </label>
-        <label>
-          Confirm password
-          <input value={confirmPassword} type="password" placeholder="Re-enter new password" onChange={(event) => setConfirmPassword(event.target.value)} />
-        </label>
+        <PasswordField
+          label="New password"
+          value={password}
+          onChange={setPassword}
+          placeholder="Minimum 8 characters"
+          autoComplete="new-password"
+        />
+        <PasswordField
+          label="Confirm password"
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+          placeholder="Re-enter new password"
+          autoComplete="new-password"
+        />
         <button type="submit" className="seller-login__submit" disabled={submitting}>
           {submitting ? 'Saving...' : 'Save password and sign in'}
         </button>

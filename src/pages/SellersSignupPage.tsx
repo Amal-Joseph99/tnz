@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { AuthPageShell } from '../components/AuthPageShell'
+import { PasswordField } from '../components/auth/PasswordField'
 import { fetchSellerCountryOptions, type SellerCountryOption } from '../lib/sellerCountries'
 import { normalizeAuthEmail } from '../lib/authOtp'
 import { signUpSeller } from '../lib/sellerAuth'
@@ -99,7 +100,17 @@ export function SellersSignupPage() {
   }
 
   return (
-    <AuthPageShell title="Create account" fallbackBack="/">
+    <AuthPageShell
+      title="Create account"
+      subtitle="Register your business and start selling on AGTRENZ."
+      fallbackBack="/"
+      footer={
+        <>
+          <span />
+          <Link to="/seller/signin">Seller login</Link>
+        </>
+      }
+    >
       {error && <div className="auth-message auth-message--error">{error}</div>}
       {success && <div className="auth-message auth-message--success">{success}</div>}
 
@@ -172,26 +183,18 @@ export function SellersSignupPage() {
             />
           </div>
         </label>
-        <label>
-          Password
-          <input
-            value={password}
-            type="password"
-            placeholder="Minimum 8 characters"
-            autoComplete="new-password"
-            minLength={8}
-            required
-            onChange={(event) => setPassword(event.target.value)}
-          />
-        </label>
+        <PasswordField
+          value={password}
+          onChange={setPassword}
+          placeholder="Minimum 8 characters"
+          autoComplete="new-password"
+          required
+          minLength={8}
+        />
         <button type="submit" className="seller-login__submit" disabled={submitting || loadingCountries}>
-          {submitting ? 'Creating account...' : 'Create seller account'}
+          {submitting ? 'Creating account...' : 'Create account'}
         </button>
       </form>
-
-      <p className="seller-login__signup">
-        Already registered? <Link to="/seller/signin">Seller login</Link>
-      </p>
     </AuthPageShell>
   )
 }
