@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 
-export type KycStatus = 'not_submitted' | 'pending' | 'approved' | 'rejected'
+export type KycStatus = 'not_submitted' | 'draft' | 'pending' | 'approved' | 'rejected'
 export type ProductApprovalStatus = 'none' | 'draft' | 'pending' | 'approved' | 'rejected'
 
 export type SellerWorkflowState = {

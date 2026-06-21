@@ -57,6 +57,7 @@ import { SellerOtpVerificationPage } from './pages/SellerOtpVerificationPage'
 import { SellerOrdersPage } from './pages/SellerOrdersPage'
 import { SellerProductsPage } from './pages/SellerProductsPage'
 import { ProductListingWizardPage, ProductListingWizardRedirect } from './pages/ProductListingWizardPage'
+import { SellerKycVerificationPage } from './pages/SellerKycVerificationPage'
 import { SellerProfilePage } from './pages/SellerProfilePage'
 import { SellerResetPasswordPage } from './pages/SellerResetPasswordPage'
 import { SellerTermsPoliciesPage } from './pages/SellerTermsPoliciesPage'
@@ -141,6 +142,8 @@ function AppContent() {
               <Route path="/seller/reset-password" element={<SellerResetPasswordPage />} />
               <Route path="/seller/dashboard" element={<RequireSellerAuth><SellerDashboardPage /></RequireSellerAuth>} />
               <Route path="/seller/profile" element={<RequireSellerAuth><SellerProfilePage /></RequireSellerAuth>} />
+              <Route path="/seller/kyc" element={<RequireSellerAuth><SellerKycVerificationPage /></RequireSellerAuth>} />
+              <Route path="/seller/kyc/step/:step" element={<RequireSellerAuth><SellerKycVerificationPage /></RequireSellerAuth>} />
               <Route path="/seller/warehouse" element={<RequireSellerAuth><SellerWarehousePage /></RequireSellerAuth>} />
               <Route path="/seller/products/new" element={<RequireSellerAuth><ProductListingWizardRedirect /></RequireSellerAuth>} />
               <Route path="/seller/products/new/step/:step" element={<RequireSellerAuth><ProductListingWizardPage /></RequireSellerAuth>} />

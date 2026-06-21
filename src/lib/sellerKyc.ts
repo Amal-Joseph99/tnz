@@ -18,7 +18,7 @@ export type SellerAccountProfile = {
 export type SellerKycSubmission = {
   userId: string
   kycId: string
-  status: 'pending' | 'approved' | 'rejected'
+  status: 'draft' | 'pending' | 'approved' | 'rejected'
   businessType: string
   businessName: string
   businessAddress: string
@@ -44,6 +44,7 @@ export type SellerKycSubmission = {
   ifscSwift: string
   submittedAt: string
   rejectionReason: string | null
+  kycStep: number
 }
 
 export type SellerKycDocument = {
@@ -120,7 +121,7 @@ export const KYC_POLICY_ACCEPTANCE_ITEMS = [
   },
   {
     field: 'shipping_return_policy_accepted_at',
-    label: 'I have accepted the AGTRENZ Shipping Policy and Return Policy.',
+    label: 'I have accepted the AGTRENZ Tax & Payout Rules.',
   },
 ] as const
 
@@ -209,8 +210,9 @@ export async function fetchSellerKycSubmission(): Promise<SellerKycSubmission | 
     bankName: data.bank_name,
     accountNumber: data.account_number,
     ifscSwift: data.ifsc_swift,
-    submittedAt: data.submitted_at,
+    submittedAt: data.submitted_at ?? '',
     rejectionReason: data.rejection_reason,
+    kycStep: Number(data.kyc_step ?? 1),
   }
 }
 
@@ -300,14 +302,17 @@ export async function submitSellerKyc(input: SellerKycInput): Promise<MutationRe
 
   const requiredDocs: Array<{ type: KycDocumentType; label: string }> = [
     { type: 'photo', label: 'seller photo' },
-    { type: 'individual_address_proof', label: 'individual address proof' },
-    { type: 'business_address_proof', label: 'business address proof' },
+    { type: 'business_address_proof', label: 'business address proof (front)' },
   ]
 
   for (const doc of requiredDocs) {
     if (!input.documents.some((item) => item.documentType === doc.type && item.documentSlot === 1)) {
       return { ok: false, message: `Missing required document: ${doc.label}.` }
     }
+  }
+
+  if (!input.documents.some((item) => item.documentType === 'business_address_proof' && item.documentSlot === 2)) {
+    return { ok: false, message: 'Missing required document: business address proof (back).' }
   }
 
   const now = new Date().toISOString()

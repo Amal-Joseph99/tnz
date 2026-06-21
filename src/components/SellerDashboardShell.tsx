@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 const sellerNavItems = [
   { label: 'Dashboard', to: '/seller/dashboard' },
   { label: 'Profile', to: '/seller/profile' },
+  { label: 'KYC Verification', to: '/seller/kyc' },
   { label: 'Warehouse', to: '/seller/warehouse' },
   { label: 'Products', to: '/seller/products' },
   { label: 'Orders', to: '/seller/orders' },
