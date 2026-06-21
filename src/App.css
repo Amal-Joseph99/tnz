@@ -16,6 +16,11 @@
   box-shadow: 0 4px 18px rgba(15, 23, 42, 0.22);
 }
 
+.header--home {
+  background: #f5ffcd;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+}
+
 .header__inner {
   display: flex;
   align-items: center;
