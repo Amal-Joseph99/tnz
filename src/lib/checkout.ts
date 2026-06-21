@@ -9,7 +9,7 @@ export type CartItem = {
   originalPrice?: number
   image: string
   quantity: number
-  variantId?: number
+  variantId?: string
 }
 
 export const defaultCartItems: CartItem[] = []

@@ -56,7 +56,7 @@ import { SellerNotificationsPage } from './pages/SellerNotificationsPage'
 import { SellerOtpVerificationPage } from './pages/SellerOtpVerificationPage'
 import { SellerOrdersPage } from './pages/SellerOrdersPage'
 import { SellerProductsPage } from './pages/SellerProductsPage'
-import { SellerProductListingPage } from './pages/SellerProductListingPage'
+import { ProductListingWizardPage, ProductListingWizardRedirect } from './pages/ProductListingWizardPage'
 import { SellerProfilePage } from './pages/SellerProfilePage'
 import { SellerResetPasswordPage } from './pages/SellerResetPasswordPage'
 import { SellerTermsPoliciesPage } from './pages/SellerTermsPoliciesPage'
@@ -141,8 +141,10 @@ function AppContent() {
               <Route path="/seller/dashboard" element={<RequireSellerAuth><SellerDashboardPage /></RequireSellerAuth>} />
               <Route path="/seller/profile" element={<RequireSellerAuth><SellerProfilePage /></RequireSellerAuth>} />
               <Route path="/seller/warehouse" element={<RequireSellerAuth><SellerWarehousePage /></RequireSellerAuth>} />
-              <Route path="/seller/products/new" element={<RequireSellerAuth><SellerProductListingPage /></RequireSellerAuth>} />
-              <Route path="/seller/products/:productId/edit" element={<RequireSellerAuth><SellerProductListingPage /></RequireSellerAuth>} />
+              <Route path="/seller/products/new" element={<RequireSellerAuth><ProductListingWizardRedirect /></RequireSellerAuth>} />
+              <Route path="/seller/products/new/step/:step" element={<RequireSellerAuth><ProductListingWizardPage /></RequireSellerAuth>} />
+              <Route path="/seller/products/:productId/edit" element={<RequireSellerAuth><ProductListingWizardRedirect /></RequireSellerAuth>} />
+              <Route path="/seller/products/:productId/edit/step/:step" element={<RequireSellerAuth><ProductListingWizardPage /></RequireSellerAuth>} />
               <Route path="/seller/products" element={<RequireSellerAuth><SellerProductsPage /></RequireSellerAuth>} />
               <Route path="/seller/orders" element={<RequireSellerAuth><SellerOrdersPage /></RequireSellerAuth>} />
               <Route path="/seller/wallet" element={<RequireSellerAuth><SellerWalletPage /></RequireSellerAuth>} />

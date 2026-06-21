@@ -110,7 +110,7 @@ export function SellerProductsPage() {
       setError('Complete warehouse setup before adding products.')
       return
     }
-    navigate('/seller/products/new')
+    navigate('/seller/products/new/step/1')
   }
 
   const handleConfirmAction = async () => {
@@ -118,7 +118,7 @@ export function SellerProductsPage() {
 
     if (confirmState.type === 'modify') {
       setConfirmState(null)
-      navigate(`/seller/products/${confirmState.product.id}/edit`)
+      navigate(`/seller/products/${confirmState.product.id}/edit/step/1`)
       return
     }
 

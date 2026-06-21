@@ -77,7 +77,7 @@ export type CheckoutCartItem = {
   title: string
   quantity: number
   unitPrice: number
-  variantId?: number
+  variantId?: string
 }
 
 type MutationResult = { ok: true } | { ok: false; message: string }

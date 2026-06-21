@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { CartIcon, StarIcon } from '../components/Icons'
 import { PageMeta } from '../components/PageMeta'
@@ -6,12 +6,68 @@ import { ProductReviewsSection } from '../components/ProductReviewsSection'
 import { useCurrency } from '../context/CurrencyContext'
 import { useAddToCart } from '../hooks/useAddToCart'
 import { useCheckout } from '../context/CheckoutContext'
+import {
+  aboutProductBullets,
+  formatPackageDimensions,
+  formatPackageWeight,
+  formatReturnReasons,
+  formatYesNo,
+  optionLabel,
+  parseBulletArray,
+  readDangerousGoodsFlags,
+  usageText,
+} from '../lib/productListingDisplay'
 import { shareProduct } from '../lib/productShare'
 import { appendSearchHistory } from '../lib/searchHistory'
 import { absoluteUrl } from '../lib/site'
 import { ogImageUrl } from '../lib/sharePages'
 import { buildCategoryBrowsePath, fetchStorefrontProductById } from '../lib/storefrontCatalog'
 import type { Product } from '../data/products'
+
+const PRODUCT_PLACEHOLDER =
+  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="sans-serif" font-size="18"%3EAGTRENZ%3C/text%3E%3C/svg%3E'
+
+function DetailTable({ rows }: { rows: Array<[string, string]> }) {
+  const visibleRows = rows.filter(([, value]) => value && value !== '—')
+  if (visibleRows.length === 0) return null
+
+  return (
+    <div className="product-detail__table">
+      {visibleRows.map(([label, value]) => (
+        <div key={label}>
+          <span>{label}</span>
+          <strong>{value}</strong>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function BulletPanel({ title, items }: { title: string; items: string[] }) {
+  if (items.length === 0) return null
+
+  return (
+    <article className="product-detail__panel">
+      <h2>{title}</h2>
+      <ul className="product-detail__bullets">
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </article>
+  )
+}
+
+function TextPanel({ title, text }: { title: string; text: string }) {
+  if (!text.trim()) return null
+
+  return (
+    <article className="product-detail__panel">
+      <h2>{title}</h2>
+      <p className="product-detail__body-text">{text}</p>
+    </article>
+  )
+}
 
 export function ProductDetailsPage() {
   const { productId } = useParams()
@@ -23,6 +79,9 @@ export function ProductDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [shareMessage, setShareMessage] = useState<string | null>(null)
   const [reviewSummary, setReviewSummary] = useState({ reviewCount: 0, averageRating: 0 })
+  const [selectedSize, setSelectedSize] = useState('')
+  const [selectedColor, setSelectedColor] = useState('')
+  const [activeImageIndex, setActiveImageIndex] = useState(0)
 
   useEffect(() => {
     let active = true
@@ -39,6 +98,9 @@ export function ProductDetailsPage() {
         if (result) {
           setProduct(result.card)
           setDetail(result)
+          const firstVariant = result.detail.variants[0]
+          setSelectedSize(firstVariant?.size ?? '')
+          setSelectedColor(firstVariant?.color ?? '')
           void appendSearchHistory({
             searchInput: result.card.title,
             productId: numericId,
@@ -58,6 +120,45 @@ export function ProductDetailsPage() {
     }
   }, [productId])
 
+  const selectedVariant = useMemo(() => {
+    if (!detail) return null
+    return (
+      detail.detail.variants.find((variant) => variant.size === selectedSize && variant.color === selectedColor)
+      ?? detail.detail.variants[0]
+      ?? null
+    )
+  }, [detail, selectedColor, selectedSize])
+
+  const sizeVariants = useMemo(
+    () => [...new Set(detail?.detail.variants.map((variant) => variant.size) ?? [])],
+    [detail],
+  )
+  const colourVariants = useMemo(
+    () => [...new Set(detail?.detail.variants.map((variant) => variant.color) ?? [])],
+    [detail],
+  )
+
+  const galleryImages = useMemo(() => {
+    if (!detail) return [PRODUCT_PLACEHOLDER]
+    const images = detail.detail.media
+      .filter((item) => item.mediaType === 'product_image' || item.mediaType === 'description_image')
+      .map((item) => item.url)
+
+    if (selectedVariant?.image_storage_path) {
+      const variantImage = detail.detail.media.find((item) => item.storagePath === selectedVariant.image_storage_path)
+      if (variantImage) {
+        return [variantImage.url, ...images.filter((url) => url !== variantImage.url)]
+      }
+    }
+
+    return images.length > 0 ? images : [product?.image ?? PRODUCT_PLACEHOLDER]
+  }, [detail, product?.image, selectedVariant?.image_storage_path])
+
+  const galleryVideos = useMemo(
+    () => detail?.detail.media.filter((item) => item.mediaType === 'product_video') ?? [],
+    [detail],
+  )
+
   if (loading) {
     return (
       <section className="product-detail-page">
@@ -70,22 +171,59 @@ export function ProductDetailsPage() {
     return <Navigate to="/categories" replace />
   }
 
-  const productDescription = detail.detail.short_description
-    || `${product.title} by ${product.brand}. Shop on AGTRENZ.`
-  const productImage = ogImageUrl(product.image)
-  const galleryImages = detail.detail.media.length > 0 ? detail.detail.media : [product.image]
-  const sizeVariants = [...new Set(detail.detail.variants.map((variant) => variant.size))]
-  const colourVariants = [...new Set(detail.detail.variants.map((variant) => variant.color))]
-  const primaryVariant = detail.detail.variants[0]
-  const totalStock = detail.detail.variants.reduce((sum, variant) => sum + (variant.stock ?? 0), 0)
-  const stockLabel = totalStock > 0 ? 'In Stock' : 'Out of Stock'
+  const productRow = detail.detail
+  const options = detail.listingOptions
+  const productDescription = productRow.short_description || `${product.title} by ${product.brand}. Shop on AGTRENZ.`
+  const productImage = ogImageUrl(galleryImages[activeImageIndex] ?? product.image)
+  const aboutBullets = aboutProductBullets(productRow)
+  const packageContents = parseBulletArray(productRow.package_contents_bullets)
+  const usage = usageText(productRow)
+  const dangerousGoods = readDangerousGoodsFlags(productRow)
+  const displayPrice = selectedVariant?.selling_price ?? product.price
+  const displayMrp = selectedVariant?.mrp ?? product.originalPrice ?? product.price
+  const hasDiscount = displayMrp > displayPrice && displayPrice > 0
+  const discountPercent = hasDiscount
+    ? `${Math.round(((displayMrp - displayPrice) / displayMrp) * 100)}% off`
+    : undefined
+  const variantStock = selectedVariant?.stock ?? 0
+  const stockLabel = variantStock > 0 ? 'In Stock' : 'Out of Stock'
 
-  const specifications = [
+  const specifications: Array<[string, string]> = [
     ['Brand', product.brand],
-    ['Category', detail.detail.category_name],
-    ['Sub Category', detail.detail.sub_category_name],
-    ['Product Type', detail.detail.product_type_name],
-    ...detail.detail.specifications.map((spec) => [spec.attribute_name, spec.attribute_value]),
+    ['Category', productRow.category_name],
+    ['Sub Category', productRow.sub_category_name],
+    ['Product Type', productRow.product_type_name],
+    ...productRow.specifications.map((spec) => [spec.attribute_name, spec.attribute_value] as [string, string]),
+  ]
+
+  const itemDetails: Array<[string, string]> = [
+    ['SKU', productRow.sku],
+    ['HSN', productRow.hsn_code],
+    ['Item condition', optionLabel(options.itemConditions, productRow.item_condition_code ?? '')],
+    ['Manufacturer', productRow.manufacturer_name ?? '—'],
+    ['Manufacturer country', productRow.manufacturer_country ?? '—'],
+    ['Origin country', productRow.origin_country ?? '—'],
+    ['Package dimensions', formatPackageDimensions(productRow, options)],
+    ['Package weight', formatPackageWeight(productRow, options)],
+    ['Stock', stockLabel],
+  ]
+
+  const complianceRows: Array<[string, string]> = [
+    ['Warranty available', formatYesNo(Boolean(productRow.warranty_available))],
+    ...(productRow.warranty_available
+      ? ([
+          ['Warranty period', optionLabel(options.warrantyPeriods, productRow.warranty_period_code ?? '')],
+          ['Warranty type', productRow.warranty_type ?? '—'],
+        ] as Array<[string, string]>)
+      : []),
+    ['Return eligible', formatYesNo(Boolean(productRow.return_eligible))],
+    ...(productRow.return_eligible
+      ? ([
+          ['Return window', optionLabel(options.returnWindows, productRow.return_window_code ?? '')],
+          ['Return reasons', formatReturnReasons(productRow.return_reason_codes, options)],
+        ] as Array<[string, string]>)
+      : []),
+    ...dangerousGoods.map((field) => [field.label, 'Yes'] as [string, string]),
   ]
 
   const handleShare = async () => {
@@ -116,31 +254,45 @@ export function ProductDetailsPage() {
         <nav className="product-detail__breadcrumb" aria-label="Breadcrumb">
           <Link to="/">Home</Link>
           <span>/</span>
-          <Link to={buildCategoryBrowsePath(detail.detail.category_name)}>{detail.detail.category_name}</Link>
+          <Link to={buildCategoryBrowsePath(productRow.category_name)}>{productRow.category_name}</Link>
           <span>/</span>
-          <Link to={buildCategoryBrowsePath(detail.detail.category_name, detail.detail.sub_category_name)}>
-            {detail.detail.sub_category_name}
+          <Link to={buildCategoryBrowsePath(productRow.category_name, productRow.sub_category_name)}>
+            {productRow.sub_category_name}
           </Link>
           <span>/</span>
-          <strong>{detail.detail.product_type_name}</strong>
+          <strong>{productRow.product_type_name}</strong>
         </nav>
 
         <div className="product-detail__hero">
           <section className="product-detail__gallery">
             <div className="product-detail__main-image">
-              <img src={galleryImages[0]} alt={product.title} />
+              <img src={galleryImages[activeImageIndex] ?? galleryImages[0]} alt={product.title} />
             </div>
             <div className="product-detail__thumbs">
               {galleryImages.map((image, index) => (
                 <button
                   type="button"
-                  className={index === 0 ? 'product-detail__thumb product-detail__thumb--active' : 'product-detail__thumb'}
+                  className={index === activeImageIndex ? 'product-detail__thumb product-detail__thumb--active' : 'product-detail__thumb'}
                   key={`${product.id}-image-${index + 1}`}
+                  onClick={() => setActiveImageIndex(index)}
                 >
                   <img src={image} alt={`${product.title} thumbnail ${index + 1}`} />
                 </button>
               ))}
             </div>
+            {galleryVideos.length > 0 && (
+              <div className="product-detail__videos">
+                {galleryVideos.map((video) => (
+                  <video
+                    key={video.storagePath}
+                    className="product-detail__video"
+                    src={video.url}
+                    controls
+                    preload="metadata"
+                  />
+                ))}
+              </div>
+            )}
           </section>
 
           <section className="product-detail__summary">
@@ -164,33 +316,45 @@ export function ProductDetailsPage() {
             )}
 
             <div className="product-detail__price-block">
-              {product.originalPrice && <span>MRP: <s>{formatPrice(product.originalPrice)}</s></span>}
-              {product.discount && <strong>{product.discount}</strong>}
-              <div>{formatPrice(product.price)}</div>
+              {hasDiscount && <span>MRP: <s>{formatPrice(displayMrp)}</s></span>}
+              {discountPercent && <strong>{discountPercent}</strong>}
+              <div>{formatPrice(displayPrice)}</div>
               <small>Inclusive of all taxes</small>
             </div>
 
             <div className="product-detail__variant-block">
-              <div className="product-detail__option-row">
-                <span>Size</span>
-                {sizeVariants.map((size, index) => (
-                  <button type="button" className={index === 0 ? 'product-detail__chip product-detail__chip--active' : 'product-detail__chip'} key={size}>{size}</button>
-                ))}
-              </div>
-              <div className="product-detail__option-row">
-                <span>Colour</span>
-                {colourVariants.map((colour, index) => (
-                  <button
-                    type="button"
-                    className={index === 0 ? 'product-detail__chip product-detail__chip--active' : 'product-detail__chip'}
-                    key={colour}
-                  >
-                    {colour}
-                  </button>
-                ))}
-              </div>
+              {sizeVariants.length > 0 && (
+                <div className="product-detail__option-row">
+                  <span>Size</span>
+                  {sizeVariants.map((size) => (
+                    <button
+                      type="button"
+                      className={size === selectedSize ? 'product-detail__chip product-detail__chip--active' : 'product-detail__chip'}
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {colourVariants.length > 0 && (
+                <div className="product-detail__option-row">
+                  <span>Colour</span>
+                  {colourVariants.map((colour) => (
+                    <button
+                      type="button"
+                      className={colour === selectedColor ? 'product-detail__chip product-detail__chip--active' : 'product-detail__chip'}
+                      key={colour}
+                      onClick={() => setSelectedColor(colour)}
+                    >
+                      {colour}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="product-detail__variant-meta">
-                <span>Variant ID: {primaryVariant?.variant_id ?? '—'}</span>
+                <span>Variant ID: {selectedVariant?.variant_id ?? '—'}</span>
                 <strong>{stockLabel}</strong>
               </div>
             </div>
@@ -199,26 +363,25 @@ export function ProductDetailsPage() {
               <button
                 type="button"
                 className="product-detail__add"
+                disabled={!selectedVariant || variantStock <= 0}
                 onClick={() => {
                   void (async () => {
                     const allowed = await requestAddToCart()
-                    if (!allowed || !primaryVariant) return
-
-                    const sellerUserId = (detail.detail as { user_id?: string }).user_id
-                    if (!sellerUserId) return
+                    if (!allowed || !selectedVariant) return
 
                     addItem({
                       id: String(product.id),
                       productId: Number(product.id),
-                      sellerUserId,
-                      sku: detail.detail.sku,
+                      sellerUserId: productRow.user_id,
+                      sku: productRow.sku,
                       title: product.title,
                       brand: product.brand,
-                      price: primaryVariant.selling_price,
-                      originalPrice: primaryVariant.mrp > primaryVariant.selling_price ? primaryVariant.mrp : undefined,
-                      image: product.image,
+                      price: selectedVariant.selling_price,
+                      originalPrice:
+                        selectedVariant.mrp > selectedVariant.selling_price ? selectedVariant.mrp : undefined,
+                      image: galleryImages[activeImageIndex] ?? product.image,
                       quantity: 1,
-                      variantId: primaryVariant.variant_id,
+                      variantId: selectedVariant.variant_id,
                     })
                   })()
                 }}
@@ -236,48 +399,52 @@ export function ProductDetailsPage() {
 
             <div className="product-detail__notice">
               <span>Delivery details available at checkout.</span>
+              {productRow.return_eligible && (
+                <span>
+                  Returns accepted within {optionLabel(options.returnWindows, productRow.return_window_code ?? '')}.
+                </span>
+              )}
             </div>
           </section>
         </div>
 
         <section className="product-detail__info-grid">
-          <article className="product-detail__panel product-detail__about">
-            <h2>About Product</h2>
-            <p>{detail.detail.full_description || productDescription}</p>
-          </article>
+          {(aboutBullets.length > 0 || productRow.full_description) && (
+            <article className="product-detail__panel product-detail__about">
+              <h2>About Product</h2>
+              {aboutBullets.length > 0 ? (
+                <ul className="product-detail__bullets">
+                  {aboutBullets.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="product-detail__body-text">{productRow.full_description}</p>
+              )}
+            </article>
+          )}
 
           <article className="product-detail__panel">
             <h2>Specifications</h2>
-            <div className="product-detail__table">
-              {specifications.map(([label, value], index) => (
-                <div key={`${label}-${index}`}>
-                  <span>{label}</span>
-                  <strong>{value}</strong>
-                </div>
-              ))}
-            </div>
+            <DetailTable rows={specifications} />
           </article>
 
           <article className="product-detail__panel">
             <h2>Item Details</h2>
-            <div className="product-detail__table">
-              <div><span>SKU</span><strong>{detail.detail.sku}</strong></div>
-              <div><span>HSN</span><strong>{detail.detail.hsn_code}</strong></div>
-              <div><span>Brand</span><strong>{product.brand}</strong></div>
-              <div><span>Category</span><strong>{detail.detail.category_name}</strong></div>
-              <div><span>Sub Category</span><strong>{detail.detail.sub_category_name}</strong></div>
-              <div><span>Product Type</span><strong>{detail.detail.product_type_name}</strong></div>
-              <div><span>Stock</span><strong>{stockLabel}</strong></div>
-              <div><span>Manufacturer Name</span><strong>{detail.detail.manufacturer_name}</strong></div>
-              <div><span>Manufacturer Country</span><strong>{detail.detail.manufacturer_country}</strong></div>
-              <div><span>Origin Country</span><strong>{detail.detail.origin_country}</strong></div>
-              <div><span>Total Weight</span><strong>{detail.detail.weight_kg} kg</strong></div>
-              <div><span>Package</span><strong>{`${detail.detail.package_length_cm} x ${detail.detail.package_width_cm} x ${detail.detail.package_height_cm} cm`}</strong></div>
-              <div><span>Type of Packing</span><strong>{detail.detail.packing_type}</strong></div>
-              {detail.detail.usage_note && <div><span>Usage Note</span><strong>{detail.detail.usage_note}</strong></div>}
-              {detail.detail.ingredients && <div><span>Ingredients</span><strong>{detail.detail.ingredients}</strong></div>}
-            </div>
+            <DetailTable rows={itemDetails} />
           </article>
+
+          <BulletPanel title="Package Contents" items={packageContents} />
+          <TextPanel title="Ingredients" text={productRow.ingredients ?? ''} />
+          <TextPanel title="Usage Instructions" text={usage} />
+          <TextPanel title="Important Note / Warning" text={productRow.important_note ?? ''} />
+
+          {complianceRows.length > 0 && (
+            <article className="product-detail__panel">
+              <h2>Warranty & Returns</h2>
+              <DetailTable rows={complianceRows} />
+            </article>
+          )}
         </section>
 
         <ProductReviewsSection

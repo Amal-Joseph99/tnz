@@ -1,4 +1,5 @@
 import type { Product } from '../data/products'
+import { fetchProductListingDisplayOptions } from './productListingDisplay'
 import { supabase } from './supabase'
 import { getCategorySlug, getSubcategorySlug, resolveNameFromSlug } from './categoryDisplay'
 import { fetchCategoryTaxonomy, fetchStorefrontCategoryNames } from './catalogCategories'
@@ -16,9 +17,74 @@ type SellerProductRow = {
   short_description: string | null
 }
 
-type VariantRow = {
+type CatalogVariantPrice = {
   mrp: number
   selling_price: number
+}
+
+type StorefrontVariantRow = {
+  variant_id: string
+  size: string
+  color: string
+  mrp: number
+  selling_price: number
+  stock: number
+  image_storage_path?: string | null
+}
+
+export type StorefrontProductMedia = {
+  url: string
+  storagePath: string
+  mediaType: 'product_image' | 'product_video' | 'description_image'
+  fileName?: string
+  mimeType?: string
+}
+
+export type StorefrontProductDetail = {
+  id: number
+  user_id: string
+  product_name: string
+  brand_name: string
+  category_name: string
+  sub_category_name: string
+  product_type_name: string
+  short_description: string | null
+  full_description: string | null
+  full_description_bullets: unknown
+  sku: string
+  hsn_code: string
+  item_condition_code: string | null
+  packing_type: string | null
+  weight_kg: number | null
+  package_length_cm: number | null
+  package_width_cm: number | null
+  package_height_cm: number | null
+  package_length_unit_code: string | null
+  package_width_unit_code: string | null
+  package_height_unit_code: string | null
+  package_weight_unit_code: string | null
+  manufacturer_name: string | null
+  manufacturer_country: string | null
+  origin_country: string | null
+  usage_note: string | null
+  usage_instructions: string | null
+  important_note: string | null
+  ingredients: string | null
+  package_contents_bullets: unknown
+  warranty_available: boolean | null
+  warranty_period_code: string | null
+  warranty_type: string | null
+  contains_battery: boolean | null
+  contains_liquid: boolean | null
+  contains_magnetic_material: boolean | null
+  contains_aerosol: boolean | null
+  contains_flammable_material: boolean | null
+  return_eligible: boolean | null
+  return_window_code: string | null
+  return_reason_codes: string[] | null
+  variants: StorefrontVariantRow[]
+  media: StorefrontProductMedia[]
+  specifications: Array<{ attribute_name: string; attribute_value: string }>
 }
 
 function getProductImageUrl(storagePath: string | undefined) {
@@ -30,7 +96,7 @@ function getProductImageUrl(storagePath: string | undefined) {
 
 function mapToProductCard(
   product: SellerProductRow,
-  variant: VariantRow | undefined,
+  variant: CatalogVariantPrice | undefined,
   imagePath: string | undefined,
 ): Product {
   const price = variant?.selling_price ?? 0
@@ -115,7 +181,7 @@ export async function fetchStorefrontProductsByCategory(
       .order('slot_index', { ascending: true }),
   ])
 
-  const variantByProduct = new Map<number, VariantRow>()
+  const variantByProduct = new Map<number, CatalogVariantPrice>()
   for (const variant of variants ?? []) {
     const existing = variantByProduct.get(variant.product_id)
     if (!existing || variant.selling_price < existing.selling_price) {
@@ -168,7 +234,7 @@ export async function fetchProductCardsByIds(productIds: number[]): Promise<Prod
       .order('slot_index', { ascending: true }),
   ])
 
-  const variantByProduct = new Map<number, VariantRow>()
+  const variantByProduct = new Map<number, CatalogVariantPrice>()
   for (const variant of variants ?? []) {
     const existing = variantByProduct.get(variant.product_id)
     if (!existing || variant.selling_price < existing.selling_price) {
@@ -201,26 +267,38 @@ export async function fetchProductCardsByIds(productIds: number[]): Promise<Prod
 export async function fetchStorefrontProductById(productId: number) {
   if (!supabase || !Number.isFinite(productId)) return null
 
-  const { data: product, error } = await supabase
-    .from('seller_products')
-    .select('id, user_id, product_name, brand_name, category_name, sub_category_name, product_type_name, short_description, full_description, sku, hsn_code, packing_type, weight_kg, package_length_cm, package_width_cm, package_height_cm, manufacturer_name, manufacturer_country, origin_country, usage_note, ingredients')
-    .eq('id', productId)
-    .eq('approval_status', 'approved')
-    .maybeSingle()
+  const [{ data: product, error }, listingOptions] = await Promise.all([
+    supabase
+      .from('seller_products')
+      .select(`
+        id, user_id, product_name, brand_name, category_name, sub_category_name, product_type_name,
+        short_description, full_description, full_description_bullets, sku, hsn_code, item_condition_code,
+        packing_type, weight_kg, package_length_cm, package_width_cm, package_height_cm,
+        package_length_unit_code, package_width_unit_code, package_height_unit_code, package_weight_unit_code,
+        manufacturer_name, manufacturer_country, origin_country, usage_note, usage_instructions, important_note,
+        ingredients, package_contents_bullets, warranty_available, warranty_period_code, warranty_type,
+        contains_battery, contains_liquid, contains_magnetic_material, contains_aerosol, contains_flammable_material,
+        return_eligible, return_window_code, return_reason_codes
+      `)
+      .eq('id', productId)
+      .eq('approval_status', 'approved')
+      .maybeSingle(),
+    fetchProductListingDisplayOptions(),
+  ])
 
   if (error || !product) return null
 
   const [{ data: variants }, { data: media }, { data: specs }] = await Promise.all([
     supabase
       .from('seller_product_variants')
-      .select('variant_id, size, color, mrp, selling_price, stock')
+      .select('variant_id, size, color, mrp, selling_price, stock, image_storage_path')
       .eq('product_id', productId)
       .order('sort_order', { ascending: true }),
     supabase
       .from('seller_product_media')
-      .select('storage_path, slot_index, media_type')
+      .select('storage_path, slot_index, media_type, file_name, mime_type')
       .eq('product_id', productId)
-      .in('media_type', ['product_image', 'description_image'])
+      .in('media_type', ['product_image', 'description_image', 'product_video'])
       .order('sort_order', { ascending: true }),
     supabase
       .from('seller_product_specifications')
@@ -238,14 +316,23 @@ export async function fetchStorefrontProductById(productId: number) {
     (media ?? []).find((item) => item.media_type === 'product_image')?.storage_path,
   )
 
+  const mappedMedia: StorefrontProductMedia[] = (media ?? []).map((item) => ({
+    url: getProductImageUrl(item.storage_path),
+    storagePath: item.storage_path,
+    mediaType: item.media_type as StorefrontProductMedia['mediaType'],
+    fileName: item.file_name ?? undefined,
+    mimeType: item.mime_type ?? undefined,
+  }))
+
   return {
     card,
     detail: {
-      ...product,
-      variants: variants ?? [],
-      media: (media ?? []).map((item) => getProductImageUrl(item.storage_path)),
+      ...(product as StorefrontProductDetail),
+      variants: (variants ?? []) as StorefrontVariantRow[],
+      media: mappedMedia,
       specifications: specs ?? [],
     },
+    listingOptions,
   }
 }
 
@@ -288,7 +375,7 @@ export async function searchStorefrontProducts(query: string): Promise<Product[]
       .order('slot_index', { ascending: true }),
   ])
 
-  const variantByProduct = new Map<number, VariantRow>()
+  const variantByProduct = new Map<number, CatalogVariantPrice>()
   for (const variant of variants ?? []) {
     const existing = variantByProduct.get(variant.product_id)
     if (!existing || variant.selling_price < existing.selling_price) {

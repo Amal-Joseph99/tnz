@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AdminDashboardShell } from '../components/AdminDashboardShell'
+import { AdminProductVerificationForm } from '../components/AdminProductVerificationForm'
 import { PanelEmptyState } from '../components/PanelEmptyState'
 import { RejectionReasonDialog } from '../components/RejectionReasonDialog'
 import {
@@ -9,6 +10,8 @@ import {
   type AdminProductDetail,
   type ProductQueueItem,
 } from '../lib/adminApprovals'
+import { fetchProductListingDisplayOptions } from '../lib/productListingDisplay'
+import type { ProductListingWizardOptions } from '../lib/productListingWizard'
 import { getSignedStorageUrl } from '../lib/sellerStorage'
 
 export function AdminProductsPage() {
@@ -19,7 +22,10 @@ export function AdminProductsPage() {
   const [error, setError] = useState('')
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null)
   const [detail, setDetail] = useState<AdminProductDetail | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [listingOptions, setListingOptions] = useState<ProductListingWizardOptions | null>(null)
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({})
+  const [variantImageUrls, setVariantImageUrls] = useState<Record<string, string>>({})
   const [rejectTarget, setRejectTarget] = useState<number | null>(null)
 
   const loadQueue = async (status: string) => {
@@ -31,27 +37,43 @@ export function AdminProductsPage() {
 
   useEffect(() => {
     void loadQueue(filter)
+    void fetchProductListingDisplayOptions().then(setListingOptions)
   }, [filter])
 
   useEffect(() => {
     if (!selectedProductId) {
       setDetail(null)
       setMediaUrls({})
+      setVariantImageUrls({})
       return
     }
 
+    setDetailLoading(true)
     void fetchAdminProductDetail(selectedProductId).then(async (nextDetail) => {
       setDetail(nextDetail)
-      if (!nextDetail) return
+      if (!nextDetail) {
+        setDetailLoading(false)
+        return
+      }
 
       const urls: Record<string, string> = {}
-      await Promise.all(
-        nextDetail.media.map(async (item) => {
+      const variantUrls: Record<string, string> = {}
+
+      await Promise.all([
+        ...nextDetail.media.map(async (item) => {
           const url = await getSignedStorageUrl('seller-products', item.storagePath)
           if (url) urls[item.storagePath] = url
         }),
-      )
+        ...nextDetail.variants.map(async (variant) => {
+          if (!variant.imageStoragePath) return
+          const url = await getSignedStorageUrl('seller-products', variant.imageStoragePath)
+          if (url) variantUrls[variant.imageStoragePath] = url
+        }),
+      ])
+
       setMediaUrls(urls)
+      setVariantImageUrls(variantUrls)
+      setDetailLoading(false)
     })
   }, [selectedProductId])
 
@@ -83,66 +105,28 @@ export function AdminProductsPage() {
     await loadQueue(filter)
   }
 
-  const renderDetail = (item: ProductQueueItem, detailData: AdminProductDetail | null) => (
-    <div className="admin-approval-card">
-      <strong>{item.productName}</strong>
-      <p>SKU: {item.sku} · HSN: {item.hsnCode}</p>
-      <p>Seller: {item.sellerEmail} · {item.sellerBusinessName}</p>
-      <p>Category: {item.categoryName} / {item.subCategoryName} / {item.productTypeName}</p>
-      {detailData && (
-        <>
-          <p>Brand: {String(detailData.product.brand_name ?? '')}</p>
-          <p>{String(detailData.product.short_description ?? '')}</p>
-          <div className="spec-table">
-            <div className="spec-table__row spec-table__row--head"><span>Attribute</span><span>Value</span></div>
-            {detailData.specifications.map((spec, index) => (
-              <div className="spec-table__row" key={`${spec.attributeName}-${index}`}>
-                <span>{spec.attributeName}</span>
-                <span>{spec.attributeValue}</span>
-              </div>
-            ))}
-          </div>
-          <div className="variant-table">
-            <div className="variant-table__row variant-table__row--head">
-              <span>Variant</span><span>Size</span><span>Colour</span><span>MRP</span><span>Price</span><span>Stock</span>
-            </div>
-            {detailData.variants.map((variant) => (
-              <div className="variant-table__row" key={variant.variantId}>
-                <span>{variant.variantId}</span>
-                <span>{variant.size}</span>
-                <span>{variant.color}</span>
-                <span>{variant.mrp}</span>
-                <span>{variant.sellingPrice}</span>
-                <span>{variant.stock}</span>
-              </div>
-            ))}
-          </div>
-          <div className="listing-media-grid">
-            {detailData.media.map((item) => (
-              <article key={item.storagePath} className="listing-media-card">
-                <strong>{item.mediaType}</strong>
-                <p>{item.fileName}</p>
-                {mediaUrls[item.storagePath] ? (
-                  item.mimeType.startsWith('video/') ? (
-                    <video src={mediaUrls[item.storagePath]} controls />
-                  ) : (
-                    <img src={mediaUrls[item.storagePath]} alt={item.fileName} />
-                  )
-                ) : (
-                  <span>Preview unavailable</span>
-                )}
-              </article>
-            ))}
-          </div>
-        </>
-      )}
-      {item.approvalStatus === 'pending' && (
-        <div className="admin-approval-card__actions">
-          <button type="button" className="admin-accept" onClick={() => void handleDecision(item.id, true)}>Approve listing</button>
-          <button type="button" className="admin-reject" onClick={() => setRejectTarget(item.id)}>Reject listing</button>
-        </div>
-      )}
-    </div>
+  const renderVerificationForm = (item: ProductQueueItem, detailData: AdminProductDetail | null, isLoading: boolean) => (
+    <AdminProductVerificationForm
+      item={item}
+      detail={detailData}
+      options={
+        listingOptions ?? {
+          itemConditions: [],
+          warrantyPeriods: [],
+          dimensionUnits: [],
+          weightUnits: [],
+          returnWindows: [],
+          returnReasonTypes: [],
+          sizePresets: [],
+          colorPresets: [],
+        }
+      }
+      mediaUrls={mediaUrls}
+      variantImageUrls={variantImageUrls}
+      loading={isLoading}
+      onApprove={item.approvalStatus === 'pending' ? () => void handleDecision(item.id, true) : undefined}
+      onReject={item.approvalStatus === 'pending' ? () => setRejectTarget(item.id) : undefined}
+    />
   )
 
   return (
@@ -156,7 +140,7 @@ export function AdminProductsPage() {
             <h2>Priority listing review</h2>
             <p>Active submission awaiting admin decision.</p>
           </div>
-          {renderDetail(priority, selectedProductId === priority.id ? detail : null)}
+          {renderVerificationForm(priority, selectedProductId === priority.id ? detail : null, selectedProductId === priority.id && detailLoading)}
         </section>
       )}
 
@@ -208,29 +192,33 @@ export function AdminProductsPage() {
         )}
       </section>
 
-      {selectedProductId && detail && (
+      {selectedProductId && (
         <section className="admin-panel">
           <div className="admin-panel__header">
             <h2>Listing detail</h2>
-            <p>Specifications, variants, and media for selected product.</p>
+            <p>Full wizard submission for admin review.</p>
           </div>
-          {renderDetail(queue.find((item) => item.id === selectedProductId) ?? {
-            id: selectedProductId,
-            userId: String(detail.product.user_id ?? ''),
-            sku: String(detail.product.sku ?? ''),
-            productName: String(detail.product.product_name ?? ''),
-            categoryName: String(detail.product.category_name ?? ''),
-            subCategoryName: String(detail.product.sub_category_name ?? ''),
-            productTypeName: String(detail.product.product_type_name ?? ''),
-            hsnCode: String(detail.product.hsn_code ?? ''),
-            brandName: String(detail.product.brand_name ?? ''),
-            approvalStatus: String(detail.product.approval_status ?? ''),
-            submittedAt: null,
-            reviewedAt: null,
-            rejectionReason: null,
-            sellerEmail: String(detail.product.sellerEmail ?? ''),
-            sellerBusinessName: String(detail.product.sellerBusinessName ?? ''),
-          }, detail)}
+          {renderVerificationForm(
+            queue.find((item) => item.id === selectedProductId) ?? {
+              id: selectedProductId,
+              userId: String(detail?.product.user_id ?? ''),
+              sku: String(detail?.product.sku ?? ''),
+              productName: String(detail?.product.product_name ?? ''),
+              categoryName: String(detail?.product.category_name ?? ''),
+              subCategoryName: String(detail?.product.sub_category_name ?? ''),
+              productTypeName: String(detail?.product.product_type_name ?? ''),
+              hsnCode: String(detail?.product.hsn_code ?? ''),
+              brandName: String(detail?.product.brand_name ?? ''),
+              approvalStatus: String(detail?.product.approval_status ?? ''),
+              submittedAt: null,
+              reviewedAt: null,
+              rejectionReason: null,
+              sellerEmail: String(detail?.product.sellerEmail ?? ''),
+              sellerBusinessName: String(detail?.product.sellerBusinessName ?? ''),
+            },
+            detail,
+            detailLoading,
+          )}
         </section>
       )}
 
