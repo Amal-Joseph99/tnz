@@ -112,7 +112,7 @@ export function SellerOtpVerificationPage() {
       return
     }
 
-    const result = await resendSignupOtp(email)
+    const result = await resendSignupOtp(email, '/seller/verify-email')
     if (!result.ok) {
       setError(result.message)
       return
@@ -121,7 +121,7 @@ export function SellerOtpVerificationPage() {
     setOtp(Array(OTP_LENGTH).fill(''))
     setSecondsLeft(30)
     setError('')
-    setMessage(`A new 6-digit code was sent to ${email}.`)
+    setMessage(`A new 6-digit code was sent to ${email}. Check your inbox and spam folder.`)
     inputRefs.current[0]?.focus()
   }
 
@@ -161,6 +161,10 @@ export function SellerOtpVerificationPage() {
           {verifying ? 'Verifying...' : 'Verify and open dashboard'}
         </button>
       </form>
+
+      <p className="auth-hint">
+        Did not receive the email? Check spam or promotions, wait up to 2 minutes, then tap Resend code.
+      </p>
 
       <div className="seller-otp-card__resend">
         {secondsLeft > 0 ? (

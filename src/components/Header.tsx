@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCurrency } from '../context/CurrencyContext'
 import { appendSearchHistory } from '../lib/searchHistory'
@@ -26,8 +26,6 @@ export function Header() {
   const [accountOpen, setAccountOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const navigate = useNavigate()
-  const location = useLocation()
-  const isHome = location.pathname === '/'
   const { currency, locationLabel, loading, pricingReady, refreshLocation } = useCurrency()
   const { isSignedIn, signOutWithConfirm } = useAuth()
 
@@ -50,7 +48,7 @@ export function Header() {
   }
 
   return (
-    <header className={`header${isHome ? ' header--home' : ''}`}>
+    <header className="header">
       <div className="container header__inner">
         <button
           type="button"

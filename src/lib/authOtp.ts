@@ -1,3 +1,4 @@
+import { absoluteUrl } from './site'
 import { supabase } from './supabase'
 
 export function normalizeAuthEmail(email: string) {
@@ -5,6 +6,22 @@ export function normalizeAuthEmail(email: string) {
 }
 
 type OtpResult = { ok: true } | { ok: false; message: string }
+
+function signupRedirectUrl(verifyPath: '/seller/verify-email' | '/buyer/verify-email') {
+  return absoluteUrl(verifyPath)
+}
+
+export async function finalizeSignupEmailDelivery(
+  email: string,
+  verifyPath: '/seller/verify-email' | '/buyer/verify-email',
+  signupUser: { identities?: { id: string }[] | null } | null,
+): Promise<OtpResult> {
+  if (signupUser?.identities?.length === 0) {
+    return resendSignupOtp(email, verifyPath)
+  }
+
+  return { ok: true }
+}
 
 export async function verifySignupOtp(email: string, token: string): Promise<OtpResult> {
   if (!supabase) {
@@ -33,7 +50,10 @@ export async function verifySignupOtp(email: string, token: string): Promise<Otp
   return { ok: false, message: lastMessage }
 }
 
-export async function resendSignupOtp(email: string): Promise<OtpResult> {
+export async function resendSignupOtp(
+  email: string,
+  verifyPath: '/seller/verify-email' | '/buyer/verify-email' = '/buyer/verify-email',
+): Promise<OtpResult> {
   if (!supabase) {
     return { ok: false, message: 'Supabase is not configured.' }
   }
@@ -42,9 +62,20 @@ export async function resendSignupOtp(email: string): Promise<OtpResult> {
   const { error } = await supabase.auth.resend({
     type: 'signup',
     email: normalizedEmail,
+    options: {
+      emailRedirectTo: signupRedirectUrl(verifyPath),
+    },
   })
 
   if (error) {
+    const normalized = error.message.toLowerCase()
+    if (normalized.includes('already registered') || normalized.includes('already been registered')) {
+      return {
+        ok: false,
+        message: 'This email is already registered. Sign in instead, or use Forgot password if you cannot access the account.',
+      }
+    }
+
     return { ok: false, message: error.message }
   }
 

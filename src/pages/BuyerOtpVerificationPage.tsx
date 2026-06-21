@@ -81,7 +81,7 @@ export function BuyerOtpVerificationPage() {
       return
     }
 
-    const result = await resendSignupOtp(email)
+    const result = await resendSignupOtp(email, '/buyer/verify-email')
     if (!result.ok) {
       setError(result.message)
       return

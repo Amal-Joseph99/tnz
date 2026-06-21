@@ -1,4 +1,5 @@
-import { normalizeAuthEmail } from './authOtp'
+import { finalizeSignupEmailDelivery, normalizeAuthEmail } from './authOtp'
+import { absoluteUrl } from './site'
 import { supabase } from './supabase'
 import { verifyLoginPortal } from './portalAuth'
 import type { SellerCountryOption } from './sellerCountries'
@@ -79,10 +80,11 @@ export async function signUpSeller(input: SellerSignUpInput): Promise<SellerSign
     return { ok: false, message: String(eligibility.message ?? 'This email cannot be used for seller signup.') }
   }
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password: input.password,
     options: {
+      emailRedirectTo: absoluteUrl('/seller/verify-email'),
       data: {
         account_type: 'seller',
         business_name: input.businessName.trim(),
@@ -98,6 +100,11 @@ export async function signUpSeller(input: SellerSignUpInput): Promise<SellerSign
 
   if (error) {
     return { ok: false, message: error.message }
+  }
+
+  const deliveryResult = await finalizeSignupEmailDelivery(email, '/seller/verify-email', data.user)
+  if (!deliveryResult.ok) {
+    return deliveryResult
   }
 
   return { ok: true }

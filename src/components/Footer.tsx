@@ -1,8 +1,16 @@
 import { Link } from 'react-router-dom'
 import { useState, type FormEvent } from 'react'
+import { FacebookIcon, InstagramIcon, LinkedInIcon, YoutubeIcon } from './Icons'
 import { Logo } from './Logo'
 import { footerLegalLinks } from '../lib/legalDocuments'
 import { subscribeNewsletter } from '../lib/marketplaceBackend'
+
+const socialLinks = [
+  { label: 'Facebook', href: 'https://www.facebook.com/agtrenz', Icon: FacebookIcon },
+  { label: 'Instagram', href: 'https://www.instagram.com/agtrenz', Icon: InstagramIcon },
+  { label: 'YouTube', href: 'https://www.youtube.com/@agtrenz', Icon: YoutubeIcon },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/company/agtrenz', Icon: LinkedInIcon },
+] as const
 
 export function Footer() {
   const [email, setEmail] = useState('')
@@ -20,6 +28,13 @@ export function Footer() {
         <div className="footer__brand">
           <Logo className="header__logo header__logo--footer" />
           <p>Your trusted global marketplace for quality products delivered worldwide.</p>
+          <div className="footer__social" aria-label="Social media">
+            {socialLinks.map(({ label, href, Icon }) => (
+              <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}>
+                <Icon />
+              </a>
+            ))}
+          </div>
         </div>
 
         <div className="footer__links">
@@ -72,19 +87,14 @@ export function Footer() {
       </div>
 
       <div className="container footer__bottom">
-        <div className="footer__legal footer__legal--grid">
-          <span>&copy; 2026 AGTRENZ. All rights reserved.</span>
-          <nav className="footer__legal-nav" aria-label="Legal">
-            {footerLegalLinks.map((link) => (
-              <Link key={link.to} to={link.to}>{link.label}</Link>
-            ))}
-          </nav>
+        <div className="footer__bottom-row">
+          <p className="footer__copyright">&copy; 2026 AGTRENZ. All rights reserved.</p>
         </div>
-        <div className="footer__payments">
-          {['Visa', 'MC', 'Stripe', 'Amex', 'Apple Pay', 'G Pay'].map((p) => (
-            <span key={p} className="payment-badge">{p}</span>
+        <nav className="footer__legal-nav" aria-label="Legal">
+          {footerLegalLinks.map((link) => (
+            <Link key={link.to} to={link.to}>{link.label}</Link>
           ))}
-        </div>
+        </nav>
       </div>
     </footer>
   )

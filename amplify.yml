@@ -14,3 +14,11 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
+customHeaders:
+redirects:
+  - source: '/seller/verify-email/'
+    target: '/seller/verify-email'
+    status: '301'
+  - source: '/buyer/verify-email/'
+    target: '/buyer/verify-email'
+    status: '301'
