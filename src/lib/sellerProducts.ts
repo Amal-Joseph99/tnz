@@ -59,8 +59,21 @@ export type SellerProductCatalogueRow = {
   productName: string
   sku: string
   stock: number
+  mrp: number
+  sellingPrice: number
   approvalStatus: string
+  imageStoragePath: string | null
 }
+
+export type SellerProductCatalogueStats = {
+  liveProducts: number
+  lowStock: number
+  outOfStock: number
+}
+
+export const SELLER_PRODUCTS_PAGE_SIZE = 25
+
+export const SELLER_PRODUCT_LISTING_TUTORIAL_URL = 'https://www.youtube.com/'
 
 export type SellerProductListingDetail = {
   productId: number
@@ -290,24 +303,102 @@ export async function fetchSellerProductCatalogue(): Promise<SellerProductCatalo
 
   if (error || !products) return []
 
-  const rows: SellerProductCatalogueRow[] = []
+  const productIds = products.map((product) => product.id)
+  if (productIds.length === 0) return []
 
-  for (const product of products) {
-    const { data: variants } = await supabase
+  const [{ data: variants }, { data: media }] = await Promise.all([
+    supabase
       .from('seller_product_variants')
-      .select('stock')
-      .eq('product_id', product.id)
+      .select('product_id, mrp, selling_price, stock')
+      .in('product_id', productIds),
+    supabase
+      .from('seller_product_media')
+      .select('product_id, storage_path, slot_index')
+      .in('product_id', productIds)
+      .eq('media_type', 'product_image')
+      .order('slot_index', { ascending: true }),
+  ])
 
-    const stock = (variants ?? []).reduce((sum, variant) => sum + (variant.stock ?? 0), 0)
+  const variantSummary = new Map<number, { mrp: number; sellingPrice: number; stock: number }>()
+  for (const variant of variants ?? []) {
+    const current = variantSummary.get(variant.product_id)
+    if (!current) {
+      variantSummary.set(variant.product_id, {
+        mrp: Number(variant.mrp ?? 0),
+        sellingPrice: Number(variant.selling_price ?? 0),
+        stock: Number(variant.stock ?? 0),
+      })
+      continue
+    }
 
-    rows.push({
-      id: product.id,
-      productName: product.product_name,
-      sku: product.sku,
-      stock,
-      approvalStatus: product.approval_status,
+    variantSummary.set(variant.product_id, {
+      mrp: Math.max(current.mrp, Number(variant.mrp ?? 0)),
+      sellingPrice: current.sellingPrice || Number(variant.selling_price ?? 0),
+      stock: current.stock + Number(variant.stock ?? 0),
     })
   }
 
-  return rows
+  const imageByProduct = new Map<number, string>()
+  for (const item of media ?? []) {
+    if (!imageByProduct.has(item.product_id) && item.storage_path) {
+      imageByProduct.set(item.product_id, item.storage_path)
+    }
+  }
+
+  return products.map((product) => {
+    const summary = variantSummary.get(product.id) ?? { mrp: 0, sellingPrice: 0, stock: 0 }
+    return {
+      id: product.id,
+      productName: product.product_name,
+      sku: product.sku,
+      stock: summary.stock,
+      mrp: summary.mrp,
+      sellingPrice: summary.sellingPrice,
+      approvalStatus: product.approval_status,
+      imageStoragePath: imageByProduct.get(product.id) ?? null,
+    }
+  })
+}
+
+export function computeSellerProductCatalogueStats(rows: SellerProductCatalogueRow[]): SellerProductCatalogueStats {
+  const approved = rows.filter((row) => row.approvalStatus === 'approved')
+  return {
+    liveProducts: approved.length,
+    lowStock: approved.filter((row) => row.stock > 0 && row.stock < 5).length,
+    outOfStock: approved.filter((row) => row.stock === 0).length,
+  }
+}
+
+export function filterSellerProductsByTab(rows: SellerProductCatalogueRow[], tab: string) {
+  if (tab === 'approved') {
+    return rows.filter((row) => row.approvalStatus === 'approved')
+  }
+  if (tab === 'rejected') {
+    return rows.filter((row) => row.approvalStatus === 'rejected')
+  }
+  return rows.filter((row) => row.approvalStatus === 'draft' || row.approvalStatus === 'pending')
+}
+
+export async function deleteSellerProduct(productId: number): Promise<{ ok: true } | { ok: false; message: string }> {
+  if (!supabase) {
+    return { ok: false, message: 'Supabase is not configured.' }
+  }
+
+  const { data: authData } = await supabase.auth.getUser()
+  const user = authData.user
+  if (!user) {
+    return { ok: false, message: 'You must be signed in as a seller.' }
+  }
+
+  const { error } = await supabase
+    .from('seller_products')
+    .delete()
+    .eq('id', productId)
+    .eq('user_id', user.id)
+
+  if (error) {
+    return { ok: false, message: error.message }
+  }
+
+  return { ok: true }
 }
