@@ -6,7 +6,7 @@ import { featuredProducts, trendingProducts } from './src/data/products'
 import { buildProductShareHtml } from './src/lib/sharePages'
 
 function sharePagesPlugin(): Plugin {
-  const siteOrigin = (process.env.VITE_SITE_URL ?? 'https://www.shopncart.store').replace(/\/$/, '')
+  const siteOrigin = (process.env.VITE_SITE_URL ?? 'https://www.agtrenz.com').replace(/\/$/, '')
 
   const writePages = (outputDir: string) => {
     mkdirSync(outputDir, { recursive: true })

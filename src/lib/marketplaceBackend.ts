@@ -168,3 +168,151 @@ export async function fetchAdminSellers(): Promise<AdminSellerRow[]> {
   if (error || !Array.isArray(data)) return []
   return data as AdminSellerRow[]
 }
+
+export type AppNotification = {
+  id: number
+  audience: string
+  category: string
+  title: string
+  body: string
+  link_path: string | null
+  is_read: boolean
+  created_at: string
+}
+
+export type SellerLedgerEntry = {
+  id: number
+  entry_type: string
+  amount: number
+  currency_code: string
+  status: string
+  available_at: string | null
+  description: string | null
+  created_at: string
+  order_id: number | null
+}
+
+export type AdminReturnRequest = {
+  id: number
+  order_id: number
+  order_number: string
+  reason: string
+  status: string
+  admin_note: string | null
+  stripe_refund_status: string
+  total_amount: number
+  currency_code: string
+  payment_method: string
+  created_at: string
+}
+
+export type SupportRequestRow = {
+  id: number
+  portal_key: string
+  user_id: string | null
+  topic_key: string
+  message: string
+  status: string
+  created_at: string
+  source: string
+}
+
+export type PlatformSettings = {
+  checkout_tax_rate: number
+  return_window_days: number
+  stale_payment_hours: number
+  commission_percent: number
+  settlement_days: number
+  ops_email: string | null
+  notify_kyc_submissions: boolean
+  notify_order_disputes: boolean
+  require_seller_kyc_approval: boolean
+  require_product_approval: boolean
+}
+
+export async function fetchNotifications(): Promise<AppNotification[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('list_user_notifications', { p_limit: 50 })
+  if (error || !Array.isArray(data)) return []
+  return data as AppNotification[]
+}
+
+export async function markAllNotificationsRead() {
+  if (!supabase) return { ok: false as const, message: 'Supabase is not configured.' }
+  const { error } = await supabase.rpc('mark_notifications_read', { p_notification_ids: null })
+  if (error) return { ok: false as const, message: error.message }
+  return { ok: true as const }
+}
+
+export async function fetchSellerWalletSummary() {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('get_seller_wallet_summary')
+  if (error || !data) return null
+  return data as {
+    currencyCode: string
+    availableBalance: number
+    pendingBalance: number
+    totalFees: number
+  }
+}
+
+export async function fetchSellerLedger(): Promise<SellerLedgerEntry[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('list_seller_ledger_entries', { p_limit: 50 })
+  if (error || !Array.isArray(data)) return []
+  return data as SellerLedgerEntry[]
+}
+
+export async function requestSellerPayout(amount: number) {
+  if (!supabase) return { ok: false as const, message: 'Supabase is not configured.' }
+  const { error } = await supabase.rpc('request_seller_payout', { p_amount: amount })
+  if (error) return { ok: false as const, message: error.message }
+  return { ok: true as const }
+}
+
+export async function subscribeNewsletter(email: string) {
+  if (!supabase) return { ok: false as const, message: 'Supabase is not configured.' }
+  const { error } = await supabase.rpc('subscribe_newsletter', { p_email: email })
+  if (error) return { ok: false as const, message: error.message }
+  return { ok: true as const }
+}
+
+export async function fetchAdminPlatformSettings(): Promise<PlatformSettings | null> {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('get_admin_platform_settings')
+  if (error || !data) return null
+  return data as PlatformSettings
+}
+
+export async function saveAdminPlatformSettings(payload: Partial<PlatformSettings>) {
+  if (!supabase) return { ok: false as const, message: 'Supabase is not configured.' }
+  const { error } = await supabase.rpc('update_admin_platform_settings', { p_payload: payload })
+  if (error) return { ok: false as const, message: error.message }
+  return { ok: true as const }
+}
+
+export async function fetchAdminReturnRequests(): Promise<AdminReturnRequest[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('list_admin_return_requests')
+  if (error || !Array.isArray(data)) return []
+  return data as AdminReturnRequest[]
+}
+
+export async function fetchAdminSupportRequests(): Promise<SupportRequestRow[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase.rpc('list_admin_support_requests')
+  if (error || !Array.isArray(data)) return []
+  return data as SupportRequestRow[]
+}
+
+export async function adminReviewReturn(returnRequestId: number, approve: boolean, adminNote?: string) {
+  if (!supabase) return { ok: false as const, message: 'Supabase is not configured.' }
+  const { data, error } = await supabase.functions.invoke('admin-review-return', {
+    body: { returnRequestId, approve, adminNote },
+  })
+  if (error) return { ok: false as const, message: error.message }
+  if (data && typeof data === 'object' && 'error' in data) {
+    return { ok: false as const, message: String((data as { error: string }).error) }
+  }
+  return { ok: true as const, data }
+}

@@ -1,6 +1,18 @@
 import { Link } from 'react-router-dom'
+import { useState, type FormEvent } from 'react'
+import { footerLegalLinks } from '../lib/legalDocuments'
+import { subscribeNewsletter } from '../lib/marketplaceBackend'
 
 export function Footer() {
+  const [email, setEmail] = useState('')
+  const [newsletterMessage, setNewsletterMessage] = useState('')
+
+  const handleNewsletter = async (event: FormEvent) => {
+    event.preventDefault()
+    const result = await subscribeNewsletter(email)
+    setNewsletterMessage(result.ok ? 'Subscribed successfully.' : result.message)
+  }
+
   return (
     <footer className="footer">
       <div className="container footer__main">
@@ -41,39 +53,39 @@ export function Footer() {
               <li><Link to="/sustainability">Sustainability</Link></li>
             </ul>
           </div>
+          <div>
+            <h4>Legal</h4>
+            <ul>
+              {footerLegalLinks.map((link) => (
+                <li key={link.to}><Link to={link.to}>{link.label}</Link></li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         <div className="footer__newsletter">
           <h4>Newsletter</h4>
           <p>Subscribe for exclusive deals and updates.</p>
-          <form className="footer__form" onSubmit={(e) => e.preventDefault()}>
-            <input type="email" placeholder="Your email address" aria-label="Email address" />
-            <button type="submit" className="btn btn--primary">
-              Subscribe
-            </button>
+          {newsletterMessage && <p>{newsletterMessage}</p>}
+          <form className="footer__form" onSubmit={(event) => void handleNewsletter(event)}>
+            <input type="email" placeholder="Your email address" aria-label="Email address" value={email} onChange={(event) => setEmail(event.target.value)} required />
+            <button type="submit" className="btn btn--primary">Subscribe</button>
           </form>
         </div>
       </div>
 
       <div className="container footer__bottom">
-        <div className="footer__legal">
+        <div className="footer__legal footer__legal--grid">
           <span>&copy; 2026 AGTRENZ. All rights reserved.</span>
-          <Link to="/privacy-policy">Privacy Policy</Link>
-          <Link to="/terms-of-service">Terms of Service</Link>
-          <Link to="/cookies-settings">Cookies Settings</Link>
+          <nav className="footer__legal-nav" aria-label="Legal">
+            {footerLegalLinks.map((link) => (
+              <Link key={link.to} to={link.to}>{link.label}</Link>
+            ))}
+          </nav>
         </div>
         <div className="footer__payments">
-          {['Visa', 'MC', 'PayPal', 'Amex', 'Apple Pay', 'G Pay'].map((p) => (
-            <span key={p} className="payment-badge">
-              {p}
-            </span>
-          ))}
-        </div>
-        <div className="footer__social">
-          {['Facebook', 'Instagram', 'X', 'YouTube'].map((s) => (
-            <a key={s} href="#" aria-label={s}>
-              {s[0]}
-            </a>
+          {['Visa', 'MC', 'Stripe', 'Amex', 'Apple Pay', 'G Pay'].map((p) => (
+            <span key={p} className="payment-badge">{p}</span>
           ))}
         </div>
       </div>

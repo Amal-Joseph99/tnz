@@ -78,7 +78,7 @@ export function getCheckoutSiteUrl(fallbackOrigin?: string | null) {
   if (fallbackOrigin?.trim()) {
     return fallbackOrigin.trim().replace(/\/$/, '')
   }
-  throw new Error('Missing SITE_URL secret for Stripe redirect URLs.')
+  return 'https://www.agtrenz.com'
 }
 
 export async function verifyStripeWebhookSignature(

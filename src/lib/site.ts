@@ -1,4 +1,4 @@
-const DEFAULT_SITE_URL = 'https://main.d13h6a6205mdyf.amplifyapp.com'
+const DEFAULT_SITE_URL = 'https://www.agtrenz.com'
 
 export function getSiteOrigin(): string {
   const configured = import.meta.env.VITE_SITE_URL as string | undefined

@@ -3762,7 +3762,7 @@
 
 .footer__links {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
 }
 
@@ -3814,6 +3814,29 @@
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.footer__legal--grid {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.footer__legal-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.footer__legal-nav a {
+  color: #64748b;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.footer__legal-nav a:hover {
+  color: #0f172a;
+  text-decoration: underline;
 }
 
 .payment-badge,

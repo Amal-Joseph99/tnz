@@ -13,6 +13,8 @@ const adminNavItems = [
   { label: 'Homepage sections', to: '/admin/homepage-sections' },
   { label: 'Orders', to: '/admin/orders' },
   { label: 'Customers', to: '/admin/customers' },
+  { label: 'Returns', to: '/admin/returns' },
+  { label: 'Support', to: '/admin/support' },
   { label: 'Notifications', to: '/admin/notifications' },
   { label: 'Settings', to: '/admin/settings' },
   { label: 'Help', to: '/admin/help' },

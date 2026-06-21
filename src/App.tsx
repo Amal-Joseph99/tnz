@@ -33,7 +33,6 @@ import { CheckoutReviewPage } from './pages/CheckoutReviewPage'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { CategoryProductsPage } from './pages/CategoryProductsPage'
 import { ContactUsPage } from './pages/ContactUsPage'
-import { CookiesSettingsPage } from './pages/CookiesSettingsPage'
 import { HomePage } from './pages/HomePage'
 import { HelpCenterPage } from './pages/HelpCenterPage'
 import { NewArrivalsPage } from './pages/NewArrivalsPage'
@@ -41,7 +40,9 @@ import { NotificationsPage } from './pages/NotificationsPage'
 import { OrdersPage } from './pages/OrdersPage'
 import { PressPage } from './pages/PressPage'
 import { ProductDetailsPage } from './pages/ProductDetailsPage'
-import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
+import { AdminReturnsPage } from './pages/AdminReturnsPage'
+import { AdminSupportPage } from './pages/AdminSupportPage'
+import { LegalDocumentBySlug } from './pages/LegalDocumentPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { ReturnsPage } from './pages/ReturnsPage'
 import { SalePage } from './pages/SalePage'
@@ -65,7 +66,6 @@ import { SellersSignupPage } from './pages/SellersSignupPage'
 import { SignInPage } from './pages/SignInPage'
 import { SignUpPage } from './pages/SignUpPage'
 import { SustainabilityPage } from './pages/SustainabilityPage'
-import { TermsOfServicePage } from './pages/TermsOfServicePage'
 import { TrackOrderPage } from './pages/TrackOrderPage'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
@@ -119,9 +119,16 @@ function AppContent() {
               <Route path="/careers" element={<CareersPage />} />
               <Route path="/press" element={<PressPage />} />
               <Route path="/sustainability" element={<SustainabilityPage />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-              <Route path="/terms-of-service" element={<TermsOfServicePage />} />
-              <Route path="/cookies-settings" element={<CookiesSettingsPage />} />
+              <Route path="/privacy-policy" element={<LegalDocumentBySlug slug="privacy-policy" />} />
+              <Route path="/terms-of-service" element={<LegalDocumentBySlug slug="terms-of-service" />} />
+              <Route path="/cookies-settings" element={<LegalDocumentBySlug slug="cookies-settings" />} />
+              <Route path="/shipping-policy" element={<LegalDocumentBySlug slug="shipping-policy" />} />
+              <Route path="/refund-policy" element={<LegalDocumentBySlug slug="refund-policy" />} />
+              <Route path="/seller-agreement" element={<LegalDocumentBySlug slug="seller-agreement" />} />
+              <Route path="/buyer-protection" element={<LegalDocumentBySlug slug="buyer-protection" />} />
+              <Route path="/payment-terms" element={<LegalDocumentBySlug slug="payment-terms" />} />
+              <Route path="/disclaimer" element={<LegalDocumentBySlug slug="disclaimer" />} />
+              <Route path="/accessibility" element={<LegalDocumentBySlug slug="accessibility" />} />
               <Route path="/sellerslandingpage" element={<SellersLandingPage />} />
               <Route path="/seller/signin" element={<SellersLoginPage />} />
               <Route path="/seller/signup" element={<SellersSignupPage />} />
@@ -146,6 +153,8 @@ function AppContent() {
               <Route path="/admin/homepage-sections" element={<RequireAdminAuth><AdminStorefrontSectionsPage /></RequireAdminAuth>} />
               <Route path="/admin/orders" element={<RequireAdminAuth><AdminOrdersPage /></RequireAdminAuth>} />
               <Route path="/admin/customers" element={<RequireAdminAuth><AdminCustomersPage /></RequireAdminAuth>} />
+              <Route path="/admin/returns" element={<RequireAdminAuth><AdminReturnsPage /></RequireAdminAuth>} />
+              <Route path="/admin/support" element={<RequireAdminAuth><AdminSupportPage /></RequireAdminAuth>} />
               <Route path="/admin/notifications" element={<RequireAdminAuth><AdminNotificationsPage /></RequireAdminAuth>} />
               <Route path="/admin/settings" element={<RequireAdminAuth><AdminSettingsPage /></RequireAdminAuth>} />
               <Route path="/admin/help" element={<RequireAdminAuth><AdminHelpPage /></RequireAdminAuth>} />
