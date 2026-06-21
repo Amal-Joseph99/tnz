@@ -1916,8 +1916,68 @@
 
 .kyc-upload-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+
+.kyc-address-card .checkout-form label {
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.kyc-form-required {
+  color: #dc2626;
+}
+
+.kyc-location-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.kyc-location-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.kyc-location-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.kyc-upload-slot {
+  display: grid;
+  gap: 6px;
+  padding-top: 10px;
+  margin-top: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.kyc-upload-slot__label {
+  color: #0f172a !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+
+.seller-kyc-terms__list {
+  display: grid;
+  gap: 12px;
+}
+
+.seller-kyc-terms .seller-terms-check a {
+  color: #1d4ed8;
+  font-weight: 700;
+  text-decoration: underline;
 }
 
 .kyc-upload-card {

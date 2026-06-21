@@ -14,6 +14,7 @@ function sanitizeFileName(fileName: string) {
 export async function uploadKycDocument(
   documentType: string,
   file: File,
+  documentSlot = 1,
 ): Promise<UploadResult> {
   if (!supabase) {
     return { ok: false, message: 'Supabase is not configured.' }
@@ -26,7 +27,7 @@ export async function uploadKycDocument(
   }
 
   const safeName = sanitizeFileName(file.name)
-  const storagePath = `${user.id}/${documentType}/${Date.now()}-${safeName}`
+  const storagePath = `${user.id}/${documentType}/slot-${documentSlot}/${Date.now()}-${safeName}`
 
   const { error } = await supabase.storage.from(KYC_BUCKET).upload(storagePath, file, {
     upsert: true,

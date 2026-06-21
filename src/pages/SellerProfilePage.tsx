@@ -1,10 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { LocationIcon } from '../components/Icons'
 import { SellerDashboardShell } from '../components/SellerDashboardShell'
+import { detectLocationWithOpenCage } from '../lib/opencage'
+import { fetchSellerCountryOptions, type SellerCountryOption } from '../lib/sellerCountries'
 import {
   fetchSellerAccountProfile,
   fetchSellerKycDocuments,
   fetchSellerKycSubmission,
+  kycDocumentKey,
   submitSellerKyc,
+  type KycDocumentSlot,
   type KycDocumentType,
   type SellerKycDocument,
 } from '../lib/sellerKyc'
@@ -12,30 +18,45 @@ import { uploadKycDocument } from '../lib/sellerStorage'
 import { fetchSellerWorkflow, type SellerWorkflowState } from '../lib/sellerWorkflow'
 
 const kycDocumentSlots: Array<{ title: string; documentType: KycDocumentType; required: boolean }> = [
-  { title: 'Photo', documentType: 'photo', required: true },
-  { title: 'Address proof', documentType: 'address_proof', required: true },
-  { title: 'Tax ID proof', documentType: 'tax_id_proof', required: false },
+  { title: 'Seller photo', documentType: 'photo', required: true },
+  { title: 'Individual address proof', documentType: 'individual_address_proof', required: true },
+  { title: 'Business address proof', documentType: 'business_address_proof', required: true },
+  { title: 'Tax certificate', documentType: 'tax_certificate', required: false },
 ]
+
+const uploadSlots: KycDocumentSlot[] = [1, 2]
+
+function RequiredMark() {
+  return <span className="kyc-form-required" aria-hidden="true"> *</span>
+}
 
 export function SellerProfilePage() {
   const [workflow, setWorkflow] = useState<SellerWorkflowState | null>(null)
   const [profile, setProfile] = useState({ businessName: '', email: '', countryName: '', phone: '' })
+  const [countries, setCountries] = useState<SellerCountryOption[]>([])
   const [businessType, setBusinessType] = useState('Individual')
   const [businessName, setBusinessName] = useState('')
   const [businessAddress, setBusinessAddress] = useState('')
+  const [contactFullName, setContactFullName] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
+  const [streetAddress, setStreetAddress] = useState('')
+  const [addressLine2, setAddressLine2] = useState('')
+  const [city, setCity] = useState('')
+  const [stateProvince, setStateProvince] = useState('')
+  const [postalCode, setPostalCode] = useState('')
+  const [addressCountry, setAddressCountry] = useState('')
   const [taxId, setTaxId] = useState('')
   const [accountHolderName, setAccountHolderName] = useState('')
   const [bankName, setBankName] = useState('')
   const [accountNumber, setAccountNumber] = useState('')
   const [ifscSwift, setIfscSwift] = useState('')
   const [documents, setDocuments] = useState<SellerKycDocument[]>([])
-  const [uploadProgress, setUploadProgress] = useState<Record<KycDocumentType, number>>({
-    photo: 0,
-    address_proof: 0,
-    tax_id_proof: 0,
-  })
-  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
+  const [termsAndPoliciesAccepted, setTermsAndPoliciesAccepted] = useState(false)
+  const [sellerAgreementAccepted, setSellerAgreementAccepted] = useState(false)
+  const [shippingReturnPolicyAccepted, setShippingReturnPolicyAccepted] = useState(false)
   const [rejectionReason, setRejectionReason] = useState<string | null>(null)
+  const [locating, setLocating] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
@@ -51,22 +72,35 @@ export function SellerProfilePage() {
       fetchSellerAccountProfile(),
       fetchSellerKycSubmission(),
       fetchSellerKycDocuments(),
+      fetchSellerCountryOptions(),
     ])
-      .then(([workflowState, accountProfile, kycSubmission, kycDocuments]) => {
+      .then(([workflowState, accountProfile, kycSubmission, kycDocuments, countryOptions]) => {
         if (!active) return
 
         setWorkflow(workflowState)
+        setCountries(countryOptions)
 
         if (accountProfile) {
           setProfile(accountProfile)
+          setContactFullName(kycSubmission?.contactFullName || accountProfile.businessName)
+          setContactPhone(kycSubmission?.contactPhone || accountProfile.phone)
           setBusinessName(kycSubmission?.businessName || accountProfile.businessName)
           setAccountHolderName(kycSubmission?.accountHolderName || accountProfile.businessName)
+          setAddressCountry(kycSubmission?.addressCountry || accountProfile.countryName)
         }
 
         if (kycSubmission) {
           setBusinessType(kycSubmission.businessType)
           setBusinessName(kycSubmission.businessName)
           setBusinessAddress(kycSubmission.businessAddress)
+          setContactFullName(kycSubmission.contactFullName)
+          setContactPhone(kycSubmission.contactPhone)
+          setStreetAddress(kycSubmission.streetAddress)
+          setAddressLine2(kycSubmission.addressLine2)
+          setCity(kycSubmission.city)
+          setStateProvince(kycSubmission.stateProvince)
+          setPostalCode(kycSubmission.postalCode)
+          setAddressCountry(kycSubmission.addressCountry)
           setTaxId(kycSubmission.taxId)
           setAccountHolderName(kycSubmission.accountHolderName)
           setBankName(kycSubmission.bankName)
@@ -76,11 +110,18 @@ export function SellerProfilePage() {
         }
 
         setDocuments(kycDocuments)
-        setUploadProgress({
-          photo: kycDocuments.some((doc) => doc.documentType === 'photo') ? 100 : 0,
-          address_proof: kycDocuments.some((doc) => doc.documentType === 'address_proof') ? 100 : 0,
-          tax_id_proof: kycDocuments.some((doc) => doc.documentType === 'tax_id_proof') ? 100 : 0,
-        })
+        const progress: Record<string, number> = {}
+        for (const slot of kycDocumentSlots) {
+          for (const documentSlot of uploadSlots) {
+            const key = kycDocumentKey(slot.documentType, documentSlot)
+            progress[key] = kycDocuments.some(
+              (doc) => doc.documentType === slot.documentType && doc.documentSlot === documentSlot,
+            )
+              ? 100
+              : 0
+          }
+        }
+        setUploadProgress(progress)
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -91,30 +132,62 @@ export function SellerProfilePage() {
     }
   }, [])
 
-  const handleDocumentUpload = async (documentType: KycDocumentType, file: File, required: boolean) => {
-    setError('')
-    setUploadProgress((current) => ({ ...current, [documentType]: 35 }))
+  const countryOptions = useMemo(
+    () => countries.map((country) => country.country_name),
+    [countries],
+  )
 
-    const upload = await uploadKycDocument(documentType, file)
+  const handleUseCurrentLocation = async () => {
+    setLocating(true)
+    setError('')
+    try {
+      const detected = await detectLocationWithOpenCage()
+      if (!detected) {
+        setError('Unable to detect your location. Enter the address manually.')
+        return
+      }
+
+      setCity(detected.city)
+      setStateProvince(detected.state)
+      setAddressCountry(detected.country)
+    } finally {
+      setLocating(false)
+    }
+  }
+
+  const handleDocumentUpload = async (
+    documentType: KycDocumentType,
+    documentSlot: KycDocumentSlot,
+    file: File,
+    required: boolean,
+  ) => {
+    const progressKey = kycDocumentKey(documentType, documentSlot)
+    setError('')
+    setUploadProgress((current) => ({ ...current, [progressKey]: 35 }))
+
+    const upload = await uploadKycDocument(documentType, file, documentSlot)
     if (!upload.ok) {
-      setUploadProgress((current) => ({ ...current, [documentType]: 0 }))
+      setUploadProgress((current) => ({ ...current, [progressKey]: 0 }))
       setError(upload.message)
       return
     }
 
     const nextDocument: SellerKycDocument = {
       documentType,
+      documentSlot,
       storagePath: upload.storagePath,
       fileName: upload.fileName,
       mimeType: upload.mimeType,
-      isRequired: required,
+      isRequired: required && documentSlot === 1,
     }
 
     setDocuments((current) => [
-      ...current.filter((doc) => doc.documentType !== documentType),
+      ...current.filter(
+        (doc) => !(doc.documentType === documentType && doc.documentSlot === documentSlot),
+      ),
       nextDocument,
     ])
-    setUploadProgress((current) => ({ ...current, [documentType]: 100 }))
+    setUploadProgress((current) => ({ ...current, [progressKey]: 100 }))
   }
 
   const handleSubmit = async () => {
@@ -126,12 +199,22 @@ export function SellerProfilePage() {
       businessType,
       businessName,
       businessAddress,
+      contactFullName,
+      contactPhone,
+      streetAddress,
+      addressLine2,
+      city,
+      stateProvince,
+      postalCode,
+      addressCountry,
       taxId,
       accountHolderName,
       bankName,
       accountNumber,
       ifscSwift,
-      termsAccepted,
+      termsAndPoliciesAccepted,
+      sellerAgreementAccepted,
+      shippingReturnPolicyAccepted,
       documents,
     })
 
@@ -159,19 +242,113 @@ export function SellerProfilePage() {
     <SellerDashboardShell title="Seller Profile & KYC" subtitle="Complete KYC verification before warehouse setup and product listing.">
       <section className="seller-console-grid seller-console-grid--kyc">
         <div className="seller-kyc-main">
-          <section className="seller-console-card">
+          <section className="seller-console-card kyc-address-card">
             <div className="seller-console-card__header">
               <div>
-                <h2>Personal details</h2>
-                <p>Details captured during seller signup.</p>
+                <h2>Contact information</h2>
+                <p>Primary contact details for your seller account.</p>
               </div>
               <span className="seller-badge seller-badge--success">Email verified</span>
             </div>
-            <form className="seller-console-form">
-              <label>Business name<input value={profile.businessName} readOnly /></label>
-              <label>Email<input value={profile.email} readOnly /></label>
-              <label>Country<input value={profile.countryName} readOnly /></label>
-              <label>Mobile number<input value={profile.phone} readOnly /></label>
+            <form className="checkout-form checkout-form--grid kyc-address-form">
+              <label>
+                Full name<RequiredMark />
+                <input
+                  value={contactFullName}
+                  disabled={kycLocked}
+                  onChange={(event) => setContactFullName(event.target.value)}
+                  required
+                />
+              </label>
+              <label>
+                Phone number<RequiredMark />
+                <input
+                  type="tel"
+                  value={contactPhone}
+                  disabled={kycLocked}
+                  onChange={(event) => setContactPhone(event.target.value)}
+                  required
+                />
+              </label>
+              <label className="checkout-form__full">
+                Email<RequiredMark />
+                <input type="email" value={profile.email} readOnly />
+              </label>
+            </form>
+          </section>
+
+          <section className="seller-console-card kyc-address-card">
+            <div className="seller-console-card__header">
+              <div>
+                <h2>Address details</h2>
+                <p>Your registered individual address for verification.</p>
+              </div>
+              {!kycLocked && (
+                <button
+                  type="button"
+                  className="kyc-location-btn"
+                  disabled={locating}
+                  onClick={() => void handleUseCurrentLocation()}
+                >
+                  <LocationIcon />
+                  {locating ? 'Locating…' : 'Use current location'}
+                </button>
+              )}
+            </div>
+            <form className="checkout-form checkout-form--grid kyc-address-form">
+              <label className="checkout-form__full">
+                Street address<RequiredMark />
+                <input
+                  value={streetAddress}
+                  disabled={kycLocked}
+                  onChange={(event) => setStreetAddress(event.target.value)}
+                  required
+                />
+              </label>
+              <label className="checkout-form__full">
+                Apartment, suite, etc. (optional)
+                <input
+                  value={addressLine2}
+                  disabled={kycLocked}
+                  onChange={(event) => setAddressLine2(event.target.value)}
+                />
+              </label>
+              <label>
+                City<RequiredMark />
+                <input value={city} disabled={kycLocked} onChange={(event) => setCity(event.target.value)} required />
+              </label>
+              <label>
+                State / Province<RequiredMark />
+                <input
+                  value={stateProvince}
+                  disabled={kycLocked}
+                  onChange={(event) => setStateProvince(event.target.value)}
+                  required
+                />
+              </label>
+              <label>
+                Postal code<RequiredMark />
+                <input
+                  value={postalCode}
+                  disabled={kycLocked}
+                  onChange={(event) => setPostalCode(event.target.value)}
+                  required
+                />
+              </label>
+              <label>
+                Country<RequiredMark />
+                <select
+                  value={addressCountry}
+                  disabled={kycLocked}
+                  onChange={(event) => setAddressCountry(event.target.value)}
+                  required
+                >
+                  <option value="">Select country</option>
+                  {countryOptions.map((country) => (
+                    <option key={country} value={country}>{country}</option>
+                  ))}
+                </select>
+              </label>
             </form>
           </section>
 
@@ -206,41 +383,59 @@ export function SellerProfilePage() {
             <div className="seller-console-card__header">
               <div>
                 <h2>KYC document gallery upload</h2>
-                <p>Upload identity, address, and tax documents. Progress is visible for every file.</p>
+                <p>Upload seller photo, individual and business address proofs, and optional tax certificate. Two files allowed per section.</p>
               </div>
             </div>
             <div className="kyc-upload-grid">
-              {kycDocumentSlots.map((item) => {
-                const uploaded = documents.find((doc) => doc.documentType === item.documentType)
-                const progress = uploadProgress[item.documentType]
+              {kycDocumentSlots.map((item) => (
+                <article key={item.documentType} className="kyc-upload-card">
+                  <div className="kyc-upload-card__icon">{item.title.slice(0, 1)}</div>
+                  <strong>{item.title}</strong>
+                  <span>{item.required ? 'Required' : 'Optional'}</span>
+                  {uploadSlots.map((documentSlot) => {
+                    const progressKey = kycDocumentKey(item.documentType, documentSlot)
+                    const uploaded = documents.find(
+                      (doc) => doc.documentType === item.documentType && doc.documentSlot === documentSlot,
+                    )
+                    const progress = uploadProgress[progressKey] ?? 0
 
-                return (
-                  <article key={item.title} className="kyc-upload-card">
-                    <div className="kyc-upload-card__icon">{item.title.slice(0, 1)}</div>
-                    <strong>{item.title}</strong>
-                    <span>{item.required ? 'Required' : 'Optional'}</span>
-                    <p>{uploaded?.fileName || 'No file selected'}</p>
-                    <div className="kyc-progress" aria-label={`${item.title} upload progress`}>
-                      <span style={{ width: `${progress}%` }} />
-                    </div>
-                    <em>{progress}% uploading</em>
-                    {!kycLocked && (
-                      <label className="seller-secondary-action">
-                        Choose file
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp,application/pdf"
-                          hidden
-                          onChange={(event) => {
-                            const file = event.target.files?.[0]
-                            if (file) void handleDocumentUpload(item.documentType, file, item.required)
-                          }}
-                        />
-                      </label>
-                    )}
-                  </article>
-                )
-              })}
+                    return (
+                      <div key={progressKey} className="kyc-upload-slot">
+                        <p className="kyc-upload-slot__label">
+                          Upload {documentSlot}
+                          {item.required && documentSlot === 1 ? <RequiredMark /> : null}
+                        </p>
+                        <p>{uploaded?.fileName || 'No file selected'}</p>
+                        <div className="kyc-progress" aria-label={`${item.title} upload ${documentSlot} progress`}>
+                          <span style={{ width: `${progress}%` }} />
+                        </div>
+                        <em>{progress}% uploading</em>
+                        {!kycLocked && (
+                          <label className="seller-secondary-action">
+                            Choose file {documentSlot}
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,application/pdf"
+                              hidden
+                              onChange={(event) => {
+                                const file = event.target.files?.[0]
+                                if (file) {
+                                  void handleDocumentUpload(
+                                    item.documentType,
+                                    documentSlot,
+                                    file,
+                                    item.required,
+                                  )
+                                }
+                              }}
+                            />
+                          </label>
+                        )}
+                      </div>
+                    )
+                  })}
+                </article>
+              ))}
             </div>
           </section>
 
@@ -268,11 +463,46 @@ export function SellerProfilePage() {
           )}
 
           {!kycLocked && (
-            <section className="seller-console-card">
-              <label className="seller-terms-check">
-                <input type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} />
-                <span>I accept the AGTRENZ seller terms, KYC policy, and document verification conditions.</span>
-              </label>
+            <section className="seller-console-card seller-kyc-terms">
+              <div className="seller-kyc-terms__list">
+                <label className="seller-terms-check">
+                  <input
+                    type="checkbox"
+                    checked={termsAndPoliciesAccepted}
+                    onChange={(event) => setTermsAndPoliciesAccepted(event.target.checked)}
+                  />
+                  <span>
+                    I accept the AGTRENZ{' '}
+                    <Link to="/terms-of-service" target="_blank" rel="noreferrer">Terms of Service</Link>
+                    {' '}and{' '}
+                    <Link to="/privacy-policy" target="_blank" rel="noreferrer">Privacy Policy</Link>.
+                  </span>
+                </label>
+                <label className="seller-terms-check">
+                  <input
+                    type="checkbox"
+                    checked={sellerAgreementAccepted}
+                    onChange={(event) => setSellerAgreementAccepted(event.target.checked)}
+                  />
+                  <span>
+                    I accept the AGTRENZ{' '}
+                    <Link to="/seller-agreement" target="_blank" rel="noreferrer">Seller Agreement</Link>.
+                  </span>
+                </label>
+                <label className="seller-terms-check">
+                  <input
+                    type="checkbox"
+                    checked={shippingReturnPolicyAccepted}
+                    onChange={(event) => setShippingReturnPolicyAccepted(event.target.checked)}
+                  />
+                  <span>
+                    I accept the AGTRENZ{' '}
+                    <Link to="/shipping-policy" target="_blank" rel="noreferrer">Shipping Policy</Link>
+                    {' '}and{' '}
+                    <Link to="/refund-policy" target="_blank" rel="noreferrer">Return Policy</Link>.
+                  </span>
+                </label>
+              </div>
               {error && <div className="auth-message auth-message--error">{error}</div>}
               {message && <div className="auth-message auth-message--success">{message}</div>}
               <button type="button" className="seller-primary-action" disabled={saving} onClick={() => void handleSubmit()}>
