@@ -7,6 +7,7 @@ import { useCurrency } from '../context/CurrencyContext'
 const adminNavItems = [
   { label: 'Dashboard', to: '/admin/dashboard' },
   { label: 'Sellers', to: '/admin/sellers' },
+  { label: 'Warehouses', to: '/admin/warehouses' },
   { label: 'KYC Approvals', to: '/admin/kyc' },
   { label: 'Products', to: '/admin/products' },
   { label: 'Categories', to: '/admin/categories' },
