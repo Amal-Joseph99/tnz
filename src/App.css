@@ -1955,6 +1955,27 @@
   cursor: wait;
 }
 
+.kyc-same-address-check {
+  margin-top: 4px;
+  padding: 12px 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  background: #f8fbff;
+}
+
+.kyc-address-subsection {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.kyc-address-subsection h3 {
+  margin-bottom: 14px;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .kyc-upload-slot {
   display: grid;
   gap: 6px;
@@ -2284,6 +2305,50 @@
   margin: 0;
   color: #475569;
   font-size: 13px;
+}
+
+.admin-kyc-address-block {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-kyc-address-block pre {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.admin-kyc-flag {
+  color: #1d4ed8 !important;
+  font-size: 12px !important;
+  font-weight: 700;
+}
+
+.admin-document-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.admin-document-grid article {
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.admin-document-grid a {
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .admin-approval-card__actions {

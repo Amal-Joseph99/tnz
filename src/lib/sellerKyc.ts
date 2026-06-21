@@ -22,6 +22,13 @@ export type SellerKycSubmission = {
   businessType: string
   businessName: string
   businessAddress: string
+  businessStreetAddress: string
+  businessAddressLine2: string
+  businessCity: string
+  businessStateProvince: string
+  businessPostalCode: string
+  businessAddressCountry: string
+  businessSameAsIndividual: boolean
   contactFullName: string
   contactPhone: string
   streetAddress: string
@@ -51,7 +58,13 @@ export type SellerKycDocument = {
 export type SellerKycInput = {
   businessType: string
   businessName: string
-  businessAddress: string
+  businessStreetAddress: string
+  businessAddressLine2: string
+  businessCity: string
+  businessStateProvince: string
+  businessPostalCode: string
+  businessAddressCountry: string
+  businessSameAsIndividual: boolean
   contactFullName: string
   contactPhone: string
   streetAddress: string
@@ -82,8 +95,38 @@ export function normalizeKycDocumentType(value: string): KycDocumentType {
   return LEGACY_DOCUMENT_TYPES[value] ?? (value as KycDocumentType)
 }
 
+export const KYC_DOCUMENT_LABELS: Record<string, string> = {
+  photo: 'Seller photo',
+  individual_address_proof: 'Individual address proof',
+  business_address_proof: 'Business address proof',
+  tax_certificate: 'Tax certificate',
+  address_proof: 'Address proof',
+  tax_id_proof: 'Tax ID proof',
+}
+
+export function formatKycDocumentLabel(documentType: string, documentSlot?: number) {
+  const label = KYC_DOCUMENT_LABELS[documentType] ?? documentType.replaceAll('_', ' ')
+  return documentSlot ? `${label} (upload ${documentSlot})` : label
+}
+
 export function kycDocumentKey(documentType: KycDocumentType, documentSlot: KycDocumentSlot) {
   return `${documentType}:${documentSlot}`
+}
+
+export function formatKycAddress(parts: {
+  streetAddress: string
+  addressLine2?: string
+  city: string
+  stateProvince: string
+  postalCode: string
+  addressCountry: string
+}) {
+  return [
+    parts.streetAddress.trim(),
+    parts.addressLine2?.trim(),
+    [parts.city.trim(), parts.stateProvince.trim(), parts.postalCode.trim()].filter(Boolean).join(', '),
+    parts.addressCountry.trim(),
+  ].filter(Boolean).join('\n')
 }
 
 export async function fetchSellerAccountProfile(): Promise<SellerAccountProfile | null> {
@@ -131,6 +174,13 @@ export async function fetchSellerKycSubmission(): Promise<SellerKycSubmission | 
     businessType: data.business_type,
     businessName: data.business_name,
     businessAddress: data.business_address,
+    businessStreetAddress: data.business_street_address ?? '',
+    businessAddressLine2: data.business_address_line_2 ?? '',
+    businessCity: data.business_city ?? '',
+    businessStateProvince: data.business_state_province ?? '',
+    businessPostalCode: data.business_postal_code ?? '',
+    businessAddressCountry: data.business_address_country ?? '',
+    businessSameAsIndividual: Boolean(data.business_same_as_individual),
     contactFullName: data.contact_full_name ?? '',
     contactPhone: data.contact_phone ?? '',
     streetAddress: data.street_address ?? '',
@@ -204,6 +254,29 @@ export async function submitSellerKyc(input: SellerKycInput): Promise<MutationRe
     return { ok: false, message: 'Complete the address details before submitting KYC.' }
   }
 
+  if (!input.businessName.trim()) {
+    return { ok: false, message: 'Business name is required.' }
+  }
+
+  if (
+    !input.businessStreetAddress.trim()
+    || !input.businessCity.trim()
+    || !input.businessStateProvince.trim()
+    || !input.businessPostalCode.trim()
+    || !input.businessAddressCountry.trim()
+  ) {
+    return { ok: false, message: 'Complete the business address before submitting KYC.' }
+  }
+
+  const formattedBusinessAddress = formatKycAddress({
+    streetAddress: input.businessStreetAddress,
+    addressLine2: input.businessAddressLine2,
+    city: input.businessCity,
+    stateProvince: input.businessStateProvince,
+    postalCode: input.businessPostalCode,
+    addressCountry: input.businessAddressCountry,
+  })
+
   const { data: authData } = await supabase.auth.getUser()
   const user = authData.user
   if (!user) {
@@ -228,7 +301,14 @@ export async function submitSellerKyc(input: SellerKycInput): Promise<MutationRe
     user_id: user.id,
     business_type: input.businessType.trim(),
     business_name: input.businessName.trim(),
-    business_address: input.businessAddress.trim(),
+    business_address: formattedBusinessAddress,
+    business_street_address: input.businessStreetAddress.trim(),
+    business_address_line_2: input.businessAddressLine2.trim() || null,
+    business_city: input.businessCity.trim(),
+    business_state_province: input.businessStateProvince.trim(),
+    business_postal_code: input.businessPostalCode.trim(),
+    business_address_country: input.businessAddressCountry.trim(),
+    business_same_as_individual: input.businessSameAsIndividual,
     contact_full_name: input.contactFullName.trim(),
     contact_phone: input.contactPhone.trim(),
     street_address: input.streetAddress.trim(),
@@ -247,7 +327,7 @@ export async function submitSellerKyc(input: SellerKycInput): Promise<MutationRe
     shipping_return_policy_accepted_at: now,
   }
 
-  const writeResult = existing?.status === 'rejected'
+  const writeResult = existing
     ? await supabase.from('seller_kyc_submissions').update(payload).eq('user_id', user.id)
     : await supabase.from('seller_kyc_submissions').insert(payload)
 

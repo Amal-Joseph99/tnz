@@ -36,7 +36,13 @@ export function SellerProfilePage() {
   const [countries, setCountries] = useState<SellerCountryOption[]>([])
   const [businessType, setBusinessType] = useState('Individual')
   const [businessName, setBusinessName] = useState('')
-  const [businessAddress, setBusinessAddress] = useState('')
+  const [businessSameAsIndividual, setBusinessSameAsIndividual] = useState(false)
+  const [businessStreetAddress, setBusinessStreetAddress] = useState('')
+  const [businessAddressLine2, setBusinessAddressLine2] = useState('')
+  const [businessCity, setBusinessCity] = useState('')
+  const [businessStateProvince, setBusinessStateProvince] = useState('')
+  const [businessPostalCode, setBusinessPostalCode] = useState('')
+  const [businessAddressCountry, setBusinessAddressCountry] = useState('')
   const [contactFullName, setContactFullName] = useState('')
   const [contactPhone, setContactPhone] = useState('')
   const [streetAddress, setStreetAddress] = useState('')
@@ -92,7 +98,13 @@ export function SellerProfilePage() {
         if (kycSubmission) {
           setBusinessType(kycSubmission.businessType)
           setBusinessName(kycSubmission.businessName)
-          setBusinessAddress(kycSubmission.businessAddress)
+          setBusinessSameAsIndividual(kycSubmission.businessSameAsIndividual)
+          setBusinessStreetAddress(kycSubmission.businessStreetAddress)
+          setBusinessAddressLine2(kycSubmission.businessAddressLine2)
+          setBusinessCity(kycSubmission.businessCity)
+          setBusinessStateProvince(kycSubmission.businessStateProvince)
+          setBusinessPostalCode(kycSubmission.businessPostalCode)
+          setBusinessAddressCountry(kycSubmission.businessAddressCountry)
           setContactFullName(kycSubmission.contactFullName)
           setContactPhone(kycSubmission.contactPhone)
           setStreetAddress(kycSubmission.streetAddress)
@@ -131,6 +143,25 @@ export function SellerProfilePage() {
       active = false
     }
   }, [])
+
+  useEffect(() => {
+    if (!businessSameAsIndividual) return
+
+    setBusinessStreetAddress(streetAddress)
+    setBusinessAddressLine2(addressLine2)
+    setBusinessCity(city)
+    setBusinessStateProvince(stateProvince)
+    setBusinessPostalCode(postalCode)
+    setBusinessAddressCountry(addressCountry)
+  }, [
+    businessSameAsIndividual,
+    streetAddress,
+    addressLine2,
+    city,
+    stateProvince,
+    postalCode,
+    addressCountry,
+  ])
 
   const countryOptions = useMemo(
     () => countries.map((country) => country.country_name),
@@ -198,7 +229,13 @@ export function SellerProfilePage() {
     const result = await submitSellerKyc({
       businessType,
       businessName,
-      businessAddress,
+      businessStreetAddress,
+      businessAddressLine2,
+      businessCity,
+      businessStateProvince,
+      businessPostalCode,
+      businessAddressCountry,
+      businessSameAsIndividual,
       contactFullName,
       contactPhone,
       streetAddress,
@@ -352,14 +389,14 @@ export function SellerProfilePage() {
             </form>
           </section>
 
-          <section className="seller-console-card">
+          <section className="seller-console-card kyc-address-card">
             <div className="seller-console-card__header">
               <div>
                 <h2>Business details</h2>
                 <p>Tax ID is optional for individual sellers.</p>
               </div>
             </div>
-            <form className="seller-console-form">
+            <form className="seller-console-form checkout-form checkout-form--grid kyc-address-form">
               <label>
                 Type of business
                 <select value={businessType} disabled={kycLocked} onChange={(event) => setBusinessType(event.target.value)}>
@@ -370,13 +407,88 @@ export function SellerProfilePage() {
                   <option>LLP</option>
                 </select>
               </label>
-              <label>Business name<input value={businessName} disabled={kycLocked} onChange={(event) => setBusinessName(event.target.value)} /></label>
-              <label className="seller-console-form__full">Business address<textarea value={businessAddress} disabled={kycLocked} onChange={(event) => setBusinessAddress(event.target.value)} /></label>
               <label>
-                Tax ID {businessType === 'Individual' ? '(optional)' : ''}
-                <input value={taxId} disabled={kycLocked} placeholder="Enter GST/VAT/Tax ID" onChange={(event) => setTaxId(event.target.value)} />
+                Business name<RequiredMark />
+                <input value={businessName} disabled={kycLocked} onChange={(event) => setBusinessName(event.target.value)} required />
+              </label>
+              <label className="checkout-form__full seller-terms-check kyc-same-address-check">
+                <input
+                  type="checkbox"
+                  checked={businessSameAsIndividual}
+                  disabled={kycLocked}
+                  onChange={(event) => setBusinessSameAsIndividual(event.target.checked)}
+                />
+                <span>Business address is the same as individual address</span>
               </label>
             </form>
+
+            <div className="kyc-address-subsection">
+              <h3>Business address</h3>
+              <form className="checkout-form checkout-form--grid kyc-address-form">
+                <label className="checkout-form__full">
+                  Street address<RequiredMark />
+                  <input
+                    value={businessStreetAddress}
+                    disabled={kycLocked || businessSameAsIndividual}
+                    onChange={(event) => setBusinessStreetAddress(event.target.value)}
+                    required
+                  />
+                </label>
+                <label className="checkout-form__full">
+                  Apartment, suite, etc. (optional)
+                  <input
+                    value={businessAddressLine2}
+                    disabled={kycLocked || businessSameAsIndividual}
+                    onChange={(event) => setBusinessAddressLine2(event.target.value)}
+                  />
+                </label>
+                <label>
+                  City<RequiredMark />
+                  <input
+                    value={businessCity}
+                    disabled={kycLocked || businessSameAsIndividual}
+                    onChange={(event) => setBusinessCity(event.target.value)}
+                    required
+                  />
+                </label>
+                <label>
+                  State / Province<RequiredMark />
+                  <input
+                    value={businessStateProvince}
+                    disabled={kycLocked || businessSameAsIndividual}
+                    onChange={(event) => setBusinessStateProvince(event.target.value)}
+                    required
+                  />
+                </label>
+                <label>
+                  Postal code<RequiredMark />
+                  <input
+                    value={businessPostalCode}
+                    disabled={kycLocked || businessSameAsIndividual}
+                    onChange={(event) => setBusinessPostalCode(event.target.value)}
+                    required
+                  />
+                </label>
+                <label>
+                  Country<RequiredMark />
+                  <select
+                    value={businessAddressCountry}
+                    disabled={kycLocked || businessSameAsIndividual}
+                    onChange={(event) => setBusinessAddressCountry(event.target.value)}
+                    required
+                  >
+                    <option value="">Select country</option>
+                    {countryOptions.map((country) => (
+                      <option key={`business-${country}`} value={country}>{country}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="checkout-form__full">
+                  Tax ID {businessType === 'Individual' ? '(optional)' : ''}
+                  <input value={taxId} disabled={kycLocked} placeholder="Enter GST/VAT/Tax ID" onChange={(event) => setTaxId(event.target.value)} />
+                </label>
+              </form>
+            </div>
           </section>
 
           <section className="seller-console-card">

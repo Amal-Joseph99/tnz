@@ -9,7 +9,41 @@ import {
   type KycDetail,
   type KycQueueItem,
 } from '../lib/adminApprovals'
+import { formatKycAddress, formatKycDocumentLabel } from '../lib/sellerKyc'
 import { getSignedStorageUrl } from '../lib/sellerStorage'
+
+function readSubmissionAddress(
+  submission: Record<string, unknown>,
+  prefix: 'individual' | 'business',
+) {
+  if (prefix === 'individual') {
+    return formatKycAddress({
+      streetAddress: String(submission.street_address ?? ''),
+      addressLine2: String(submission.address_line_2 ?? ''),
+      city: String(submission.city ?? ''),
+      stateProvince: String(submission.state_province ?? ''),
+      postalCode: String(submission.postal_code ?? ''),
+      addressCountry: String(submission.address_country ?? ''),
+    })
+  }
+
+  if (submission.business_street_address) {
+    return formatKycAddress({
+      streetAddress: String(submission.business_street_address ?? ''),
+      addressLine2: String(submission.business_address_line_2 ?? ''),
+      city: String(submission.business_city ?? ''),
+      stateProvince: String(submission.business_state_province ?? ''),
+      postalCode: String(submission.business_postal_code ?? ''),
+      addressCountry: String(submission.business_address_country ?? ''),
+    })
+  }
+
+  return String(submission.business_address ?? '')
+}
+
+function documentPreviewKey(documentType: string, documentSlot?: number) {
+  return documentSlot ? `${documentType}:${documentSlot}` : documentType
+}
 
 export function AdminKycPage() {
   const [queue, setQueue] = useState<KycQueueItem[]>([])
@@ -47,8 +81,9 @@ export function AdminKycPage() {
       const urls: Record<string, string> = {}
       await Promise.all(
         nextDetail.documents.map(async (doc) => {
+          const key = documentPreviewKey(doc.documentType, doc.documentSlot)
           const url = await getSignedStorageUrl('seller-kyc', doc.storagePath)
-          if (url) urls[doc.documentType] = url
+          if (url) urls[key] = url
         }),
       )
       setDocumentUrls(urls)
@@ -83,29 +118,44 @@ export function AdminKycPage() {
     await loadQueue(filter)
   }
 
-  const renderDetail = (item: KycQueueItem, detailData: KycDetail | null) => (
+  const renderDetail = (item: KycQueueItem, detailData: KycDetail | null) => {
+    const submission = detailData?.submission ?? {}
+
+    return (
     <div className="admin-approval-card">
       <strong>{item.businessName}</strong>
       <p>KYC ID: {item.kycId}</p>
-      <p>Seller: {item.sellerEmail} · {item.countryName}</p>
+      <p>Seller: {item.sellerEmail} · {item.countryName} · {item.phone}</p>
       <p>Business type: {item.businessType}</p>
-      <p>Business address: {item.businessAddress}</p>
+      <p>Contact: {String(submission.contact_full_name ?? item.signupBusinessName)} · {String(submission.contact_phone ?? item.phone)}</p>
+      <div className="admin-kyc-address-block">
+        <strong>Individual address</strong>
+        <pre>{readSubmissionAddress(submission, 'individual') || 'Not provided'}</pre>
+      </div>
+      <div className="admin-kyc-address-block">
+        <strong>Business address</strong>
+        {submission.business_same_as_individual ? <p className="admin-kyc-flag">Same as individual address</p> : null}
+        <pre>{readSubmissionAddress(submission, 'business') || item.businessAddress || 'Not provided'}</pre>
+      </div>
       <p>Tax ID: {item.taxId || 'Not provided'}</p>
       <p>Bank: {item.bankName} · {item.accountHolderName}</p>
       <p>Account: {item.accountNumber} · {item.ifscSwift}</p>
-      {detailData && (
+      {detailData && detailData.documents.length > 0 && (
         <div className="admin-document-grid">
-          {detailData.documents.map((doc) => (
-            <article key={doc.documentType}>
-              <strong>{doc.documentType}</strong>
+          {detailData.documents.map((doc) => {
+            const key = documentPreviewKey(doc.documentType, doc.documentSlot)
+            return (
+            <article key={key}>
+              <strong>{formatKycDocumentLabel(doc.documentType, doc.documentSlot)}</strong>
               <p>{doc.fileName}</p>
-              {documentUrls[doc.documentType] ? (
-                <a href={documentUrls[doc.documentType]} target="_blank" rel="noreferrer">View document</a>
+              {documentUrls[key] ? (
+                <a href={documentUrls[key]} target="_blank" rel="noreferrer">View document</a>
               ) : (
                 <span>Preview unavailable</span>
               )}
             </article>
-          ))}
+            )
+          })}
         </div>
       )}
       {item.status === 'pending' && (
@@ -115,7 +165,8 @@ export function AdminKycPage() {
         </div>
       )}
     </div>
-  )
+    )
+  }
 
   return (
     <AdminDashboardShell

@@ -55,6 +55,7 @@ export type KycDetail = {
   phone: string
   documents: Array<{
     documentType: string
+    documentSlot?: number
     storagePath: string
     fileName: string
     mimeType: string
@@ -236,6 +237,7 @@ export async function fetchAdminKycDetail(userId: string): Promise<KycDetail | n
       const doc = row as Record<string, unknown>
       return {
         documentType: String(doc.documentType ?? ''),
+        documentSlot: doc.documentSlot != null ? Number(doc.documentSlot) : undefined,
         storagePath: String(doc.storagePath ?? ''),
         fileName: String(doc.fileName ?? ''),
         mimeType: String(doc.mimeType ?? ''),
