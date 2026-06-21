@@ -26,12 +26,20 @@
 .header__logo {
   display: inline-flex;
   align-items: center;
-  color: #fff;
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -1.2px;
+  flex-shrink: 0;
   line-height: 1;
-  white-space: nowrap;
+}
+
+.site-logo {
+  display: block;
+  height: 42px;
+  width: auto;
+  max-width: 200px;
+  object-fit: contain;
+}
+
+.header__logo--footer .site-logo {
+  height: 38px;
 }
 
 .logo-prefix,
@@ -3893,7 +3901,11 @@
 
   .header__logo {
     margin-right: auto;
-    font-size: 20px;
+  }
+
+  .site-logo {
+    height: 34px;
+    max-width: 160px;
   }
 
   .logo-highlight {

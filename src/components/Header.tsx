@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCurrency } from '../context/CurrencyContext'
 import { appendSearchHistory } from '../lib/searchHistory'
+import { Logo } from './Logo'
 import {
   CartIcon,
   ChevronDownIcon,
@@ -58,11 +59,7 @@ export function Header() {
           {menuOpen ? <XIcon /> : <MenuIcon />}
         </button>
 
-        <Link to="/" className="header__logo" aria-label="AGTRENZ home">
-          <span className="logo-prefix">AG</span>
-          <span className="logo-highlight">T</span>
-          <span className="logo-suffix">RENZ</span>
-        </Link>
+        <Logo />
 
         <form className="header__search" onSubmit={(event) => {
           event.preventDefault()

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState, type FormEvent } from 'react'
+import { Logo } from './Logo'
 import { footerLegalLinks } from '../lib/legalDocuments'
 import { subscribeNewsletter } from '../lib/marketplaceBackend'
 
@@ -17,11 +18,7 @@ export function Footer() {
     <footer className="footer">
       <div className="container footer__main">
         <div className="footer__brand">
-          <Link to="/" className="header__logo">
-            <span className="logo-prefix">AG</span>
-            <span className="logo-highlight">T</span>
-            <span className="logo-suffix">RENZ</span>
-          </Link>
+          <Logo className="header__logo header__logo--footer" />
           <p>Your trusted global marketplace for quality products delivered worldwide.</p>
         </div>
 
