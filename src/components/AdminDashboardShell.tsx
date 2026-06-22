@@ -154,13 +154,15 @@ export function AdminDashboardShell({ title, subtitle, children }: AdminDashboar
           </div>
         </header>
 
-        <main className="admin-console__content admin-console__content--bento">
-          <div className="admin-console__page-heading">
-            <h1>{title}</h1>
-            {subtitle ? <p>{subtitle}</p> : null}
-          </div>
-          {children}
-        </main>
+        <div className="admin-console__scroll">
+          <main className="admin-console__content admin-console__content--bento">
+            <div className="admin-console__page-heading">
+              <h1>{title}</h1>
+              {subtitle ? <p>{subtitle}</p> : null}
+            </div>
+            {children}
+          </main>
+        </div>
 
         <footer className="admin-console__bar admin-console__footer">
           <span>AGTRENZ Admin Console</span>
