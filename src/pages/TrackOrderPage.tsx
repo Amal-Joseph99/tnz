@@ -1,12 +1,20 @@
-import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { trackShiprocketOrder } from '../lib/shiprocketShipping'
 
 export function TrackOrderPage() {
-  const [orderNumber, setOrderNumber] = useState('')
+  const [searchParams] = useSearchParams()
+  const [orderNumber, setOrderNumber] = useState(searchParams.get('orderNumber') ?? '')
   const [email, setEmail] = useState('')
   const [result, setResult] = useState<Awaited<ReturnType<typeof trackShiprocketOrder>> | null>(null)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    const nextOrderNumber = searchParams.get('orderNumber')
+    if (nextOrderNumber) {
+      setOrderNumber(nextOrderNumber)
+    }
+  }, [searchParams])
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()

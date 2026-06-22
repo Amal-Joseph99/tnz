@@ -146,7 +146,7 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const setDelivery = useCallback((delivery: CheckoutDelivery) => {
-    setState((current) => ({ ...current, delivery, shippingQuote: null }))
+    setState((current) => ({ ...current, delivery }))
   }, [])
 
   const setPaymentMethod = useCallback((paymentMethod: CheckoutPaymentMethod) => {

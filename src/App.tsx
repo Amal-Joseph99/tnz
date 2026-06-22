@@ -31,7 +31,7 @@ import { BuyerResetPasswordPage } from './pages/BuyerResetPasswordPage'
 import { CareersPage } from './pages/CareersPage'
 import { CartPage } from './pages/CartPage'
 import { CheckoutAddressPage } from './pages/CheckoutAddressPage'
-import { CheckoutConfirmationPage } from './pages/CheckoutConfirmationPage'
+import { CheckoutOrderStatusPage } from './pages/CheckoutOrderStatusPage'
 import { CheckoutPaymentPage } from './pages/CheckoutPaymentPage'
 import { CheckoutReviewPage } from './pages/CheckoutReviewPage'
 import { CategoriesPage } from './pages/CategoriesPage'
@@ -123,7 +123,8 @@ function AppContent() {
               <Route path="/checkout" element={<CheckoutAddressPage />} />
               <Route path="/checkout/payment" element={<CheckoutPaymentPage />} />
               <Route path="/checkout/review" element={<CheckoutReviewPage />} />
-              <Route path="/checkout/confirmation" element={<CheckoutConfirmationPage />} />
+              <Route path="/checkout/status" element={<CheckoutOrderStatusPage />} />
+              <Route path="/checkout/confirmation" element={<Navigate to="/checkout/status" replace />} />
               <Route path="/categories" element={<CategoriesPage />} />
               <Route path="/category/:categorySlug" element={<CategoryProductsPage />} />
               <Route path="/category/:categorySlug/:subCategorySlug" element={<CategoryProductsPage />} />

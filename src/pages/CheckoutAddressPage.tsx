@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CheckoutShell } from '../components/CheckoutShell'
 import { useCheckout } from '../context/CheckoutContext'
-import { useCurrency } from '../context/CurrencyContext'
 import { fetchBuyerAccount, type BuyerAddress } from '../lib/marketplaceBackend'
 import { fetchCheckoutCountries, fetchShiprocketServiceability } from '../lib/shiprocketShipping'
 import { supabase } from '../lib/supabase'
@@ -18,9 +17,24 @@ function formatSavedAddress(address: BuyerAddress) {
   return lines.join(', ')
 }
 
+function isAddressComplete(input: {
+  fullName: string
+  phone: string
+  email: string
+  addressLine1: string
+  city: string
+  state: string
+  postcode: string
+  countryIso2: string
+}) {
+  if (!input.fullName.trim() || !input.phone.trim() || !input.email.trim()) return false
+  if (!input.addressLine1.trim() || !input.city.trim() || !input.state.trim()) return false
+  if (input.countryIso2 === 'IN' && !input.postcode.trim()) return false
+  return Boolean(input.countryIso2.trim())
+}
+
 export function CheckoutAddressPage() {
-  const { items, delivery, setDelivery, paymentMethod, shippingQuote, setShippingQuote } = useCheckout()
-  const { formatDisplayAmount, toDisplayListingAmount } = useCurrency()
+  const { items, delivery, setDelivery, setShippingQuote } = useCheckout()
   const [countries, setCountries] = useState<Array<{ countryName: string; isoAlpha2: string }>>([])
   const [savedAddresses, setSavedAddresses] = useState<BuyerAddress[]>([])
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null)
@@ -34,7 +48,7 @@ export function CheckoutAddressPage() {
   const [state, setState] = useState(delivery?.state ?? '')
   const [postcode, setPostcode] = useState(delivery?.postcode ?? '')
   const [countryIso2, setCountryIso2] = useState(delivery?.countryIso2 ?? 'IN')
-  const [loadingQuote, setLoadingQuote] = useState(false)
+  const [quoteReady, setQuoteReady] = useState(false)
   const [quoteError, setQuoteError] = useState('')
   const prefilledRef = useRef(false)
 
@@ -49,6 +63,9 @@ export function CheckoutAddressPage() {
     setState(address.state)
     setPostcode(address.postcode)
     setCountryIso2(address.country_iso2)
+    setShippingQuote(null)
+    setQuoteReady(false)
+    setQuoteError('')
   }
 
   useEffect(() => {
@@ -94,45 +111,57 @@ export function CheckoutAddressPage() {
 
   const sellerUserId = items[0]?.sellerUserId
   const isInternational = countryIso2 !== 'IN'
-  const shiprocketPaymentMethod = paymentMethod === 'cod' ? 'cod' : 'prepaid'
-  const refreshQuote = async () => {
-    if (!sellerUserId || !countryIso2) return
+
+  useEffect(() => {
+    if (!sellerUserId || items.length === 0) return
+    if (!isAddressComplete({ fullName, phone, email, addressLine1, city, state, postcode, countryIso2 })) {
+      setQuoteReady(false)
+      setQuoteError('')
+      setShippingQuote(null)
+      return
+    }
     if (!isInternational && !postcode.trim()) return
 
-    setLoadingQuote(true)
-    setQuoteError('')
-
-    try {
-      const result = await fetchShiprocketServiceability({
+    const timer = window.setTimeout(() => {
+      void fetchShiprocketServiceability({
         sellerUserId,
         deliveryPostcode: isInternational ? undefined : postcode.trim(),
         deliveryCountryIso2: countryIso2,
-        paymentMethod: shiprocketPaymentMethod,
+        paymentMethod: 'prepaid',
         items: items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
-      })
+      }).then((result) => {
+        if (!result.serviceable) {
+          setShippingQuote(null)
+          setQuoteReady(false)
+          setQuoteError(result.message)
+          return
+        }
 
-      if (!result.serviceable) {
+        setShippingQuote(result.quote)
+        setQuoteReady(true)
+        setQuoteError('')
+      }).catch((error) => {
         setShippingQuote(null)
-        setQuoteError(result.message)
-        return
-      }
-
-      setShippingQuote(result.quote)
-    } catch (error) {
-      setShippingQuote(null)
-      setQuoteError(error instanceof Error ? error.message : 'Unable to fetch shipping rate.')
-    } finally {
-      setLoadingQuote(false)
-    }
-  }
-
-  useEffect(() => {
-    if (items.length === 0) return
-    const timer = window.setTimeout(() => {
-      void refreshQuote()
+        setQuoteReady(false)
+        setQuoteError(error instanceof Error ? error.message : 'Unable to fetch shipping rate.')
+      })
     }, 400)
+
     return () => window.clearTimeout(timer)
-  }, [items, countryIso2, postcode, paymentMethod, sellerUserId])
+  }, [
+    items,
+    sellerUserId,
+    fullName,
+    phone,
+    email,
+    addressLine1,
+    city,
+    state,
+    postcode,
+    countryIso2,
+    isInternational,
+    setShippingQuote,
+  ])
 
   const saveDelivery = () => {
     setDelivery({
@@ -148,8 +177,19 @@ export function CheckoutAddressPage() {
     })
   }
 
+  const canContinue = quoteReady && isAddressComplete({
+    fullName,
+    phone,
+    email,
+    addressLine1,
+    city,
+    state,
+    postcode,
+    countryIso2,
+  })
+
   return (
-    <CheckoutShell>
+    <CheckoutShell showSummary={false}>
       <section className="checkout-panel">
         <div className="checkout-panel__header">
           <h2>Delivery address</h2>
@@ -198,6 +238,8 @@ export function CheckoutAddressPage() {
               onChange={(event) => {
                 setSelectedAddressId(null)
                 setFullName(event.target.value)
+                setQuoteReady(false)
+                setQuoteError('')
               }}
               required
             />
@@ -210,6 +252,8 @@ export function CheckoutAddressPage() {
               onChange={(event) => {
                 setSelectedAddressId(null)
                 setPhone(event.target.value)
+                setQuoteReady(false)
+                setQuoteError('')
               }}
               required
             />
@@ -226,6 +270,8 @@ export function CheckoutAddressPage() {
               onChange={(event) => {
                 setSelectedAddressId(null)
                 setAddressLine1(event.target.value)
+                setQuoteReady(false)
+                setQuoteError('')
               }}
               required
             />
@@ -249,6 +295,8 @@ export function CheckoutAddressPage() {
               onChange={(event) => {
                 setSelectedAddressId(null)
                 setCity(event.target.value)
+                setQuoteReady(false)
+                setQuoteError('')
               }}
               required
             />
@@ -261,6 +309,8 @@ export function CheckoutAddressPage() {
               onChange={(event) => {
                 setSelectedAddressId(null)
                 setState(event.target.value)
+                setQuoteReady(false)
+                setQuoteError('')
               }}
               required
             />
@@ -273,6 +323,8 @@ export function CheckoutAddressPage() {
               onChange={(event) => {
                 setSelectedAddressId(null)
                 setPostcode(event.target.value)
+                setQuoteReady(false)
+                setQuoteError('')
               }}
               required={!isInternational}
             />
@@ -284,6 +336,8 @@ export function CheckoutAddressPage() {
               onChange={(event) => {
                 setSelectedAddressId(null)
                 setCountryIso2(event.target.value)
+                setQuoteReady(false)
+                setQuoteError('')
               }}
               required
             >
@@ -297,36 +351,23 @@ export function CheckoutAddressPage() {
         </form>
       </section>
 
-      <section className="checkout-panel">
-        <div className="checkout-panel__header">
-          <h2>Shiprocket rate</h2>
-        </div>
-        {loadingQuote && <p>Fetching live shipping rate...</p>}
-        {quoteError && <div className="auth-message auth-message--error">{quoteError}</div>}
-        {shippingQuote && (
-          <div className="checkout-shipping-quote">
-            <div><span>Lane</span><strong>{shippingQuote.shippingLane === 'india_domestic' ? 'India domestic' : 'India → international'}</strong></div>
-            <div><span>Courier</span><strong>{shippingQuote.courierName ?? 'Lowest rate'}</strong></div>
-            <div><span>Shipping</span><strong>{formatDisplayAmount(toDisplayListingAmount(shippingQuote.shippingCharge, 'INR'))}</strong></div>
-            {shiprocketPaymentMethod === 'cod' && (
-              <div><span>COD charges</span><strong>{formatDisplayAmount(toDisplayListingAmount(shippingQuote.codCharges, 'INR'))}</strong></div>
-            )}
-            <div><span>Total shipping</span><strong>{formatDisplayAmount(toDisplayListingAmount(shippingQuote.totalShippingCharge, 'INR'))}</strong></div>
-            <div><span>Estimated delivery</span><strong>{shippingQuote.estimatedDelivery ?? '—'}</strong></div>
-          </div>
-        )}
-      </section>
+      {quoteError && <div className="auth-message auth-message--error">{quoteError}</div>}
 
       <div className="checkout-actions">
         <Link to="/cart" className="checkout-btn checkout-btn--ghost">Back to cart</Link>
-        <Link
-          to="/checkout/payment"
-          className="checkout-btn"
-          onClick={saveDelivery}
-          aria-disabled={!shippingQuote}
-        >
-          Continue
-        </Link>
+        {canContinue ? (
+          <Link
+            to="/checkout/review"
+            className="checkout-btn"
+            onClick={saveDelivery}
+          >
+            Continue to review
+          </Link>
+        ) : (
+          <span className="checkout-btn checkout-btn--disabled" aria-disabled="true">
+            Continue to review
+          </span>
+        )}
       </div>
     </CheckoutShell>
   )

@@ -70,7 +70,7 @@ export function getCartTotals(
 
 export const checkoutSteps = [
   { id: 'address', label: 'Address', path: '/checkout' },
-  { id: 'payment', label: 'Payment', path: '/checkout/payment' },
   { id: 'review', label: 'Review', path: '/checkout/review' },
-  { id: 'confirmation', label: 'Confirmation', path: '/checkout/confirmation' },
+  { id: 'payment', label: 'Payment', path: '/checkout/payment' },
+  { id: 'status', label: 'Status', path: '/checkout/status' },
 ] as const
