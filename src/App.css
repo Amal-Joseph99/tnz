@@ -1869,6 +1869,119 @@
   padding: 24px 28px;
 }
 
+.seller-wallet-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.seller-wallet-kpis article {
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.seller-wallet-kpis span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.seller-wallet-kpis strong {
+  display: block;
+  margin-top: 6px;
+  color: #0f172a;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.seller-wallet-kpis p {
+  margin: 6px 0 0;
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.seller-wallet-withdraw__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.seller-wallet-withdraw label {
+  display: grid;
+  gap: 6px;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.seller-wallet-withdraw input {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.seller-wallet-table-wrap {
+  overflow-x: auto;
+}
+
+.seller-wallet-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+}
+
+.seller-wallet-table th,
+.seller-wallet-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  color: #334155;
+  font-size: 12px;
+}
+
+.seller-wallet-table th {
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.seller-wallet-status {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.seller-wallet-status--unsettled {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.seller-wallet-status--pending_settlement {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.seller-wallet-status--available {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.seller-wallet-status--cancelled {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
 .seller-kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -6343,8 +6456,13 @@
 
   .seller-kpi-grid,
   .seller-kpi-grid--three,
+  .seller-wallet-kpis,
   .seller-console-grid,
   .seller-console-grid--kyc {
+    grid-template-columns: 1fr;
+  }
+
+  .seller-wallet-withdraw__row {
     grid-template-columns: 1fr;
   }
 
