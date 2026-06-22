@@ -12,6 +12,7 @@ import {
   loadProductListingDraft,
   saveProductListingDraft,
   submitProductListingForApproval,
+  shouldGenerateProductSku,
   type ProductListingDraft,
   type ProductListingWizardOptions,
 } from '../lib/productListingWizard'
@@ -213,7 +214,7 @@ export function ProductListingWizardPage() {
   }
 
   const handleNextFromStep1 = async () => {
-    const savedId = await persistDraft(draft, 1, !draft.sku)
+    const savedId = await persistDraft(draft, 1, shouldGenerateProductSku(draft.sku))
     if (savedId) goToStep(2, savedId)
   }
 
@@ -229,7 +230,7 @@ export function ProductListingWizardPage() {
     }
 
     setSaving(true)
-    const savedId = await persistDraft(draft, 5)
+    const savedId = await persistDraft(draft, 5, shouldGenerateProductSku(draft.sku))
     if (!savedId) {
       setSaving(false)
       return

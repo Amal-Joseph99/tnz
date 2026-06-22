@@ -114,6 +114,15 @@ export const MIN_PRODUCT_IMAGES = 3
 export const MAX_PRODUCT_IMAGES = 10
 export const MAX_PRODUCT_VIDEOS = 2
 
+export function isValidProductSku(sku: string) {
+  return /^\d{14}$/.test(sku.trim())
+}
+
+export function shouldGenerateProductSku(sku: string) {
+  const value = sku.trim()
+  return !value || value.startsWith('DRAFT-') || !isValidProductSku(value)
+}
+
 export function createEmptyProductListingDraft(originCountry = ''): ProductListingDraft {
   return {
     sku: '',
