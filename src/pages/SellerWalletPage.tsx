@@ -36,7 +36,7 @@ export function SellerWalletPage() {
   const currency = summary?.currencyCode ?? 'USD'
 
   return (
-    <SellerDashboardShell title="Wallet" subtitle="Review settlements, pending payouts, fees, and transaction history.">
+    <SellerDashboardShell>
       {error && <div className="auth-message auth-message--error">{error}</div>}
       {message && <div className="auth-message auth-message--success">{message}</div>}
       <section className="seller-kpi-grid seller-kpi-grid--three">

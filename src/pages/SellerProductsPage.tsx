@@ -136,14 +136,14 @@ export function SellerProductsPage() {
 
   if (loading || !workflow) {
     return (
-      <SellerDashboardShell title="Products" subtitle="Manage your catalogue, stock, and listing approvals.">
+      <SellerDashboardShell>
         <p>Loading products...</p>
       </SellerDashboardShell>
     )
   }
 
   return (
-    <SellerDashboardShell title="Products" subtitle="Manage your catalogue, stock, and listing approvals.">
+    <SellerDashboardShell>
       <section className="seller-product-highlights">
         <article>
           <span>Total live products</span>

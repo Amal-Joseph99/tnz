@@ -18,7 +18,7 @@ export function SellerNotificationsPage() {
   useEffect(() => { load() }, [])
 
   return (
-    <SellerDashboardShell title="Notifications" subtitle="Orders, payouts, and marketplace alerts.">
+    <SellerDashboardShell>
       <section className="seller-console-card">
         <div className="seller-console-card__header">
           <div><h2>Seller alerts</h2></div>

@@ -46,14 +46,14 @@ export function SellerProfilePage() {
 
   if (loading || !workflow) {
     return (
-      <SellerDashboardShell title="Seller Profile" subtitle="Account overview and KYC access.">
+      <SellerDashboardShell>
         <p>Loading seller profile...</p>
       </SellerDashboardShell>
     )
   }
 
   return (
-    <SellerDashboardShell title="Seller Profile" subtitle="Account overview and KYC access.">
+    <SellerDashboardShell>
       <section className="seller-console-grid seller-console-grid--profile">
         <section className="seller-console-card">
           <div className="seller-console-card__header">

@@ -61,7 +61,7 @@ export function SellerOrdersPage() {
   }
 
   return (
-    <SellerDashboardShell title="Orders" subtitle="Accept/reject orders, download Shiprocket label & manifest, mark packed.">
+    <SellerDashboardShell>
       {error && <div className="auth-message auth-message--error">{error}</div>}
       {message && <div className="auth-message auth-message--success">{message}</div>}
 

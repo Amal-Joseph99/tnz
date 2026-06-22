@@ -39,23 +39,6 @@ function parseStep(value: string | undefined) {
   return step
 }
 
-function statusLabel(status: SellerWorkflowState['kycStatus']) {
-  switch (status) {
-    case 'draft':
-      return 'In progress'
-    case 'not_submitted':
-      return 'Not submitted'
-    case 'pending':
-      return 'Pending review'
-    case 'approved':
-      return 'Approved'
-    case 'rejected':
-      return 'Rejected'
-    default:
-      return status
-  }
-}
-
 export function SellerKycVerificationPage() {
   const navigate = useNavigate()
   const { step: stepParam } = useParams()
@@ -324,10 +307,7 @@ export function SellerKycVerificationPage() {
 
   if (loading || !workflow) {
     return (
-      <SellerDashboardShell
-        title="KYC Verification"
-        subtitle="Complete seller verification before warehouse setup and product listing."
-      >
+      <SellerDashboardShell>
         <p>Loading KYC verification...</p>
       </SellerDashboardShell>
     )
@@ -338,43 +318,11 @@ export function SellerKycVerificationPage() {
     return <Navigate to={`/seller/kyc/step/${resumeStep}`} replace />
   }
 
-  const statusAside = (
-    <>
-      <section className="seller-console-card">
-        <div className="seller-console-card__header">
-          <div>
-            <h2>KYC status overview</h2>
-          </div>
-        </div>
-        <div className="seller-status-list">
-          <div><strong>KYC ID</strong><span>{kycId || 'Not generated'}</span></div>
-          <div><strong>Status</strong><span>{statusLabel(workflow.kycStatus)}</span></div>
-          <div><strong>Warehouse</strong><span>{workflow.warehouseCompleted ? 'Ready' : 'Locked'}</span></div>
-          <div><strong>Product listing</strong><span>{workflow.kycStatus === 'approved' ? 'Unlocked' : 'Locked'}</span></div>
-        </div>
-      </section>
-      <section className="seller-console-card">
-        <div className="seller-console-card__header">
-          <div>
-            <h2>Approval flow</h2>
-          </div>
-        </div>
-        <p className="seller-kyc-status__note">
-          Admin must approve KYC. After approval, complete warehouse setup. Product listings then require admin
-          approval before public visibility.
-        </p>
-      </section>
-    </>
-  )
-
   return (
-    <SellerDashboardShell
-      title="KYC Verification"
-      subtitle="Complete seller verification before warehouse setup and product listing."
-    >
+    <SellerDashboardShell>
       {error ? <div className="auth-message auth-message--error">{error}</div> : null}
 
-      <KycWizardShell currentStep={currentStep} kycId={kycId || undefined} statusAside={statusAside}>
+      <KycWizardShell currentStep={currentStep}>
         {currentStep === 1 ? (
           <KycStep1Contact
             draft={draft}

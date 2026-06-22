@@ -202,7 +202,7 @@ export function ProductListingWizardPage() {
 
   if (loading || !workflow || !options) {
     return (
-      <SellerDashboardShell title="Product listing" subtitle="Loading product listing wizard...">
+      <SellerDashboardShell>
         <p>Loading...</p>
       </SellerDashboardShell>
     )
@@ -247,7 +247,7 @@ export function ProductListingWizardPage() {
   }
 
   return (
-    <SellerDashboardShell title="Product listing" subtitle="Multi-step listing wizard with auto-save drafts.">
+    <SellerDashboardShell>
       <ProductListingDraftProvider value={providerValue}>
         <ProductListingWizardShell currentStep={currentStep} sku={draft.sku}>
           {error && <div className="auth-message auth-message--error">{error}</div>}

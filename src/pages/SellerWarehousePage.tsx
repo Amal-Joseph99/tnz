@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { SellerDashboardShell } from '../components/SellerDashboardShell'
 import { WarehouseConfirmLocationDialog } from '../components/WarehouseConfirmLocationDialog'
 import { WarehouseLocationMap } from '../components/WarehouseLocationMap'
@@ -237,7 +238,7 @@ export function SellerWarehousePage() {
 
   if (loading || !workflow || !options) {
     return (
-      <SellerDashboardShell title="Warehouse" subtitle="Create your fulfillment location with verified address and map coordinates.">
+      <SellerDashboardShell>
         <p>Loading warehouse...</p>
       </SellerDashboardShell>
     )
@@ -245,7 +246,7 @@ export function SellerWarehousePage() {
 
   if (workflow.kycStatus !== 'approved') {
     return (
-      <SellerDashboardShell title="Warehouse" subtitle="Warehouse setup unlocks after admin KYC approval.">
+      <SellerDashboardShell>
         <section className="seller-console-card seller-gate-card">
           <h2>Warehouse setup locked</h2>
           <p>Your KYC must be approved by admin before you can add warehouse address and fulfillment settings.</p>
@@ -253,13 +254,16 @@ export function SellerWarehousePage() {
             <div><strong>KYC ID</strong><span>{workflow.kycId || 'Not submitted'}</span></div>
             <div><strong>KYC status</strong><span>{workflow.kycStatus.replace('_', ' ')}</span></div>
           </div>
+          <Link to="/seller/kyc" className="seller-primary-action seller-profile-kyc-link">
+            Open KYC verification
+          </Link>
         </section>
       </SellerDashboardShell>
     )
   }
 
   return (
-    <SellerDashboardShell title="Warehouse" subtitle="Create your fulfillment location with verified address and map coordinates.">
+    <SellerDashboardShell>
       <section className="seller-console-grid seller-warehouse-page">
         <article className="seller-console-card seller-warehouse-card">
           <div className="seller-console-card__header">

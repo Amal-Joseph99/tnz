@@ -15,18 +15,10 @@ const sellerNavItems = [
 ]
 
 type SellerDashboardShellProps = {
-  title: string
-  subtitle: string
-  eyebrow?: string
   children: ReactNode
 }
 
-export function SellerDashboardShell({
-  title,
-  subtitle,
-  eyebrow = 'Seller Central',
-  children,
-}: SellerDashboardShellProps) {
+export function SellerDashboardShell({ children }: SellerDashboardShellProps) {
   const { signOutFromConsole } = useAuth()
 
   return (
@@ -45,6 +37,7 @@ export function SellerDashboardShell({
             <NavLink
               key={item.to}
               to={item.to}
+              end={item.to === '/seller/kyc' ? false : undefined}
               className={({ isActive }) => (
                 isActive ? 'seller-console__nav-link seller-console__nav-link--active' : 'seller-console__nav-link'
               )}
@@ -60,22 +53,16 @@ export function SellerDashboardShell({
       </aside>
 
       <div className="seller-console__workspace">
-        <header className="seller-console__header">
-          <div>
-            <span>{eyebrow}</span>
-            <h1>{title}</h1>
-            <p>{subtitle}</p>
-          </div>
+        <header className="seller-console__header seller-console__header--brand">
+          <Link to="/seller/dashboard" className="seller-console__header-brand">
+            <span>AG</span>TRENZ Seller Central
+          </Link>
 
           <div className="seller-console__header-actions">
             <Link to="/seller/notifications" className="seller-console__notification">
               Notifications
               <strong>3</strong>
             </Link>
-            <div className="seller-console__account">
-              <strong>AGTRENZ Seller</strong>
-              <span>Verified account</span>
-            </div>
           </div>
         </header>
 
@@ -84,6 +71,7 @@ export function SellerDashboardShell({
             <NavLink
               key={item.to}
               to={item.to}
+              end={item.to === '/seller/kyc' ? false : undefined}
               className={({ isActive }) => (
                 isActive ? 'seller-console__mobile-link seller-console__mobile-link--active' : 'seller-console__mobile-link'
               )}
@@ -97,7 +85,7 @@ export function SellerDashboardShell({
           {children}
         </main>
 
-        <footer className="seller-console__footer">
+        <footer className="seller-console__footer seller-console__footer--brand">
           <span>AGTRENZ Seller Central</span>
           <span>Secure dashboard access for verified sellers only.</span>
         </footer>

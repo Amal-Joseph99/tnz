@@ -3,10 +3,7 @@ import { PanelEmptyState } from '../components/PanelEmptyState'
 
 export function SellerDashboardPage() {
   return (
-    <SellerDashboardShell
-      title="Dashboard"
-      subtitle="Monitor operations, orders, inventory, payouts, and marketplace performance."
-    >
+    <SellerDashboardShell>
       <section className="seller-kpi-grid">
         <article>
           <span>Today revenue</span>
@@ -57,32 +54,6 @@ export function SellerDashboardPage() {
             <div><strong>Payout method</strong><span>Not connected</span></div>
           </div>
         </article>
-
-        <article className="seller-console-card">
-          <div className="seller-console-card__header">
-            <div>
-              <h2>Priority actions</h2>
-              <p>Tasks that need attention</p>
-            </div>
-          </div>
-          <PanelEmptyState
-            title="No pending actions"
-            message="Operational tasks will show here when orders or listings need attention."
-          />
-        </article>
-      </section>
-
-      <section className="seller-console-card">
-        <div className="seller-console-card__header">
-          <div>
-            <h2>Recent orders</h2>
-            <p>Latest customer orders requiring seller action</p>
-          </div>
-        </div>
-        <PanelEmptyState
-          title="No orders yet"
-          message="Customer orders will appear here once your listings are live."
-        />
       </section>
     </SellerDashboardShell>
   )
