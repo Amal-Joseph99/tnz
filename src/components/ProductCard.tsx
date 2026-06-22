@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCurrency } from '../context/CurrencyContext'
 import type { Product } from '../data/products'
+import { buildCartLineId } from '../lib/checkout'
 import { useAddToCart } from '../hooks/useAddToCart'
 import { CartIcon, EyeIcon, HeartIcon, StarIcon } from './Icons'
 
@@ -104,18 +105,18 @@ export function ProductCard({ product, onOpen }: ProductCardProps) {
             onClick={() => {
               void addToCart({
                 item: {
-                  id: product.id,
+                  id: buildCartLineId(Number(product.id), product.variantId ?? 'default'),
                   productId: Number(product.id),
                   sellerUserId: product.sellerUserId,
                   sku: product.sku,
                   title: product.title,
                   brand: product.brand,
+                  variantId: product.variantId ?? 'default',
                   price: product.price,
                   originalPrice: product.originalPrice,
                   listingCurrencyCode: product.listingCurrencyCode,
                   image: imageSrc,
                   quantity: 1,
-                  variantId: product.variantId,
                 },
                 source: cartButtonRef.current,
               })

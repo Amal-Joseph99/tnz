@@ -34,6 +34,7 @@ type CurrencyContextValue = {
   formatPrice: (usdAmount: number) => string
   formatListingPrice: (amount: number, listingCurrencyCode: string) => string
   toDisplayListingAmount: (amount: number, listingCurrencyCode: string) => number
+  formatDisplayAmount: (amount: number) => string
   refreshLocation: () => Promise<void>
   ensureHomepageLocation: () => Promise<void>
   setAdminCurrency: (currencyCode: string) => Promise<void>
@@ -293,6 +294,20 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     [decimalPlaces, pricingReady, rate, symbol],
   )
 
+  const formatDisplayAmount = useCallback(
+    (amount: number) => {
+      if (!pricingReady) {
+        return '…'
+      }
+
+      return `${symbol}${amount.toLocaleString(undefined, {
+        minimumFractionDigits: decimalPlaces,
+        maximumFractionDigits: decimalPlaces,
+      })}`
+    },
+    [decimalPlaces, pricingReady, symbol],
+  )
+
   const value = useMemo(
     () => ({
       currency: pricingReady ? currency : '…',
@@ -307,6 +322,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       formatPrice,
       formatListingPrice,
       toDisplayListingAmount,
+      formatDisplayAmount,
       refreshLocation,
       ensureHomepageLocation,
       setAdminCurrency,
@@ -317,6 +333,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       formatPrice,
       formatListingPrice,
       toDisplayListingAmount,
+      formatDisplayAmount,
       hasStoredLocation,
       loading,
       locationLabel,

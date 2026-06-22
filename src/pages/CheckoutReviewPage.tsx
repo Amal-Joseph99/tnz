@@ -9,7 +9,7 @@ import { startRazorpayCheckout } from '../lib/razorpayPayments'
 
 export function CheckoutReviewPage() {
   const navigate = useNavigate()
-  const { currency, formatPrice, toDisplayListingAmount } = useCurrency()
+  const { currency, formatDisplayAmount, formatListingPrice, toDisplayListingAmount } = useCurrency()
   const {
     items,
     delivery,
@@ -93,8 +93,8 @@ export function CheckoutReviewPage() {
   }
 
   const actionLabel = paymentMethod === 'cod'
-    ? (loading ? 'Placing order...' : `Place order · ${formatPrice(total)}`)
-    : (loading ? 'Opening Razorpay...' : `Pay with Razorpay · ${formatPrice(total)}`)
+    ? (loading ? 'Placing order...' : `Place order · ${formatDisplayAmount(total)}`)
+    : (loading ? 'Opening Razorpay...' : `Pay with Razorpay · ${formatDisplayAmount(total)}`)
 
   return (
     <CheckoutShell>
@@ -131,7 +131,7 @@ export function CheckoutReviewPage() {
               <>
                 <p>{shippingQuote.courierName ?? 'Lowest Shiprocket rate'}</p>
                 <p>ETA: {shippingQuote.estimatedDelivery ?? '—'}</p>
-                <p>{formatPrice(shippingQuote.totalShippingCharge)}</p>
+                <p>{formatDisplayAmount(toDisplayListingAmount(shippingQuote.totalShippingCharge, 'INR'))}</p>
               </>
             ) : (
               <p>Shipping quote missing</p>
@@ -143,14 +143,14 @@ export function CheckoutReviewPage() {
       <section className="checkout-panel">
         <div className="checkout-review-items">
           {items.map((item) => (
-            <article key={item.productId} className="checkout-review-item">
+            <article key={item.id} className="checkout-review-item">
               <img src={item.image} alt={item.title} />
               <div>
                 <strong>{item.brand}</strong>
                 <p>{item.title}</p>
                 <span>Qty {item.quantity}</span>
               </div>
-              <strong>{formatPrice(item.price * item.quantity)}</strong>
+              <strong>{formatListingPrice(item.price * item.quantity, item.listingCurrencyCode)}</strong>
             </article>
           ))}
         </div>

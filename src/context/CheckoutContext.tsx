@@ -8,10 +8,11 @@ import {
   type ReactNode,
 } from 'react'
 import type { CartItem } from '../lib/checkout'
+import { normalizeCartItem } from '../lib/checkout'
 import type { CheckoutDelivery } from '../lib/marketplaceOrders'
 import type { ShippingQuote } from '../lib/shiprocketShipping'
 
-const STORAGE_KEY = 'agtrenz_checkout_v1'
+const STORAGE_KEY = 'agtrenz_checkout_v2'
 
 type StoredCheckout = {
   items: CartItem[]
@@ -31,8 +32,8 @@ type CheckoutContextValue = {
   placedOrderNumbers: string[]
   itemCount: number
   addItem: (item: CartItem) => void
-  updateQuantity: (productId: number, quantity: number) => void
-  removeItem: (productId: number) => void
+  updateQuantity: (lineId: string, quantity: number) => void
+  removeItem: (lineId: string) => void
   clearCart: () => void
   setDelivery: (delivery: CheckoutDelivery) => void
   setPaymentMethod: (method: CheckoutPaymentMethod) => void
@@ -61,7 +62,9 @@ function readStorage(): StoredCheckout {
       ...defaultState,
       ...parsed,
       paymentMethod,
-      items: Array.isArray(parsed.items) ? parsed.items : [],
+      items: Array.isArray(parsed.items)
+        ? parsed.items.map((item) => normalizeCartItem(item as Partial<CartItem> & { productId: number }))
+        : [],
       placedOrderNumbers: Array.isArray(parsed.placedOrderNumbers) ? parsed.placedOrderNumbers : [],
     }
   } catch {
@@ -81,51 +84,56 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
   }, [state])
 
   const addItem = useCallback((item: CartItem) => {
+    const normalized = normalizeCartItem(item)
+
     setState((current) => {
-      const existing = current.items.find((row) => row.productId === item.productId)
+      const existing = current.items.find((row) => row.id === normalized.id)
       if (existing) {
         return {
           ...current,
           shippingQuote: null,
           items: current.items.map((row) =>
-            row.productId === item.productId
-              ? { ...row, quantity: row.quantity + item.quantity }
+            row.id === normalized.id
+              ? {
+                  ...normalized,
+                  quantity: row.quantity + normalized.quantity,
+                }
               : row,
           ),
         }
       }
 
-      if (current.items.length > 0 && current.items[0]?.sellerUserId !== item.sellerUserId) {
+      if (current.items.length > 0 && current.items[0]?.sellerUserId !== normalized.sellerUserId) {
         return {
           ...current,
           shippingQuote: null,
-          items: [item],
+          items: [normalized],
         }
       }
 
       return {
         ...current,
         shippingQuote: null,
-        items: [...current.items, item],
+        items: [...current.items, normalized],
       }
     })
   }, [])
 
-  const updateQuantity = useCallback((productId: number, quantity: number) => {
+  const updateQuantity = useCallback((lineId: string, quantity: number) => {
     setState((current) => ({
       ...current,
       shippingQuote: null,
       items: current.items
-        .map((row) => (row.productId === productId ? { ...row, quantity } : row))
+        .map((row) => (row.id === lineId ? { ...row, quantity } : row))
         .filter((row) => row.quantity > 0),
     }))
   }, [])
 
-  const removeItem = useCallback((productId: number) => {
+  const removeItem = useCallback((lineId: string) => {
     setState((current) => ({
       ...current,
       shippingQuote: null,
-      items: current.items.filter((row) => row.productId !== productId),
+      items: current.items.filter((row) => row.id !== lineId),
     }))
   }, [])
 

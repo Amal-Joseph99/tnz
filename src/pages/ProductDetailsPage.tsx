@@ -21,6 +21,7 @@ import { appendSearchHistory } from '../lib/searchHistory'
 import { absoluteUrl } from '../lib/site'
 import { ogImageUrl } from '../lib/sharePages'
 import { buildCategoryBrowsePath, fetchStorefrontProductById, getStorefrontProductImageUrl } from '../lib/storefrontCatalog'
+import { buildCartLineId } from '../lib/checkout'
 import { formatVariantColor, formatVariantSize } from '../lib/variantDisplay'
 import type { Product } from '../data/products'
 
@@ -377,19 +378,21 @@ export function ProductDetailsPage() {
 
                   void addToCart({
                     item: {
-                      id: String(product.id),
+                      id: buildCartLineId(Number(product.id), selectedVariant.variant_id),
                       productId: Number(product.id),
                       sellerUserId: productRow.user_id,
                       sku: productRow.sku,
                       title: product.title,
                       brand: product.brand,
+                      variantId: selectedVariant.variant_id,
+                      variantSize: selectedVariant.size,
+                      variantColor: selectedVariant.color,
                       price: selectedVariant.selling_price,
                       originalPrice:
                         selectedVariant.mrp > selectedVariant.selling_price ? selectedVariant.mrp : undefined,
                       listingCurrencyCode: product.listingCurrencyCode,
                       image: galleryImages[activeImageIndex] ?? product.image,
                       quantity: 1,
-                      variantId: selectedVariant.variant_id,
                     },
                     source: addToCartButtonRef.current,
                   })

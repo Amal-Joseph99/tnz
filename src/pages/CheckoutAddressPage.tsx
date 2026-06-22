@@ -7,7 +7,7 @@ import { fetchCheckoutCountries, fetchShiprocketServiceability } from '../lib/sh
 
 export function CheckoutAddressPage() {
   const { items, delivery, setDelivery, paymentMethod, shippingQuote, setShippingQuote } = useCheckout()
-  const { formatPrice } = useCurrency()
+  const { formatDisplayAmount, toDisplayListingAmount } = useCurrency()
   const [countries, setCountries] = useState<Array<{ countryName: string; isoAlpha2: string }>>([])
   const [fullName, setFullName] = useState(delivery?.fullName ?? '')
   const [phone, setPhone] = useState(delivery?.phone ?? '')
@@ -144,11 +144,11 @@ export function CheckoutAddressPage() {
           <div className="checkout-shipping-quote">
             <div><span>Lane</span><strong>{shippingQuote.shippingLane === 'india_domestic' ? 'India domestic' : 'India → international'}</strong></div>
             <div><span>Courier</span><strong>{shippingQuote.courierName ?? 'Lowest rate'}</strong></div>
-            <div><span>Shipping</span><strong>{formatPrice(shippingQuote.shippingCharge)}</strong></div>
+            <div><span>Shipping</span><strong>{formatDisplayAmount(toDisplayListingAmount(shippingQuote.shippingCharge, 'INR'))}</strong></div>
             {shiprocketPaymentMethod === 'cod' && (
-              <div><span>COD charges</span><strong>{formatPrice(shippingQuote.codCharges)}</strong></div>
+              <div><span>COD charges</span><strong>{formatDisplayAmount(toDisplayListingAmount(shippingQuote.codCharges, 'INR'))}</strong></div>
             )}
-            <div><span>Total shipping</span><strong>{formatPrice(shippingQuote.totalShippingCharge)}</strong></div>
+            <div><span>Total shipping</span><strong>{formatDisplayAmount(toDisplayListingAmount(shippingQuote.totalShippingCharge, 'INR'))}</strong></div>
             <div><span>Estimated delivery</span><strong>{shippingQuote.estimatedDelivery ?? '—'}</strong></div>
           </div>
         )}
