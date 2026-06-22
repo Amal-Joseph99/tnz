@@ -8,7 +8,6 @@ type CreateCheckoutInput = {
   subtotal: number
   shippingAmount: number
   codChargesAmount: number
-  taxAmount: number
   totalAmount: number
   delivery: CheckoutDelivery
   shippingQuote: ShippingQuote
@@ -122,7 +121,6 @@ function buildCheckoutPayload(input: CreateCheckoutInput) {
     subtotal: input.subtotal,
     shippingAmount: input.shippingAmount,
     codChargesAmount: input.codChargesAmount,
-    taxAmount: input.taxAmount,
     totalAmount: input.totalAmount,
     delivery: {
       fullName: input.delivery.fullName,

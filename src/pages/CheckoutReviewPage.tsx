@@ -18,7 +18,7 @@ export function CheckoutReviewPage() {
     clearCart,
     addPlacedOrderNumber,
   } = useCheckout()
-  const { subtotal, tax, total } = getCartTotals(items, shippingQuote, {
+  const { subtotal, total } = getCartTotals(items, shippingQuote, {
     toDisplayAmount: toDisplayListingAmount,
   })
   const [loading, setLoading] = useState(false)
@@ -49,7 +49,6 @@ export function CheckoutReviewPage() {
           subtotal,
           shippingAmount: shippingQuote.shippingCharge,
           codChargesAmount: shippingQuote.codCharges,
-          taxAmount: tax,
           totalAmount: total,
           delivery,
           shippingQuote,
@@ -73,7 +72,6 @@ export function CheckoutReviewPage() {
         subtotal,
         shippingAmount: shippingQuote.shippingCharge,
         codChargesAmount: 0,
-        taxAmount: tax,
         totalAmount: total,
         delivery,
         shippingQuote,

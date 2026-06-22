@@ -5,7 +5,6 @@ import { fetchAdminPlatformSettings, saveAdminPlatformSettings, type PlatformSet
 const defaultSettings: PlatformSettings = {
     commission_percent: 12,
     settlement_days: 7,
-    checkout_tax_rate: 0.05,
     return_window_days: 14,
     stale_payment_hours: 24,
     ops_email: '',
@@ -47,7 +46,6 @@ export function AdminSettingsPage() {
           <div className="admin-form">
             <label>Default commission (%)<input type="number" value={settings.commission_percent} onChange={(e) => setSettings({ ...settings, commission_percent: Number(e.target.value) })} /></label>
             <label>Settlement window (days)<input type="number" value={settings.settlement_days} onChange={(e) => setSettings({ ...settings, settlement_days: Number(e.target.value) })} /></label>
-            <label>Checkout tax rate<input type="number" step="0.01" value={settings.checkout_tax_rate} onChange={(e) => setSettings({ ...settings, checkout_tax_rate: Number(e.target.value) })} /></label>
           </div>
         </section>
         <section className="admin-panel">

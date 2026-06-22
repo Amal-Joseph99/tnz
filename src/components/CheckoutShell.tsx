@@ -12,7 +12,7 @@ export function CheckoutShell({ children }: CheckoutShellProps) {
   const location = useLocation()
   const { formatDisplayAmount, formatListingPrice, toDisplayListingAmount } = useCurrency()
   const { items, shippingQuote } = useCheckout()
-  const { subtotal, shipping, tax, total, itemCount } = getCartTotals(items, shippingQuote, {
+  const { subtotal, shipping, total, itemCount } = getCartTotals(items, shippingQuote, {
     toDisplayAmount: toDisplayListingAmount,
   })
 
@@ -78,7 +78,6 @@ export function CheckoutShell({ children }: CheckoutShellProps) {
             <div className="checkout-summary__lines">
               <div><span>Subtotal</span><strong>{formatDisplayAmount(subtotal)}</strong></div>
               <div><span>Shipping</span><strong>{shipping === 0 ? 'Calculated at address' : formatDisplayAmount(shipping)}</strong></div>
-              <div><span>Estimated tax</span><strong>{formatDisplayAmount(tax)}</strong></div>
               <div className="checkout-summary__total"><span>Total</span><strong>{formatDisplayAmount(total)}</strong></div>
             </div>
           </aside>

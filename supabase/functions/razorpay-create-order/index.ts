@@ -23,7 +23,6 @@ type CreateOrderRequest = {
   subtotal: number
   shippingAmount: number
   codChargesAmount: number
-  taxAmount: number
   totalAmount: number
   delivery: Record<string, string>
   shippingQuote: Record<string, unknown>
@@ -80,7 +79,7 @@ Deno.serve(async (req) => {
       p_subtotal: body.subtotal,
       p_shipping_amount: body.shippingAmount,
       p_cod_charges_amount: body.codChargesAmount,
-      p_tax_amount: body.taxAmount,
+      p_tax_amount: 0,
       p_total_amount: body.totalAmount,
       p_delivery: body.delivery,
       p_shipping_quote: body.shippingQuote,

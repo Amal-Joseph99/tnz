@@ -119,7 +119,6 @@ export async function createMarketplaceOrder(input: {
   subtotal: number
   shippingAmount: number
   codChargesAmount: number
-  taxAmount: number
   totalAmount: number
   delivery: CheckoutDelivery
   shippingQuote: ShippingQuote
@@ -136,7 +135,7 @@ export async function createMarketplaceOrder(input: {
     p_subtotal: input.subtotal,
     p_shipping_amount: input.shippingAmount,
     p_cod_charges_amount: input.codChargesAmount,
-    p_tax_amount: input.taxAmount,
+    p_tax_amount: 0,
     p_total_amount: input.totalAmount,
     p_delivery: {
       fullName: input.delivery.fullName,

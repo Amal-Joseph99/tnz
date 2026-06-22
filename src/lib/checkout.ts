@@ -48,12 +48,10 @@ export function getCartTotals(
   items: CartItem[],
   shippingQuote?: { totalShippingCharge: number } | null,
   options?: {
-    taxRate?: number
     toDisplayAmount?: (price: number, listingCurrencyCode: string) => number
     shippingCurrencyCode?: string
   },
 ) {
-  const taxRate = options?.taxRate ?? 0.05
   const toDisplay = options?.toDisplayAmount ?? ((price: number) => price)
   const shippingCurrency = options?.shippingCurrencyCode ?? 'INR'
 
@@ -64,11 +62,10 @@ export function getCartTotals(
   const shipping = shippingQuote
     ? toDisplay(shippingQuote.totalShippingCharge, shippingCurrency)
     : 0
-  const tax = subtotal * taxRate
-  const total = subtotal + shipping + tax
+  const total = subtotal + shipping
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
 
-  return { subtotal, shipping, tax, total, itemCount }
+  return { subtotal, shipping, total, itemCount }
 }
 
 export const checkoutSteps = [

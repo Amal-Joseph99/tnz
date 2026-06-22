@@ -17,7 +17,7 @@ function variantLabel(item: { variantSize?: string; variantColor?: string }) {
 export function CartPage() {
   const { formatDisplayAmount, formatListingPrice, toDisplayListingAmount } = useCurrency()
   const { items, shippingQuote, updateQuantity } = useCheckout()
-  const { subtotal, shipping, tax, total } = getCartTotals(items, shippingQuote, {
+  const { subtotal, shipping, total } = getCartTotals(items, shippingQuote, {
     toDisplayAmount: toDisplayListingAmount,
   })
 
@@ -81,7 +81,6 @@ export function CartPage() {
               <div className="cart-summary-lines">
                 <div><span>Subtotal</span><strong>{formatDisplayAmount(subtotal)}</strong></div>
                 <div><span>Shipping</span><strong>{shipping > 0 ? formatDisplayAmount(shipping) : 'At checkout'}</strong></div>
-                <div><span>Tax</span><strong>{formatDisplayAmount(tax)}</strong></div>
                 <div className="cart-summary-lines__total"><span>Total</span><strong>{formatDisplayAmount(total)}</strong></div>
               </div>
               <Link to="/checkout" className="cart-checkout-btn">Proceed to checkout</Link>

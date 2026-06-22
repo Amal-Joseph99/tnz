@@ -234,7 +234,6 @@ export type SupportRequestRow = {
 }
 
 export type PlatformSettings = {
-  checkout_tax_rate: number
   return_window_days: number
   stale_payment_hours: number
   commission_percent: number
