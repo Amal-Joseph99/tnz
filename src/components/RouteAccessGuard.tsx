@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
+import { PageLoadingState } from './PageLoadingState'
 import { resolveRouteAccess } from '../lib/routeAccess'
 
 type RouteAccessGuardProps = {
@@ -13,6 +14,7 @@ export function RouteAccessGuard({ children }: RouteAccessGuardProps) {
 
   useEffect(() => {
     let active = true
+    setStatus('loading')
 
     void resolveRouteAccess(location.pathname).then((result) => {
       if (!active) return
@@ -32,7 +34,7 @@ export function RouteAccessGuard({ children }: RouteAccessGuardProps) {
   }, [location.pathname])
 
   if (status === 'loading') {
-    return <div className="auth-gate-loading">Checking access...</div>
+    return <PageLoadingState label="Checking access…" />
   }
 
   if (status === 'denied') {

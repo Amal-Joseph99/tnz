@@ -75,23 +75,44 @@ import { SignUpPage } from './pages/SignUpPage'
 import { SustainabilityPage } from './pages/SustainabilityPage'
 import { TrackOrderPage } from './pages/TrackOrderPage'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { showMarketplaceChrome } from './lib/authRoutes'
+import { PageBackButton } from './components/PageBackButton'
 import './App.css'
 
 function AppContent() {
   const location = useLocation()
   const marketplaceChrome = showMarketplaceChrome(location.pathname)
+  const [routeLoading, setRouteLoading] = useState(false)
+  const showBackButton = marketplaceChrome && location.pathname !== '/'
 
   useEffect(() => {
     void preloadDialogMessages(['sign_out', 'delete', 'remove', 'guest_add_to_cart', 'console_sign_out', 'delete_review'])
   }, [])
 
+  useEffect(() => {
+    setRouteLoading(true)
+    const timer = window.setTimeout(() => setRouteLoading(false), 180)
+    return () => window.clearTimeout(timer)
+  }, [location.key])
+
   return (
     <CurrencyProvider>
       <div className="app">
         {marketplaceChrome && <Header />}
-        <main>
+        {showBackButton && (
+          <div className="page-backbar">
+            <div className="container page-backbar__inner">
+              <PageBackButton />
+            </div>
+          </div>
+        )}
+        <main className="app-main">
+          {routeLoading && (
+            <div className="page-loading page-loading--overlay" aria-hidden="true">
+              <div className="page-loading__spinner" />
+            </div>
+          )}
           <RouteAccessGuard>
             <Routes>
               <Route path="/" element={<HomePage />} />

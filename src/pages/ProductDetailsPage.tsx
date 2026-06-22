@@ -21,6 +21,7 @@ import { appendSearchHistory } from '../lib/searchHistory'
 import { absoluteUrl } from '../lib/site'
 import { ogImageUrl } from '../lib/sharePages'
 import { buildCategoryBrowsePath, fetchStorefrontProductById, getStorefrontProductImageUrl } from '../lib/storefrontCatalog'
+import { formatVariantColor, formatVariantSize } from '../lib/variantDisplay'
 import type { Product } from '../data/products'
 
 const PRODUCT_PLACEHOLDER =
@@ -339,7 +340,7 @@ export function ProductDetailsPage() {
                       key={size}
                       onClick={() => setSelectedSize(size)}
                     >
-                      {size}
+                      {formatVariantSize(size)}
                     </button>
                   ))}
                 </div>
@@ -354,7 +355,7 @@ export function ProductDetailsPage() {
                       key={colour}
                       onClick={() => setSelectedColor(colour)}
                     >
-                      {colour}
+                      {formatVariantColor(colour)}
                     </button>
                   ))}
                 </div>

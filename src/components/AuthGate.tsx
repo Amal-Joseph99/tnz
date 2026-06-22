@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
+import { PageLoadingState } from './PageLoadingState'
 import { resolveAccountType } from '../lib/buyerAuth'
 import { supabase } from '../lib/supabase'
 
@@ -44,7 +45,7 @@ function useAuthGate(loginPath: string, isAllowed: (accountType: Awaited<ReturnT
 
 function GateShell({ status, loginPath, children }: { status: 'loading' | 'allowed' | 'denied'; loginPath: string; children: ReactNode }) {
   if (status === 'loading') {
-    return <div className="auth-gate-loading">Checking access...</div>
+    return <PageLoadingState label="Checking access…" />
   }
 
   if (status === 'denied') {
