@@ -9,6 +9,7 @@ export type Product = {
   rating: number
   reviews: number
   image: string
+  images: string[]
   listingCurrencyCode: string
   sellerUserId: string
   sku: string

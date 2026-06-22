@@ -30,10 +30,12 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState('')
   const navigate = useNavigate()
   const { currency, locationLabel, loading, pricingReady, refreshLocation } = useCurrency()
-  const { isSignedIn, signOutWithConfirm } = useAuth()
+  const { isSignedIn, accountType, signOutWithConfirm } = useAuth()
   const { items } = useCheckout()
   const { cartBump } = useCartFly()
   const cartItemCount = getCartTotals(items).itemCount
+  const isSignedInBuyer = isSignedIn && accountType === 'buyer'
+  const showSellNow = !isSignedInBuyer
 
   useEffect(() => {
     if (isSignedIn) {
@@ -97,10 +99,12 @@ export function Header() {
             </span>
           </button>
           <span className="header__currency">{loading || !pricingReady ? '…' : currency}</span>
-          <Link to="/sellerslandingpage" className="header__sell-now">
-            Sell Now
-          </Link>
-          <div className="header__account">
+          {showSellNow && (
+            <Link to="/sellerslandingpage" className="header__sell-now">
+              Sell Now
+            </Link>
+          )}
+          <div className={`header__account${isSignedInBuyer ? ' header__account--mobile-buyer' : ''}`}>
             <button
               type="button"
               className="header__action header__action--account"
@@ -181,21 +185,32 @@ export function Header() {
         </label>
 
         <div className="header__drawer-auth">
-          <Link to="/sellerslandingpage" className="header__drawer-sell-now" onClick={() => setMenuOpen(false)}>
-            Sell Now
-          </Link>
+          {showSellNow && (
+            <Link to="/sellerslandingpage" className="header__drawer-sell-now" onClick={() => setMenuOpen(false)}>
+              Sell Now
+            </Link>
+          )}
           {isSignedIn ? (
-            <button type="button" onClick={() => void signOutWithConfirm()}>
-              Sign out
-            </button>
+            <>
+              {isSignedInBuyer && (
+                <Link to="/profile" onClick={() => setMenuOpen(false)}>
+                  My account
+                </Link>
+              )}
+              <button type="button" onClick={() => void signOutWithConfirm()}>
+                Sign out
+              </button>
+            </>
           ) : (
             <Link to="/buyer/signin" onClick={() => setMenuOpen(false)}>
               Login
             </Link>
           )}
-          <Link to="/buyer/signup" onClick={() => setMenuOpen(false)}>
-            Sign Up
-          </Link>
+          {!isSignedIn && (
+            <Link to="/buyer/signup" onClick={() => setMenuOpen(false)}>
+              Sign Up
+            </Link>
+          )}
         </div>
 
         <ul className="header__drawer-links">

@@ -20,7 +20,7 @@ import { shareProduct } from '../lib/productShare'
 import { appendSearchHistory } from '../lib/searchHistory'
 import { absoluteUrl } from '../lib/site'
 import { ogImageUrl } from '../lib/sharePages'
-import { buildCategoryBrowsePath, fetchStorefrontProductById } from '../lib/storefrontCatalog'
+import { buildCategoryBrowsePath, fetchStorefrontProductById, getStorefrontProductImageUrl } from '../lib/storefrontCatalog'
 import type { Product } from '../data/products'
 
 const PRODUCT_PLACEHOLDER =
@@ -137,21 +137,28 @@ export function ProductDetailsPage() {
     [detail],
   )
 
-  const galleryImages = useMemo(() => {
-    if (!detail) return [PRODUCT_PLACEHOLDER]
-    const images = detail.detail.media
-      .filter((item) => item.mediaType === 'product_image' || item.mediaType === 'description_image')
+  const listingImages = useMemo(() => {
+    if (!detail) return []
+    return detail.detail.media
+      .filter((item) => item.mediaType === 'product_image')
       .map((item) => item.url)
+  }, [detail])
+
+  const galleryImages = useMemo(() => {
+    const listing = listingImages.length > 0
+      ? listingImages
+      : (product?.images?.length ? product.images : [product?.image ?? PRODUCT_PLACEHOLDER])
 
     if (selectedVariant?.image_storage_path) {
-      const variantImage = detail.detail.media.find((item) => item.storagePath === selectedVariant.image_storage_path)
-      if (variantImage) {
-        return [variantImage.url, ...images.filter((url) => url !== variantImage.url)]
-      }
+      return [getStorefrontProductImageUrl(selectedVariant.image_storage_path)]
     }
 
-    return images.length > 0 ? images : [product?.image ?? PRODUCT_PLACEHOLDER]
-  }, [detail, product?.image, selectedVariant?.image_storage_path])
+    return listing
+  }, [listingImages, product?.image, product?.images, selectedVariant?.image_storage_path])
+
+  useEffect(() => {
+    setActiveImageIndex(0)
+  }, [selectedSize, selectedColor])
 
   const galleryVideos = useMemo(
     () => detail?.detail.media.filter((item) => item.mediaType === 'product_video') ?? [],
