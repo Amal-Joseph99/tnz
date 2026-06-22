@@ -5,9 +5,11 @@ import { PanelEmptyState } from '../components/PanelEmptyState'
 import { getCartTotals } from '../lib/checkout'
 
 export function CartPage() {
-  const { formatPrice } = useCurrency()
+  const { formatPrice, formatListingPrice, toDisplayListingAmount } = useCurrency()
   const { items, shippingQuote, updateQuantity } = useCheckout()
-  const { subtotal, shipping, total } = getCartTotals(items, shippingQuote)
+  const { subtotal, shipping, total } = getCartTotals(items, shippingQuote, {
+    toDisplayAmount: toDisplayListingAmount,
+  })
 
   return (
     <section className="cart-page">
@@ -51,7 +53,12 @@ export function CartPage() {
                       </div>
                     </div>
                     <div className="cart-item-row__price">
-                      <strong>{formatPrice(item.price * item.quantity)}</strong>
+                      <strong>
+                        {formatListingPrice(
+                          item.price * item.quantity,
+                          item.listingCurrencyCode || 'INR',
+                        )}
+                      </strong>
                     </div>
                   </article>
                 ))}

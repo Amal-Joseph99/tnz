@@ -153,6 +153,22 @@ export async function saveBuyerAddress(input: {
   return { ok: true as const }
 }
 
+export async function setBuyerAddressDefault(address: BuyerAddress) {
+  return saveBuyerAddress({
+    id: address.id,
+    label: address.label,
+    fullName: address.full_name,
+    phone: address.phone,
+    addressLine1: address.address_line1,
+    addressLine2: address.address_line2 ?? undefined,
+    city: address.city,
+    state: address.state,
+    postcode: address.postcode,
+    countryIso2: address.country_iso2,
+    isDefault: true,
+  })
+}
+
 export async function fetchAdminBuyers(): Promise<AdminBuyerRow[]> {
   if (!supabase) return []
 

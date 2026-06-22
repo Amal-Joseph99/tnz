@@ -386,6 +386,7 @@ export function ProductDetailsPage() {
                       price: selectedVariant.selling_price,
                       originalPrice:
                         selectedVariant.mrp > selectedVariant.selling_price ? selectedVariant.mrp : undefined,
+                      listingCurrencyCode: product.listingCurrencyCode,
                       image: galleryImages[activeImageIndex] ?? product.image,
                       quantity: 1,
                       variantId: selectedVariant.variant_id,

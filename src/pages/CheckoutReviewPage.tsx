@@ -9,7 +9,7 @@ import { startRazorpayCheckout } from '../lib/razorpayPayments'
 
 export function CheckoutReviewPage() {
   const navigate = useNavigate()
-  const { currency } = useCurrency()
+  const { currency, formatPrice, toDisplayListingAmount } = useCurrency()
   const {
     items,
     delivery,
@@ -18,8 +18,9 @@ export function CheckoutReviewPage() {
     clearCart,
     addPlacedOrderNumber,
   } = useCheckout()
-  const { formatPrice } = useCurrency()
-  const { subtotal, tax, total } = getCartTotals(items, shippingQuote)
+  const { subtotal, tax, total } = getCartTotals(items, shippingQuote, {
+    toDisplayAmount: toDisplayListingAmount,
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 

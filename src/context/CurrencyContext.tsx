@@ -33,6 +33,7 @@ type CurrencyContextValue = {
   adminCurrencyOptions: AdminCurrencyOption[]
   formatPrice: (usdAmount: number) => string
   formatListingPrice: (amount: number, listingCurrencyCode: string) => string
+  toDisplayListingAmount: (amount: number, listingCurrencyCode: string) => number
   refreshLocation: () => Promise<void>
   ensureHomepageLocation: () => Promise<void>
   setAdminCurrency: (currencyCode: string) => Promise<void>
@@ -261,6 +262,22 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     [currency, currencyRates, decimalPlaces, pricingReady, symbol],
   )
 
+  const toDisplayListingAmount = useCallback(
+    (amount: number, listingCurrencyCode: string) => {
+      if (!pricingReady) {
+        return amount
+      }
+
+      return convertListingAmountToDisplay(
+        amount,
+        listingCurrencyCode,
+        currency,
+        currencyRates,
+      )
+    },
+    [currency, currencyRates, pricingReady],
+  )
+
   const formatPrice = useCallback(
     (usdAmount: number) => {
       if (!pricingReady) {
@@ -289,6 +306,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       adminCurrencyOptions,
       formatPrice,
       formatListingPrice,
+      toDisplayListingAmount,
       refreshLocation,
       ensureHomepageLocation,
       setAdminCurrency,
@@ -298,6 +316,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       currency,
       formatPrice,
       formatListingPrice,
+      toDisplayListingAmount,
       hasStoredLocation,
       loading,
       locationLabel,

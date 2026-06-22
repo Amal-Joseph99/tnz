@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BuyerAccountShell } from '../components/BuyerAccountShell'
-import { fetchBuyerAccount, saveBuyerAddress, saveBuyerProfile, type BuyerAddress } from '../lib/marketplaceBackend'
+import {
+  fetchBuyerAccount,
+  saveBuyerAddress,
+  saveBuyerProfile,
+  setBuyerAddressDefault,
+  type BuyerAddress,
+} from '../lib/marketplaceBackend'
 import { fetchCheckoutCountries } from '../lib/shiprocketShipping'
 import { supabase } from '../lib/supabase'
 
@@ -16,6 +22,19 @@ function formatAddress(address: BuyerAddress) {
   return lines.join(', ')
 }
 
+function emptyAddressForm(profileName: string, profilePhone: string) {
+  return {
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    postcode: '',
+    countryIso2: 'IN',
+    fullName: profileName,
+    phone: profilePhone,
+  }
+}
+
 export function ProfilePage() {
   const [email, setEmail] = useState('')
   const [emailVerified, setEmailVerified] = useState(false)
@@ -23,37 +42,48 @@ export function ProfilePage() {
   const [phone, setPhone] = useState('')
   const [dateOfBirth, setDateOfBirth] = useState('')
   const [countries, setCountries] = useState<Array<{ countryName: string; isoAlpha2: string }>>([])
-  const [defaultAddress, setDefaultAddress] = useState<BuyerAddress | null>(null)
+  const [addresses, setAddresses] = useState<BuyerAddress[]>([])
+  const [showAddressForm, setShowAddressForm] = useState(false)
   const [addressLine1, setAddressLine1] = useState('')
   const [addressLine2, setAddressLine2] = useState('')
   const [city, setCity] = useState('')
   const [state, setState] = useState('')
   const [postcode, setPostcode] = useState('')
   const [countryIso2, setCountryIso2] = useState('IN')
+  const [addressFullName, setAddressFullName] = useState('')
+  const [addressPhone, setAddressPhone] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingAddress, setSavingAddress] = useState(false)
 
+  const resetAddressForm = (profileName = fullName, profilePhone = phone) => {
+    const empty = emptyAddressForm(profileName, profilePhone)
+    setAddressLine1(empty.addressLine1)
+    setAddressLine2(empty.addressLine2)
+    setCity(empty.city)
+    setState(empty.state)
+    setPostcode(empty.postcode)
+    setCountryIso2(empty.countryIso2)
+    setAddressFullName(empty.fullName)
+    setAddressPhone(empty.phone)
+  }
+
   const loadAccount = async () => {
-    const { profile, addresses } = await fetchBuyerAccount()
+    const { profile, addresses: loaded } = await fetchBuyerAccount()
     if (profile) {
       setFullName(profile.full_name)
       setPhone(profile.phone ?? '')
       setDateOfBirth(profile.date_of_birth ?? '')
     }
 
-    const savedDefault = addresses.find((address) => address.is_default) ?? addresses[0] ?? null
-    setDefaultAddress(savedDefault)
-
-    if (savedDefault) {
-      setAddressLine1(savedDefault.address_line1)
-      setAddressLine2(savedDefault.address_line2 ?? '')
-      setCity(savedDefault.city)
-      setState(savedDefault.state)
-      setPostcode(savedDefault.postcode)
-      setCountryIso2(savedDefault.country_iso2)
+    setAddresses(loaded)
+    if (loaded.length === 0) {
+      setShowAddressForm(true)
+      resetAddressForm(profile?.full_name ?? fullName, profile?.phone ?? phone)
+    } else {
+      setShowAddressForm(false)
     }
   }
 
@@ -88,12 +118,12 @@ export function ProfilePage() {
     setMessage('Profile saved.')
   }
 
-  const handleSaveDefaultAddress = async () => {
+  const handleSaveAddress = async () => {
     setError('')
     setMessage('')
 
-    if (!fullName.trim() || !phone.trim()) {
-      setError('Add your name and phone before saving a default address.')
+    if (!addressFullName.trim() || !addressPhone.trim()) {
+      setError('Add your name and phone.')
       return
     }
 
@@ -104,17 +134,16 @@ export function ProfilePage() {
 
     setSavingAddress(true)
     const result = await saveBuyerAddress({
-      id: defaultAddress?.id,
-      label: 'Default',
-      fullName,
-      phone,
+      label: 'Home',
+      fullName: addressFullName.trim(),
+      phone: addressPhone.trim(),
       addressLine1: addressLine1.trim(),
       addressLine2: addressLine2.trim() || undefined,
       city: city.trim(),
       state: state.trim(),
       postcode: postcode.trim(),
       countryIso2,
-      isDefault: true,
+      isDefault: addresses.length === 0,
     })
     setSavingAddress(false)
 
@@ -124,13 +153,33 @@ export function ProfilePage() {
     }
 
     await loadAccount()
-    setMessage('Default address saved.')
+    setShowAddressForm(false)
+    resetAddressForm()
+  }
+
+  const handleMakeDefault = async (address: BuyerAddress) => {
+    setError('')
+    setMessage('')
+    setSavingAddress(true)
+    const result = await setBuyerAddressDefault(address)
+    setSavingAddress(false)
+
+    if (!result.ok) {
+      setError(result.message)
+      return
+    }
+
+    await loadAccount()
+  }
+
+  const openNewAddressForm = () => {
+    resetAddressForm()
+    setShowAddressForm(true)
   }
 
   return (
     <BuyerAccountShell
       title="Profile"
-      subtitle="Manage your personal information, saved addresses, and account security."
       action={
         <button
           type="button"
@@ -142,94 +191,138 @@ export function ProfilePage() {
         </button>
       }
     >
-      {loading && <p>Loading profile...</p>}
       {error && <div className="auth-message auth-message--error">{error}</div>}
       {message && <div className="auth-message auth-message--success">{message}</div>}
 
-      <section className="buyer-panel">
-        <div className="buyer-panel__header">
-          <h2>Personal information</h2>
-          <p>Keep your details accurate for faster checkout and delivery updates.</p>
-        </div>
-        <form className="buyer-form buyer-form--grid" onSubmit={(event) => event.preventDefault()}>
-          <label>
-            Full name
-            <input type="text" value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Enter your full name" />
-          </label>
-          <label>
-            Email address
-            <input type="email" value={email} readOnly />
-          </label>
-          <label>
-            Phone number
-            <input type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="Enter your phone number" />
-          </label>
-          <label>
-            Date of birth
-            <input type="date" value={dateOfBirth} onChange={(event) => setDateOfBirth(event.target.value)} />
-          </label>
-        </form>
-      </section>
+      {!loading && (
+        <>
+          <section className="buyer-panel">
+            <div className="buyer-panel__header">
+              <h2>Personal information</h2>
+            </div>
+            <form className="buyer-form buyer-form--grid" onSubmit={(event) => event.preventDefault()}>
+              <label>
+                Full name
+                <input type="text" value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Enter your full name" />
+              </label>
+              <label>
+                Email address
+                <input type="email" value={email} readOnly />
+              </label>
+              <label>
+                Phone number
+                <input type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="Enter your phone number" />
+              </label>
+              <label>
+                Date of birth
+                <input type="date" value={dateOfBirth} onChange={(event) => setDateOfBirth(event.target.value)} />
+              </label>
+            </form>
+          </section>
 
-      <div className="buyer-panel-grid">
+          <div className="buyer-panel-grid">
         <section className="buyer-panel">
           <div className="buyer-panel__header">
-            <h2>Default address</h2>
-            <p>Used for delivery estimates and checkout.</p>
+            <h2>Addresses</h2>
           </div>
 
-          {defaultAddress && (
-            <div className="buyer-address-summary">
-              <strong>{defaultAddress.full_name}</strong>
-              <p>{formatAddress(defaultAddress)}</p>
-              <p>{defaultAddress.phone}</p>
+          {addresses.length > 0 && (
+            <div className="buyer-address-list">
+              {addresses.map((address) => (
+                <article key={address.id} className="buyer-address-card">
+                  {address.is_default && <span>Default</span>}
+                  <strong>{address.full_name}</strong>
+                  <p>{formatAddress(address)}</p>
+                  <p>{address.phone}</p>
+                  {!address.is_default && (
+                    <button
+                      type="button"
+                      onClick={() => void handleMakeDefault(address)}
+                      disabled={savingAddress || loading}
+                    >
+                      Make default
+                    </button>
+                  )}
+                </article>
+              ))}
+              {!showAddressForm && (
+                <button type="button" className="buyer-address-add" onClick={openNewAddressForm}>
+                  Add new
+                </button>
+              )}
             </div>
           )}
 
-          <form className="buyer-form" onSubmit={(event) => {
-            event.preventDefault()
-            void handleSaveDefaultAddress()
-          }}>
-            <label>
-              Address line 1
-              <input type="text" value={addressLine1} onChange={(event) => setAddressLine1(event.target.value)} placeholder="House number and street" required />
-            </label>
-            <label>
-              Address line 2
-              <input type="text" value={addressLine2} onChange={(event) => setAddressLine2(event.target.value)} placeholder="Apartment, suite, etc. (optional)" />
-            </label>
-            <label>
-              City
-              <input type="text" value={city} onChange={(event) => setCity(event.target.value)} required />
-            </label>
-            <label>
-              State
-              <input type="text" value={state} onChange={(event) => setState(event.target.value)} required />
-            </label>
-            <label>
-              Postcode
-              <input type="text" value={postcode} onChange={(event) => setPostcode(event.target.value)} required />
-            </label>
-            <label>
-              Country
-              <select value={countryIso2} onChange={(event) => setCountryIso2(event.target.value)} required>
-                {countries.map((country) => (
-                  <option key={country.isoAlpha2} value={country.isoAlpha2}>
-                    {country.countryName}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button type="submit" disabled={savingAddress || loading}>
-              {savingAddress ? 'Saving address...' : defaultAddress ? 'Update default address' : 'Save default address'}
-            </button>
-          </form>
+          {showAddressForm && !loading && (
+            <form
+              className="buyer-form"
+              onSubmit={(event) => {
+                event.preventDefault()
+                void handleSaveAddress()
+              }}
+            >
+              <label>
+                Full name
+                <input type="text" value={addressFullName} onChange={(event) => setAddressFullName(event.target.value)} required />
+              </label>
+              <label>
+                Phone
+                <input type="tel" value={addressPhone} onChange={(event) => setAddressPhone(event.target.value)} required />
+              </label>
+              <label>
+                Address line 1
+                <input type="text" value={addressLine1} onChange={(event) => setAddressLine1(event.target.value)} required />
+              </label>
+              <label>
+                Address line 2
+                <input type="text" value={addressLine2} onChange={(event) => setAddressLine2(event.target.value)} />
+              </label>
+              <label>
+                City
+                <input type="text" value={city} onChange={(event) => setCity(event.target.value)} required />
+              </label>
+              <label>
+                State
+                <input type="text" value={state} onChange={(event) => setState(event.target.value)} required />
+              </label>
+              <label>
+                Postcode
+                <input type="text" value={postcode} onChange={(event) => setPostcode(event.target.value)} required />
+              </label>
+              <label>
+                Country
+                <select value={countryIso2} onChange={(event) => setCountryIso2(event.target.value)} required>
+                  {countries.map((country) => (
+                    <option key={country.isoAlpha2} value={country.isoAlpha2}>
+                      {country.countryName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="buyer-form__actions">
+                <button type="submit" disabled={savingAddress || loading}>
+                  {savingAddress ? 'Saving...' : 'Save'}
+                </button>
+                {addresses.length > 0 && (
+                  <button
+                    type="button"
+                    className="buyer-form__cancel"
+                    onClick={() => {
+                      setShowAddressForm(false)
+                      resetAddressForm()
+                    }}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </form>
+          )}
         </section>
 
         <section className="buyer-panel">
           <div className="buyer-panel__header">
             <h2>Security</h2>
-            <p>Review login and password settings.</p>
           </div>
           <div className="buyer-security-list">
             <div>
@@ -248,7 +341,9 @@ export function ProfilePage() {
             </div>
           </div>
         </section>
-      </div>
+          </div>
+        </>
+      )}
     </BuyerAccountShell>
   )
 }

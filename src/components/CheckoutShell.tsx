@@ -10,9 +10,11 @@ type CheckoutShellProps = {
 
 export function CheckoutShell({ children }: CheckoutShellProps) {
   const location = useLocation()
-  const { formatPrice } = useCurrency()
+  const { formatPrice, formatListingPrice, toDisplayListingAmount } = useCurrency()
   const { items, shippingQuote } = useCheckout()
-  const { subtotal, shipping, tax, total, itemCount } = getCartTotals(items, shippingQuote)
+  const { subtotal, shipping, tax, total, itemCount } = getCartTotals(items, shippingQuote, {
+    toDisplayAmount: toDisplayListingAmount,
+  })
 
   const activeIndex = checkoutSteps.findIndex((step) => step.path === location.pathname)
 
@@ -64,7 +66,12 @@ export function CheckoutShell({ children }: CheckoutShellProps) {
                     <p>{item.title}</p>
                     <span>Qty {item.quantity}</span>
                   </div>
-                  <strong>{formatPrice(item.price * item.quantity)}</strong>
+                  <strong>
+                    {formatListingPrice(
+                      item.price * item.quantity,
+                      item.listingCurrencyCode || 'INR',
+                    )}
+                  </strong>
                 </article>
               ))}
             </div>

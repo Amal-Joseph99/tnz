@@ -7311,6 +7311,49 @@
   margin-top: 12px;
 }
 
+.buyer-address-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.buyer-address-card {
+  padding: 1rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.buyer-address-card p {
+  margin: 0.35rem 0 0;
+  color: #475569;
+}
+
+.buyer-address-add {
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 8px 12px;
+}
+
+.buyer-form__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.buyer-form__cancel {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 9px 12px;
+}
+
 .buyer-address-card span {
   color: #6b7280;
   font-size: 13px;

@@ -13,7 +13,7 @@ const accountNav = [
 
 type BuyerAccountShellProps = {
   title: string
-  subtitle: string
+  subtitle?: string
   children: ReactNode
   action?: ReactNode
 }
@@ -91,7 +91,7 @@ export function BuyerAccountShell({ title, subtitle, children, action }: BuyerAc
               <div>
                 <span>My account</span>
                 <h1>{title}</h1>
-                <p>{subtitle}</p>
+                {subtitle ? <p>{subtitle}</p> : null}
               </div>
               {action && <div className="buyer-account__header-action">{action}</div>}
             </div>

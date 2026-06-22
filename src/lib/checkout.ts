@@ -7,6 +7,7 @@ export type CartItem = {
   brand: string
   price: number
   originalPrice?: number
+  listingCurrencyCode: string
   image: string
   quantity: number
   variantId?: string
@@ -17,9 +18,18 @@ export const defaultCartItems: CartItem[] = []
 export function getCartTotals(
   items: CartItem[],
   shippingQuote?: { totalShippingCharge: number } | null,
-  taxRate = 0.05,
+  options?: {
+    taxRate?: number
+    toDisplayAmount?: (price: number, listingCurrencyCode: string) => number
+  },
 ) {
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const taxRate = options?.taxRate ?? 0.05
+  const toDisplay = options?.toDisplayAmount ?? ((price: number) => price)
+
+  const subtotal = items.reduce((sum, item) => {
+    const listingCurrency = item.listingCurrencyCode || 'INR'
+    return sum + toDisplay(item.price, listingCurrency) * item.quantity
+  }, 0)
   const shipping = shippingQuote?.totalShippingCharge ?? 0
   const tax = subtotal * taxRate
   const total = subtotal + shipping + tax
