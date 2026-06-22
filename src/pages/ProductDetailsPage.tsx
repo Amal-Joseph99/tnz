@@ -71,7 +71,7 @@ function TextPanel({ title, text }: { title: string; text: string }) {
 
 export function ProductDetailsPage() {
   const { productId } = useParams()
-  const { formatPrice } = useCurrency()
+  const { formatListingPrice } = useCurrency()
   const { requestAddToCart } = useAddToCart()
   const { addItem } = useCheckout()
   const [product, setProduct] = useState<Product | null>(null)
@@ -316,9 +316,9 @@ export function ProductDetailsPage() {
             )}
 
             <div className="product-detail__price-block">
-              {hasDiscount && <span>MRP: <s>{formatPrice(displayMrp)}</s></span>}
+              {hasDiscount && <span>MRP: <s>{formatListingPrice(displayMrp, product.listingCurrencyCode)}</s></span>}
               {discountPercent && <strong>{discountPercent}</strong>}
-              <div>{formatPrice(displayPrice)}</div>
+              <div>{formatListingPrice(displayPrice, product.listingCurrencyCode)}</div>
               <small>Inclusive of all taxes</small>
             </div>
 

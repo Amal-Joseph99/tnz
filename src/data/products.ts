@@ -9,6 +9,7 @@ export type Product = {
   rating: number
   reviews: number
   image: string
+  listingCurrencyCode: string
 }
 
 export const featuredProducts: Product[] = []

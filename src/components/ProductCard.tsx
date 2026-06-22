@@ -1,8 +1,12 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCurrency } from '../context/CurrencyContext'
 import type { Product } from '../data/products'
 import { useAddToCart } from '../hooks/useAddToCart'
 import { CartIcon, EyeIcon, HeartIcon, StarIcon } from './Icons'
+
+const PRODUCT_PLACEHOLDER =
+  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="sans-serif" font-size="18"%3EAGTRENZ%3C/text%3E%3C/svg%3E'
 
 type ProductCardProps = {
   product: Product
@@ -10,8 +14,13 @@ type ProductCardProps = {
 }
 
 export function ProductCard({ product, onOpen }: ProductCardProps) {
-  const { formatPrice } = useCurrency()
+  const { formatListingPrice } = useCurrency()
   const { requestAddToCart } = useAddToCart()
+  const [imageSrc, setImageSrc] = useState(product.image || PRODUCT_PLACEHOLDER)
+
+  useEffect(() => {
+    setImageSrc(product.image || PRODUCT_PLACEHOLDER)
+  }, [product.image])
 
   return (
     <article className="product-card">
@@ -21,7 +30,12 @@ export function ProductCard({ product, onOpen }: ProductCardProps) {
           className="product-card__image-link"
           onClick={() => onOpen?.()}
         >
-          <img src={product.image} alt={product.title} className="product-card__image" />
+          <img
+            src={imageSrc}
+            alt={product.title}
+            className="product-card__image"
+            onError={() => setImageSrc(PRODUCT_PLACEHOLDER)}
+          />
         </Link>
         <div className="product-card__badges">
           {product.badge && <span className="product-card__badge">{product.badge}</span>}
@@ -50,9 +64,13 @@ export function ProductCard({ product, onOpen }: ProductCardProps) {
         <div className="product-card__footer">
           <div className="product-card__prices">
             {product.originalPrice && (
-              <span className="product-card__original">{formatPrice(product.originalPrice)}</span>
+              <span className="product-card__original">
+                {formatListingPrice(product.originalPrice, product.listingCurrencyCode)}
+              </span>
             )}
-            <span className="product-card__price">{formatPrice(product.price)}</span>
+            <span className="product-card__price">
+              {formatListingPrice(product.price, product.listingCurrencyCode)}
+            </span>
           </div>
           <button
             type="button"

@@ -9,6 +9,7 @@ const PRODUCT_PLACEHOLDER =
 
 type SellerProductRow = {
   id: number
+  user_id: string
   product_name: string
   brand_name: string
   category_name: string
@@ -20,6 +21,7 @@ type SellerProductRow = {
 type CatalogVariantPrice = {
   mrp: number
   selling_price: number
+  image_storage_path?: string | null
 }
 
 type StorefrontVariantRow = {
@@ -98,6 +100,7 @@ function mapToProductCard(
   product: SellerProductRow,
   variant: CatalogVariantPrice | undefined,
   imagePath: string | undefined,
+  listingCurrencyCode: string,
 ): Product {
   const price = variant?.selling_price ?? 0
   const originalPrice = variant?.mrp ?? price
@@ -115,8 +118,65 @@ function mapToProductCard(
     discount: discountPercent,
     rating: 0,
     reviews: 0,
-    image: getProductImageUrl(imagePath),
+    image: getProductImageUrl(imagePath ?? variant?.image_storage_path ?? undefined),
+    listingCurrencyCode,
   }
+}
+
+async function fetchSellerCurrencyMap(userIds: string[]) {
+  if (!supabase || userIds.length === 0) return new Map<string, string>()
+
+  const { data } = await supabase
+    .from('seller_accounts')
+    .select('user_id, base_currency_code')
+    .in('user_id', userIds)
+
+  return new Map(
+    (data ?? []).map((row) => [String(row.user_id), String(row.base_currency_code ?? 'USD')]),
+  )
+}
+
+function pickPrimaryVariant(variants: Array<{
+  product_id: number
+  mrp: number
+  selling_price: number
+  image_storage_path?: string | null
+}>) {
+  const variantByProduct = new Map<number, CatalogVariantPrice>()
+
+  for (const variant of variants) {
+    const existing = variantByProduct.get(variant.product_id)
+    if (!existing || variant.selling_price < existing.selling_price) {
+      variantByProduct.set(variant.product_id, {
+        mrp: variant.mrp,
+        selling_price: variant.selling_price,
+        image_storage_path: variant.image_storage_path,
+      })
+    }
+  }
+
+  return variantByProduct
+}
+
+function pickPrimaryImages(
+  media: Array<{ product_id: number; storage_path: string }>,
+  variants: Array<{ product_id: number; image_storage_path?: string | null }>,
+) {
+  const imageByProduct = new Map<number, string>()
+
+  for (const item of media) {
+    if (!imageByProduct.has(item.product_id)) {
+      imageByProduct.set(item.product_id, item.storage_path)
+    }
+  }
+
+  for (const variant of variants) {
+    if (!imageByProduct.has(variant.product_id) && variant.image_storage_path) {
+      imageByProduct.set(variant.product_id, variant.image_storage_path)
+    }
+  }
+
+  return imageByProduct
 }
 
 export async function resolveCategoryNameFromSlug(slug: string) {
@@ -154,7 +214,7 @@ export async function fetchStorefrontProductsByCategory(
 
   let query = supabase
     .from('seller_products')
-    .select('id, product_name, brand_name, category_name, sub_category_name, product_type_name, short_description')
+    .select('id, user_id, product_name, brand_name, category_name, sub_category_name, product_type_name, short_description')
     .eq('approval_status', 'approved')
     .eq('category_name', categoryName)
     .order('updated_at', { ascending: false })
@@ -167,11 +227,12 @@ export async function fetchStorefrontProductsByCategory(
   if (error || !products?.length) return []
 
   const productIds = products.map((product) => product.id)
+  const sellerIds = [...new Set(products.map((product) => product.user_id))]
 
-  const [{ data: variants }, { data: media }] = await Promise.all([
+  const [{ data: variants }, { data: media }, sellerCurrencyMap] = await Promise.all([
     supabase
       .from('seller_product_variants')
-      .select('product_id, mrp, selling_price')
+      .select('product_id, mrp, selling_price, image_storage_path')
       .in('product_id', productIds),
     supabase
       .from('seller_product_media')
@@ -179,31 +240,18 @@ export async function fetchStorefrontProductsByCategory(
       .in('product_id', productIds)
       .eq('media_type', 'product_image')
       .order('slot_index', { ascending: true }),
+    fetchSellerCurrencyMap(sellerIds),
   ])
 
-  const variantByProduct = new Map<number, CatalogVariantPrice>()
-  for (const variant of variants ?? []) {
-    const existing = variantByProduct.get(variant.product_id)
-    if (!existing || variant.selling_price < existing.selling_price) {
-      variantByProduct.set(variant.product_id, {
-        mrp: variant.mrp,
-        selling_price: variant.selling_price,
-      })
-    }
-  }
-
-  const imageByProduct = new Map<number, string>()
-  for (const item of media ?? []) {
-    if (!imageByProduct.has(item.product_id)) {
-      imageByProduct.set(item.product_id, item.storage_path)
-    }
-  }
+  const variantByProduct = pickPrimaryVariant(variants ?? [])
+  const imageByProduct = pickPrimaryImages(media ?? [], variants ?? [])
 
   return (products as SellerProductRow[]).map((product) =>
     mapToProductCard(
       product,
       variantByProduct.get(product.id),
       imageByProduct.get(product.id),
+      sellerCurrencyMap.get(product.user_id) ?? 'USD',
     ),
   )
 }
@@ -213,18 +261,19 @@ export async function fetchProductCardsByIds(productIds: number[]): Promise<Prod
 
   const { data: products, error } = await supabase
     .from('seller_products')
-    .select('id, product_name, brand_name, category_name, sub_category_name, product_type_name, short_description')
+    .select('id, user_id, product_name, brand_name, category_name, sub_category_name, product_type_name, short_description')
     .in('id', productIds)
     .eq('approval_status', 'approved')
 
   if (error || !products?.length) return []
 
   const ids = products.map((product) => product.id)
+  const sellerIds = [...new Set(products.map((product) => product.user_id))]
 
-  const [{ data: variants }, { data: media }] = await Promise.all([
+  const [{ data: variants }, { data: media }, sellerCurrencyMap] = await Promise.all([
     supabase
       .from('seller_product_variants')
-      .select('product_id, mrp, selling_price')
+      .select('product_id, mrp, selling_price, image_storage_path')
       .in('product_id', ids),
     supabase
       .from('seller_product_media')
@@ -232,30 +281,21 @@ export async function fetchProductCardsByIds(productIds: number[]): Promise<Prod
       .in('product_id', ids)
       .eq('media_type', 'product_image')
       .order('slot_index', { ascending: true }),
+    fetchSellerCurrencyMap(sellerIds),
   ])
 
-  const variantByProduct = new Map<number, CatalogVariantPrice>()
-  for (const variant of variants ?? []) {
-    const existing = variantByProduct.get(variant.product_id)
-    if (!existing || variant.selling_price < existing.selling_price) {
-      variantByProduct.set(variant.product_id, {
-        mrp: variant.mrp,
-        selling_price: variant.selling_price,
-      })
-    }
-  }
-
-  const imageByProduct = new Map<number, string>()
-  for (const item of media ?? []) {
-    if (!imageByProduct.has(item.product_id)) {
-      imageByProduct.set(item.product_id, item.storage_path)
-    }
-  }
+  const variantByProduct = pickPrimaryVariant(variants ?? [])
+  const imageByProduct = pickPrimaryImages(media ?? [], variants ?? [])
 
   const productById = new Map(
     (products as SellerProductRow[]).map((product) => [
       product.id,
-      mapToProductCard(product, variantByProduct.get(product.id), imageByProduct.get(product.id)),
+      mapToProductCard(
+        product,
+        variantByProduct.get(product.id),
+        imageByProduct.get(product.id),
+        sellerCurrencyMap.get(product.user_id) ?? 'USD',
+      ),
     ]),
   )
 
@@ -288,7 +328,7 @@ export async function fetchStorefrontProductById(productId: number) {
 
   if (error || !product) return null
 
-  const [{ data: variants }, { data: media }, { data: specs }] = await Promise.all([
+  const [{ data: variants }, { data: media }, { data: specs }, sellerCurrencyMap] = await Promise.all([
     supabase
       .from('seller_product_variants')
       .select('variant_id, size, color, mrp, selling_price, stock, image_storage_path')
@@ -305,15 +345,26 @@ export async function fetchStorefrontProductById(productId: number) {
       .select('attribute_name, attribute_value')
       .eq('product_id', productId)
       .order('sort_order', { ascending: true }),
+    fetchSellerCurrencyMap([String(product.user_id)]),
   ])
 
   const primaryVariant = (variants ?? [])[0]
+  const primaryImage =
+    (media ?? []).find((item) => item.media_type === 'product_image')?.storage_path
+    ?? primaryVariant?.image_storage_path
+    ?? undefined
+
   const card = mapToProductCard(
     product as SellerProductRow,
     primaryVariant
-      ? { mrp: primaryVariant.mrp, selling_price: primaryVariant.selling_price }
+      ? {
+          mrp: primaryVariant.mrp,
+          selling_price: primaryVariant.selling_price,
+          image_storage_path: primaryVariant.image_storage_path,
+        }
       : undefined,
-    (media ?? []).find((item) => item.media_type === 'product_image')?.storage_path,
+    primaryImage,
+    sellerCurrencyMap.get(String(product.user_id)) ?? 'USD',
   )
 
   const mappedMedia: StorefrontProductMedia[] = (media ?? []).map((item) => ({
@@ -352,7 +403,7 @@ export async function searchStorefrontProducts(query: string): Promise<Product[]
 
   const { data: products, error } = await supabase
     .from('seller_products')
-    .select('id, product_name, brand_name, category_name, sub_category_name, product_type_name, short_description')
+    .select('id, user_id, product_name, brand_name, category_name, sub_category_name, product_type_name, short_description')
     .eq('approval_status', 'approved')
     .or(`product_name.ilike."${pattern}",brand_name.ilike."${pattern}"`)
     .order('updated_at', { ascending: false })
@@ -361,11 +412,12 @@ export async function searchStorefrontProducts(query: string): Promise<Product[]
   if (error || !products?.length) return []
 
   const productIds = products.map((product) => product.id)
+  const sellerIds = [...new Set(products.map((product) => product.user_id))]
 
-  const [{ data: variants }, { data: media }] = await Promise.all([
+  const [{ data: variants }, { data: media }, sellerCurrencyMap] = await Promise.all([
     supabase
       .from('seller_product_variants')
-      .select('product_id, mrp, selling_price')
+      .select('product_id, mrp, selling_price, image_storage_path')
       .in('product_id', productIds),
     supabase
       .from('seller_product_media')
@@ -373,31 +425,18 @@ export async function searchStorefrontProducts(query: string): Promise<Product[]
       .in('product_id', productIds)
       .eq('media_type', 'product_image')
       .order('slot_index', { ascending: true }),
+    fetchSellerCurrencyMap(sellerIds),
   ])
 
-  const variantByProduct = new Map<number, CatalogVariantPrice>()
-  for (const variant of variants ?? []) {
-    const existing = variantByProduct.get(variant.product_id)
-    if (!existing || variant.selling_price < existing.selling_price) {
-      variantByProduct.set(variant.product_id, {
-        mrp: variant.mrp,
-        selling_price: variant.selling_price,
-      })
-    }
-  }
-
-  const imageByProduct = new Map<number, string>()
-  for (const item of media ?? []) {
-    if (!imageByProduct.has(item.product_id)) {
-      imageByProduct.set(item.product_id, item.storage_path)
-    }
-  }
+  const variantByProduct = pickPrimaryVariant(variants ?? [])
+  const imageByProduct = pickPrimaryImages(media ?? [], variants ?? [])
 
   return (products as SellerProductRow[]).map((product) =>
     mapToProductCard(
       product,
       variantByProduct.get(product.id),
       imageByProduct.get(product.id),
+      sellerCurrencyMap.get(product.user_id) ?? 'USD',
     ),
   )
 }

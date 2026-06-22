@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import { useAuth } from './AuthContext'
+import { convertListingAmountToDisplay } from '../lib/priceDisplay'
 import { detectLocationWithOpenCage } from '../lib/opencage'
 import {
   fetchAdminCurrencyOptions,
@@ -18,6 +19,7 @@ import {
   type CurrencyPackage,
 } from '../lib/currencyConfig'
 import { readStoredLocation, writeStoredLocation, type StoredLocation } from '../lib/userLocation'
+import { supabase } from '../lib/supabase'
 
 type CurrencyContextValue = {
   currency: string
@@ -30,6 +32,7 @@ type CurrencyContextValue = {
   hasStoredLocation: boolean
   adminCurrencyOptions: AdminCurrencyOption[]
   formatPrice: (usdAmount: number) => string
+  formatListingPrice: (amount: number, listingCurrencyCode: string) => string
   refreshLocation: () => Promise<void>
   ensureHomepageLocation: () => Promise<void>
   setAdminCurrency: (currencyCode: string) => Promise<void>
@@ -65,7 +68,29 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   const [hasStoredLocation, setHasStoredLocation] = useState(false)
   const [adminCurrencyOptions, setAdminCurrencyOptions] = useState<AdminCurrencyOption[]>([])
   const [countryCode, setCountryCode] = useState<string | null>(null)
+  const [currencyRates, setCurrencyRates] = useState<Record<string, number>>({ USD: 1 })
   const resolvingRef = useRef(0)
+
+  const loadCurrencyRates = useCallback(async () => {
+    if (!supabase) return
+
+    const { data, error } = await supabase
+      .from('countries')
+      .select('currency_code, fx_rate_usd')
+      .eq('is_active', true)
+
+    if (error || !data) return
+
+    const nextRates: Record<string, number> = { USD: 1 }
+    for (const row of data) {
+      const code = String(row.currency_code ?? '').toUpperCase()
+      const fxRate = Number(row.fx_rate_usd)
+      if (code && Number.isFinite(fxRate) && fxRate > 0) {
+        nextRates[code] = fxRate
+      }
+    }
+    setCurrencyRates(nextRates)
+  }, [])
 
   const currencySetters = useMemo(
     () => ({
@@ -164,6 +189,10 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   }, [currencySetters])
 
   useEffect(() => {
+    void loadCurrencyRates()
+  }, [loadCurrencyRates])
+
+  useEffect(() => {
     if (accountType !== 'admin') {
       setAdminCurrencyOptions([])
       return
@@ -211,6 +240,27 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     }
   }, [accountType, applyLocation, authLoading, resolvePricing])
 
+  const formatListingPrice = useCallback(
+    (amount: number, listingCurrencyCode: string) => {
+      if (!pricingReady) {
+        return '…'
+      }
+
+      const converted = convertListingAmountToDisplay(
+        amount,
+        listingCurrencyCode,
+        currency,
+        currencyRates,
+      )
+
+      return `${symbol}${converted.toLocaleString(undefined, {
+        minimumFractionDigits: decimalPlaces,
+        maximumFractionDigits: decimalPlaces,
+      })}`
+    },
+    [currency, currencyRates, decimalPlaces, pricingReady, symbol],
+  )
+
   const formatPrice = useCallback(
     (usdAmount: number) => {
       if (!pricingReady) {
@@ -238,6 +288,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       hasStoredLocation,
       adminCurrencyOptions,
       formatPrice,
+      formatListingPrice,
       refreshLocation,
       ensureHomepageLocation,
       setAdminCurrency,
@@ -246,6 +297,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       adminCurrencyOptions,
       currency,
       formatPrice,
+      formatListingPrice,
       hasStoredLocation,
       loading,
       locationLabel,
