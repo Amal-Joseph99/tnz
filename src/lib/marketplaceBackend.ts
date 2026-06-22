@@ -316,3 +316,51 @@ export async function adminReviewReturn(returnRequestId: number, approve: boolea
   }
   return { ok: true as const, data }
 }
+
+export type AccountDeletionReason = {
+  reasonKey: string
+  label: string
+  requiresCustomText: boolean
+}
+
+export async function fetchAccountDeletionReasons(): Promise<AccountDeletionReason[]> {
+  if (!supabase) return []
+
+  const { data, error } = await supabase.rpc('list_account_deletion_reasons')
+  if (error || !Array.isArray(data)) return []
+  return data as AccountDeletionReason[]
+}
+
+export async function prepareBuyerAccountDeletion(input: {
+  reasonKey: string
+  customReason?: string
+  acceptedTerms: boolean
+}) {
+  if (!supabase) return { ok: false as const, message: 'Supabase is not configured.' }
+
+  const { data, error } = await supabase.rpc('prepare_buyer_account_deletion', {
+    p_reason_key: input.reasonKey,
+    p_custom_reason: input.customReason ?? null,
+    p_accepted_terms: input.acceptedTerms,
+  })
+
+  if (error) return { ok: false as const, message: error.message }
+
+  const payload = data as { ok?: boolean; requestId?: number }
+  if (!payload.requestId) {
+    return { ok: false as const, message: 'Could not start account deletion.' }
+  }
+
+  return { ok: true as const, requestId: payload.requestId }
+}
+
+export async function completeBuyerAccountDeletion(requestId: number) {
+  if (!supabase) return { ok: false as const, message: 'Supabase is not configured.' }
+
+  const { error } = await supabase.rpc('complete_buyer_account_deletion', {
+    p_request_id: requestId,
+  })
+
+  if (error) return { ok: false as const, message: error.message }
+  return { ok: true as const }
+}

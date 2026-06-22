@@ -10160,3 +10160,77 @@
     text-align: left;
   }
 }
+
+.cart-fly-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 12000;
+}
+
+.cart-fly-item {
+  position: fixed;
+  top: 0;
+  left: 0;
+  border-radius: 999px;
+  object-fit: cover;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.22);
+  transition:
+    transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 0.7s ease;
+  will-change: transform, opacity;
+}
+
+.header__cart-badge--bump {
+  animation: cart-badge-bump 0.45s ease;
+}
+
+@keyframes cart-badge-bump {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+.buyer-address-summary {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.buyer-address-summary p {
+  margin: 0.35rem 0 0;
+  color: #475569;
+}
+
+.buyer-security-list__danger,
+.buyer-security-list a.buyer-security-list__danger {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.buyer-account__action--danger {
+  background: #b91c1c;
+  color: #fff;
+}
+
+.buyer-account__action--danger:hover {
+  background: #991b1b;
+}
+
+.buyer-form__checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.buyer-form__checkbox input {
+  margin-top: 0.2rem;
+}
+
+.confirm-dialog__backdrop--inline {
+  position: static;
+  background: transparent;
+  padding: 0;
+}

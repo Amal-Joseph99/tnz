@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCurrency } from '../context/CurrencyContext'
 import type { Product } from '../data/products'
@@ -15,7 +15,8 @@ type ProductCardProps = {
 
 export function ProductCard({ product, onOpen }: ProductCardProps) {
   const { formatListingPrice } = useCurrency()
-  const { requestAddToCart } = useAddToCart()
+  const { addToCart } = useAddToCart()
+  const cartButtonRef = useRef<HTMLButtonElement>(null)
   const [imageSrc, setImageSrc] = useState(product.image || PRODUCT_PLACEHOLDER)
 
   useEffect(() => {
@@ -73,9 +74,27 @@ export function ProductCard({ product, onOpen }: ProductCardProps) {
             </span>
           </div>
           <button
+            ref={cartButtonRef}
             type="button"
             className="product-card__cart-btn"
-            onClick={() => void requestAddToCart()}
+            onClick={() => {
+              void addToCart({
+                item: {
+                  id: product.id,
+                  productId: Number(product.id),
+                  sellerUserId: product.sellerUserId,
+                  sku: product.sku,
+                  title: product.title,
+                  brand: product.brand,
+                  price: product.price,
+                  originalPrice: product.originalPrice,
+                  image: imageSrc,
+                  quantity: 1,
+                  variantId: product.variantId,
+                },
+                source: cartButtonRef.current,
+              })
+            }}
           >
             <CartIcon />
             <span className="product-card__cart-label">Add to Cart</span>

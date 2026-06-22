@@ -129,3 +129,49 @@ export async function updateAuthenticatedPassword(password: string): Promise<Otp
 
   return { ok: true }
 }
+
+export async function sendAccountDeletionOtp(email: string): Promise<OtpResult> {
+  if (!supabase) {
+    return { ok: false, message: 'Supabase is not configured.' }
+  }
+
+  const normalizedEmail = normalizeAuthEmail(email)
+  const { error } = await supabase.auth.signInWithOtp({
+    email: normalizedEmail,
+    options: {
+      shouldCreateUser: false,
+    },
+  })
+
+  if (error) {
+    return { ok: false, message: error.message }
+  }
+
+  return { ok: true }
+}
+
+export async function verifyAccountDeletionOtp(email: string, token: string): Promise<OtpResult> {
+  if (!supabase) {
+    return { ok: false, message: 'Supabase is not configured.' }
+  }
+
+  const normalizedEmail = normalizeAuthEmail(email)
+  const attempts = ['email', 'signup'] as const
+  let lastMessage = 'Token has expired or is invalid'
+
+  for (const type of attempts) {
+    const { error } = await supabase.auth.verifyOtp({
+      email: normalizedEmail,
+      token,
+      type,
+    })
+
+    if (!error) {
+      return { ok: true }
+    }
+
+    lastMessage = error.message
+  }
+
+  return { ok: false, message: lastMessage }
+}

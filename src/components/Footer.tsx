@@ -61,8 +61,6 @@ export function Footer() {
             <ul>
               <li><Link to="/about">About Us</Link></li>
               <li><Link to="/careers">Careers</Link></li>
-              <li><Link to="/press">Press</Link></li>
-              <li><Link to="/sustainability">Sustainability</Link></li>
             </ul>
           </div>
           <div>
@@ -90,11 +88,6 @@ export function Footer() {
         <div className="footer__bottom-row">
           <p className="footer__copyright">&copy; 2026 AGTRENZ. All rights reserved.</p>
         </div>
-        <nav className="footer__legal-nav" aria-label="Legal">
-          {footerLegalLinks.map((link) => (
-            <Link key={link.to} to={link.to}>{link.label}</Link>
-          ))}
-        </nav>
       </div>
     </footer>
   )

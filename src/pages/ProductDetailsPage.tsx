@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { CartIcon, StarIcon } from '../components/Icons'
 import { PageMeta } from '../components/PageMeta'
 import { ProductReviewsSection } from '../components/ProductReviewsSection'
 import { useCurrency } from '../context/CurrencyContext'
 import { useAddToCart } from '../hooks/useAddToCart'
-import { useCheckout } from '../context/CheckoutContext'
 import {
   aboutProductBullets,
   formatPackageDimensions,
@@ -72,8 +71,8 @@ function TextPanel({ title, text }: { title: string; text: string }) {
 export function ProductDetailsPage() {
   const { productId } = useParams()
   const { formatListingPrice } = useCurrency()
-  const { requestAddToCart } = useAddToCart()
-  const { addItem } = useCheckout()
+  const { addToCart } = useAddToCart()
+  const addToCartButtonRef = useRef<HTMLButtonElement>(null)
   const [product, setProduct] = useState<Product | null>(null)
   const [detail, setDetail] = useState<Awaited<ReturnType<typeof fetchStorefrontProductById>>>(null)
   const [loading, setLoading] = useState(true)
@@ -361,15 +360,15 @@ export function ProductDetailsPage() {
 
             <div className="product-detail__actions">
               <button
+                ref={addToCartButtonRef}
                 type="button"
                 className="product-detail__add"
                 disabled={!selectedVariant || variantStock <= 0}
                 onClick={() => {
-                  void (async () => {
-                    const allowed = await requestAddToCart()
-                    if (!allowed || !selectedVariant) return
+                  if (!selectedVariant || !product) return
 
-                    addItem({
+                  void addToCart({
+                    item: {
                       id: String(product.id),
                       productId: Number(product.id),
                       sellerUserId: productRow.user_id,
@@ -382,8 +381,9 @@ export function ProductDetailsPage() {
                       image: galleryImages[activeImageIndex] ?? product.image,
                       quantity: 1,
                       variantId: selectedVariant.variant_id,
-                    })
-                  })()
+                    },
+                    source: addToCartButtonRef.current,
+                  })
                 }}
               >
                 <CartIcon />

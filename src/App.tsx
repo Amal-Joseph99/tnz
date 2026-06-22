@@ -4,6 +4,7 @@ import { Header } from './components/Header'
 import { RouteAccessGuard } from './components/RouteAccessGuard'
 import { AuthProvider } from './context/AuthContext'
 import { CheckoutProvider } from './context/CheckoutContext'
+import { CartFlyProvider } from './context/CartFlyContext'
 import { ConfirmDialogProvider } from './context/ConfirmDialogContext'
 import { CurrencyProvider } from './context/CurrencyContext'
 import { preloadDialogMessages } from './lib/appDialogs'
@@ -47,6 +48,7 @@ import { AdminReturnsPage } from './pages/AdminReturnsPage'
 import { AdminSupportPage } from './pages/AdminSupportPage'
 import { LegalDocumentBySlug } from './pages/LegalDocumentPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { DeleteAccountPage } from './pages/DeleteAccountPage'
 import { ReturnsPage } from './pages/ReturnsPage'
 import { SalePage } from './pages/SalePage'
 import { SearchResultsPage } from './pages/SearchResultsPage'
@@ -107,6 +109,7 @@ function AppContent() {
               <Route path="/best-sellers" element={<BestSellersPage />} />
               <Route path="/sale" element={<SalePage />} />
               <Route path="/profile" element={<RequireBuyerAuth><ProfilePage /></RequireBuyerAuth>} />
+              <Route path="/profile/delete-account" element={<RequireBuyerAuth><DeleteAccountPage /></RequireBuyerAuth>} />
               <Route path="/orders" element={<RequireBuyerAuth><OrdersPage /></RequireBuyerAuth>} />
               <Route path="/notifications" element={<RequireBuyerAuth><NotificationsPage /></RequireBuyerAuth>} />
               <Route path="/buyer/signin" element={<SignInPage />} />
@@ -192,7 +195,9 @@ function App() {
       <ConfirmDialogProvider>
         <AuthProvider>
           <CheckoutProvider>
-            <AppContent />
+            <CartFlyProvider>
+              <AppContent />
+            </CartFlyProvider>
           </CheckoutProvider>
         </AuthProvider>
       </ConfirmDialogProvider>

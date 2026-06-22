@@ -10,6 +10,9 @@ export type Product = {
   reviews: number
   image: string
   listingCurrencyCode: string
+  sellerUserId: string
+  sku: string
+  variantId?: string
 }
 
 export const featuredProducts: Product[] = []

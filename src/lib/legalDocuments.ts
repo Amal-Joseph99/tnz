@@ -130,9 +130,4 @@ export const footerLegalLinks = [
   { label: 'Shipping Policy', to: '/shipping-policy' },
   { label: 'Refund & Returns', to: '/refund-policy' },
   { label: 'Cookie Policy', to: '/cookies-settings' },
-  { label: 'Seller Agreement', to: '/seller-agreement' },
-  { label: 'Buyer Protection', to: '/buyer-protection' },
-  { label: 'Payment Terms', to: '/payment-terms' },
-  { label: 'Disclaimer', to: '/disclaimer' },
-  { label: 'Accessibility', to: '/accessibility' },
 ] as const

@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useCartFly } from '../context/CartFlyContext'
+import { useCheckout } from '../context/CheckoutContext'
 import { useCurrency } from '../context/CurrencyContext'
+import { getCartTotals } from '../lib/checkout'
 import { appendSearchHistory } from '../lib/searchHistory'
 import { Logo } from './Logo'
 import {
@@ -28,6 +31,9 @@ export function Header() {
   const navigate = useNavigate()
   const { currency, locationLabel, loading, pricingReady, refreshLocation } = useCurrency()
   const { isSignedIn, signOutWithConfirm } = useAuth()
+  const { items } = useCheckout()
+  const { cartBump } = useCartFly()
+  const cartItemCount = getCartTotals(items).itemCount
 
   useEffect(() => {
     if (isSignedIn) {
@@ -133,9 +139,11 @@ export function Header() {
               </div>
             )}
           </div>
-          <Link to="/cart" className="header__cart" aria-label="Shopping cart">
+          <Link to="/cart" className="header__cart" aria-label="Shopping cart" id="header-cart-target">
             <CartIcon />
-            <span className="header__cart-badge">0</span>
+            <span className={`header__cart-badge${cartBump ? ' header__cart-badge--bump' : ''}`}>
+              {cartItemCount}
+            </span>
           </Link>
         </div>
       </div>

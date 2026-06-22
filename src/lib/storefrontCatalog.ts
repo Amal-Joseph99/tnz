@@ -16,12 +16,14 @@ type SellerProductRow = {
   sub_category_name: string
   product_type_name: string
   short_description: string | null
+  sku: string
 }
 
 type CatalogVariantPrice = {
   mrp: number
   selling_price: number
   image_storage_path?: string | null
+  variant_id?: string
 }
 
 type StorefrontVariantRow = {
@@ -120,6 +122,9 @@ function mapToProductCard(
     reviews: 0,
     image: getProductImageUrl(imagePath ?? variant?.image_storage_path ?? undefined),
     listingCurrencyCode,
+    sellerUserId: product.user_id,
+    sku: product.sku,
+    variantId: variant?.variant_id,
   }
 }
 
@@ -141,6 +146,7 @@ function pickPrimaryVariant(variants: Array<{
   mrp: number
   selling_price: number
   image_storage_path?: string | null
+  variant_id?: string
 }>) {
   const variantByProduct = new Map<number, CatalogVariantPrice>()
 
@@ -151,6 +157,7 @@ function pickPrimaryVariant(variants: Array<{
         mrp: variant.mrp,
         selling_price: variant.selling_price,
         image_storage_path: variant.image_storage_path,
+        variant_id: variant.variant_id,
       })
     }
   }
@@ -214,7 +221,7 @@ export async function fetchStorefrontProductsByCategory(
 
   let query = supabase
     .from('seller_products')
-    .select('id, user_id, product_name, brand_name, category_name, sub_category_name, product_type_name, short_description')
+    .select('id, user_id, product_name, brand_name, category_name, sub_category_name, product_type_name, short_description, sku')
     .eq('approval_status', 'approved')
     .eq('category_name', categoryName)
     .order('updated_at', { ascending: false })
@@ -232,7 +239,7 @@ export async function fetchStorefrontProductsByCategory(
   const [{ data: variants }, { data: media }, sellerCurrencyMap] = await Promise.all([
     supabase
       .from('seller_product_variants')
-      .select('product_id, mrp, selling_price, image_storage_path')
+      .select('product_id, variant_id, mrp, selling_price, image_storage_path')
       .in('product_id', productIds),
     supabase
       .from('seller_product_media')
@@ -261,7 +268,7 @@ export async function fetchProductCardsByIds(productIds: number[]): Promise<Prod
 
   const { data: products, error } = await supabase
     .from('seller_products')
-    .select('id, user_id, product_name, brand_name, category_name, sub_category_name, product_type_name, short_description')
+    .select('id, user_id, product_name, brand_name, category_name, sub_category_name, product_type_name, short_description, sku')
     .in('id', productIds)
     .eq('approval_status', 'approved')
 
@@ -273,7 +280,7 @@ export async function fetchProductCardsByIds(productIds: number[]): Promise<Prod
   const [{ data: variants }, { data: media }, sellerCurrencyMap] = await Promise.all([
     supabase
       .from('seller_product_variants')
-      .select('product_id, mrp, selling_price, image_storage_path')
+      .select('product_id, variant_id, mrp, selling_price, image_storage_path')
       .in('product_id', ids),
     supabase
       .from('seller_product_media')
@@ -361,6 +368,7 @@ export async function fetchStorefrontProductById(productId: number) {
           mrp: primaryVariant.mrp,
           selling_price: primaryVariant.selling_price,
           image_storage_path: primaryVariant.image_storage_path,
+          variant_id: primaryVariant.variant_id,
         }
       : undefined,
     primaryImage,
@@ -403,7 +411,7 @@ export async function searchStorefrontProducts(query: string): Promise<Product[]
 
   const { data: products, error } = await supabase
     .from('seller_products')
-    .select('id, user_id, product_name, brand_name, category_name, sub_category_name, product_type_name, short_description')
+    .select('id, user_id, product_name, brand_name, category_name, sub_category_name, product_type_name, short_description, sku')
     .eq('approval_status', 'approved')
     .or(`product_name.ilike."${pattern}",brand_name.ilike."${pattern}"`)
     .order('updated_at', { ascending: false })
@@ -417,7 +425,7 @@ export async function searchStorefrontProducts(query: string): Promise<Product[]
   const [{ data: variants }, { data: media }, sellerCurrencyMap] = await Promise.all([
     supabase
       .from('seller_product_variants')
-      .select('product_id, mrp, selling_price, image_storage_path')
+      .select('product_id, variant_id, mrp, selling_price, image_storage_path')
       .in('product_id', productIds),
     supabase
       .from('seller_product_media')
