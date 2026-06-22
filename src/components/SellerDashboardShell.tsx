@@ -53,11 +53,7 @@ export function SellerDashboardShell({ children }: SellerDashboardShellProps) {
       </aside>
 
       <div className="seller-console__workspace">
-        <header className="seller-console__header seller-console__header--brand">
-          <Link to="/seller/dashboard" className="seller-console__header-brand">
-            <span>AG</span>TRENZ Seller Central
-          </Link>
-
+        <header className="seller-console__bar seller-console__header">
           <div className="seller-console__header-actions">
             <Link to="/seller/notifications" className="seller-console__notification">
               Notifications
@@ -85,7 +81,7 @@ export function SellerDashboardShell({ children }: SellerDashboardShellProps) {
           {children}
         </main>
 
-        <footer className="seller-console__footer seller-console__footer--brand">
+        <footer className="seller-console__bar seller-console__footer">
           <span>AGTRENZ Seller Central</span>
           <span>Secure dashboard access for verified sellers only.</span>
         </footer>

@@ -1726,39 +1726,52 @@
 }
 
 .seller-console__workspace {
-  display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   min-width: 0;
+}
+
+.seller-console__bar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 58px;
+  min-height: 58px;
+  max-height: 58px;
+  padding: 0 28px;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #08428c;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 12px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .seller-console__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 18px;
-  padding: 16px 28px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  background: #08428c;
   color: #fff;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
 }
 
-.seller-console__header--brand {
-  min-height: 58px;
+.seller-console__footer {
+  border-top-width: 1px;
+  border-top-style: solid;
 }
 
-.seller-console__header-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  color: #fff;
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.4px;
-  text-decoration: none;
+.seller-console__footer span:last-child {
+  color: rgba(255, 255, 255, 0.72);
+  white-space: nowrap;
 }
 
-.seller-console__header-brand span {
-  color: #facc15;
+.seller-console__footer span:first-child {
+  white-space: nowrap;
 }
 
 .seller-console__header span {
@@ -1849,8 +1862,10 @@
 
 .seller-console__content {
   display: grid;
+  flex: 1;
   align-content: start;
   gap: 18px;
+  min-height: 0;
   padding: 24px 28px;
 }
 
@@ -4085,21 +4100,6 @@
   font-size: 12px;
 }
 
-.seller-console__footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 16px 28px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  background: #08428c;
-  color: rgba(255, 255, 255, 0.88);
-  font-size: 12px;
-}
-
-.seller-console__footer--brand span:last-child {
-  color: rgba(255, 255, 255, 0.72);
-}
 
 .seller-dashboard-page {
   min-height: 620px;
@@ -6274,9 +6274,21 @@
   }
 
   .seller-console__header {
-    align-items: flex-start;
-    flex-direction: column;
-    padding: 18px 14px;
+    align-items: center;
+    flex-direction: row;
+    padding: 0 14px;
+  }
+
+  .seller-console__bar {
+    height: 58px;
+    min-height: 58px;
+    max-height: 58px;
+    padding: 0 14px;
+  }
+
+  .seller-console__footer {
+    flex-direction: row;
+    align-items: center;
   }
 
   .seller-console__header h1 {
@@ -6415,12 +6427,6 @@
 
   .admin-approval-card__actions {
     flex-direction: column;
-  }
-
-  .seller-console__footer {
-    align-items: flex-start;
-    flex-direction: column;
-    padding: 14px;
   }
 
   .account-workspace,
