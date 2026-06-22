@@ -466,15 +466,6 @@ export function SellerWarehousePage() {
             {saving ? 'Saving...' : 'Verify & Save'}
           </button>
         </article>
-
-        <article className="seller-console-card">
-          <h2>Warehouse status</h2>
-          <div className="seller-status-list">
-            <div><strong>Warehouse setup</strong><span>{workflow.warehouseCompleted ? 'Completed' : 'Pending'}</span></div>
-            <div><strong>Product listing</strong><span>{workflow.warehouseCompleted ? 'Unlocked' : 'Locked'}</span></div>
-            <div><strong>Location confirmed</strong><span>{locationLabel ? 'Yes' : 'No'}</span></div>
-          </div>
-        </article>
       </section>
 
       <WarehouseConfirmLocationDialog
