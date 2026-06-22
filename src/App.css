@@ -3435,7 +3435,14 @@
 
 .listing-bullet-preview ul {
   margin: 0;
-  padding-left: 18px;
+  padding-left: 20px;
+  list-style: disc;
+}
+
+.listing-bullet-preview li {
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .listing-specs-table,
