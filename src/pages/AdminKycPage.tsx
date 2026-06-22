@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { AdminDashboardShell } from '../components/AdminDashboardShell'
 import { AdminKycApproveDialog } from '../components/AdminKycApproveDialog'
 import { AdminKycVerificationForm } from '../components/AdminKycVerificationForm'
+import { AdminListPagination, ADMIN_LIST_PAGE_SIZE, paginateItems } from '../components/AdminListPagination'
 import { PanelEmptyState } from '../components/PanelEmptyState'
 import { RejectionReasonDialog } from '../components/RejectionReasonDialog'
 import {
@@ -37,9 +39,17 @@ function queueItemFromDetail(userId: string, detail: KycDetail): KycQueueItem {
   }
 }
 
+function sellerDisplayName(item: KycQueueItem) {
+  return item.businessName || item.signupBusinessName || item.sellerEmail
+}
+
 export function AdminKycPage() {
+  const [searchParams] = useSearchParams()
+  const sellerFromUrl = searchParams.get('seller')
+
   const [queue, setQueue] = useState<KycQueueItem[]>([])
-  const [filter, setFilter] = useState('pending')
+  const [filter, setFilter] = useState('all')
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [detailLoading, setDetailLoading] = useState(false)
   const [message, setMessage] = useState('')
@@ -64,11 +74,17 @@ export function AdminKycPage() {
 
   useEffect(() => {
     void loadQueue(filter).then((items) => {
-      const firstPending = items.find((item) => item.status === 'pending')
-      if (firstPending) {
-        setSelectedUserId(firstPending.userId)
+      if (sellerFromUrl && items.some((item) => item.userId === sellerFromUrl)) {
+        setSelectedUserId(sellerFromUrl)
+        return
       }
+      const firstPending = items.find((item) => item.status === 'pending')
+      setSelectedUserId(firstPending?.userId ?? items[0]?.userId ?? null)
     })
+  }, [filter, sellerFromUrl])
+
+  useEffect(() => {
+    setPage(1)
   }, [filter])
 
   useEffect(() => {
@@ -121,7 +137,7 @@ export function AdminKycPage() {
 
     const items = await loadQueue(filter)
     if (selectedUserId === userId) {
-      const nextSelection = items.find((item) => item.status === 'pending') ?? items[0] ?? null
+      const nextSelection = items.find((item) => item.userId === userId) ?? items[0] ?? null
       setSelectedUserId(nextSelection?.userId ?? null)
     }
   }
@@ -130,24 +146,23 @@ export function AdminKycPage() {
     queue.find((item) => item.userId === selectedUserId) ??
     (selectedUserId && detail ? queueItemFromDetail(selectedUserId, detail) : null)
 
+  const pageItems = paginateItems(queue, page, ADMIN_LIST_PAGE_SIZE)
   const approveBusinessName = approveTarget?.businessName ?? ''
 
   return (
-    <AdminDashboardShell
-      title="KYC Approvals"
-      subtitle="Review seller identity, business documents, and bank verification."
-    >
-      <section className="admin-panel">
-        <div className="admin-panel__header admin-panel__header--toolbar">
-          <div>
-            <h2>KYC queue</h2>
-            <p>All pending and in-review seller verification requests.</p>
-          </div>
-          <select aria-label="Filter KYC status" value={filter} onChange={(event) => setFilter(event.target.value)}>
+    <AdminDashboardShell title="KYC Approvals" hidePageHeading>
+      <section className="admin-panel admin-panel--compact">
+        <div className="admin-compact-toolbar">
+          <select
+            className="admin-compact-toolbar__select"
+            aria-label="Filter KYC status"
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+          >
+            <option value="all">All</option>
             <option value="pending">Pending review</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
-            <option value="all">All</option>
           </select>
         </div>
 
@@ -155,64 +170,76 @@ export function AdminKycPage() {
         {message && <div className="auth-message auth-message--success">{message}</div>}
 
         {loading ? (
-          <p>Loading KYC queue...</p>
+          <p className="admin-compact-empty">Loading KYC queue...</p>
         ) : queue.length === 0 ? (
           <PanelEmptyState
             title="No KYC submissions in queue"
             message="Seller verification requests will appear here for review."
           />
         ) : (
-          <div className="admin-table admin-table--categories">
-            <div className="admin-table__row admin-table__row--head">
-              <span>KYC ID</span>
-              <span>Seller</span>
-              <span>Business</span>
-              <span>Status</span>
-              <span>Actions</span>
-            </div>
-            {queue.map((item) => (
-              <div className="admin-table__row" key={item.userId}>
-                <span>{item.kycId}</span>
-                <span>{item.sellerEmail}</span>
-                <span>{item.businessName}</span>
-                <span>{item.status}</span>
-                <span className="admin-form__actions">
-                  <button type="button" onClick={() => setSelectedUserId(item.userId)}>
-                    {selectedUserId === item.userId ? 'Selected' : 'View form'}
-                  </button>
-                  {item.status === 'pending' && (
-                    <>
-                      <button
-                        type="button"
-                        className="admin-accept"
-                        onClick={() => {
-                          setSelectedUserId(item.userId)
-                          setApproveTarget(item)
-                        }}
-                      >
-                        Approve
-                      </button>
-                      <button
-                        type="button"
-                        className="admin-reject"
-                        onClick={() => {
-                          setSelectedUserId(item.userId)
-                          setRejectTarget(item.userId)
-                        }}
-                      >
-                        Reject
-                      </button>
-                    </>
-                  )}
-                </span>
+          <>
+            <div className="admin-compact-list admin-compact-list--kyc">
+              <div className="admin-compact-list__head">
+                <span>KYC ID</span>
+                <span>Seller</span>
+                <span>Business</span>
+                <span>Status</span>
+                <span />
               </div>
-            ))}
-          </div>
+              {pageItems.map((item) => (
+                <article key={item.userId} className="admin-compact-list__row">
+                  <span>{item.kycId}</span>
+                  <strong className="admin-compact-list__name">{sellerDisplayName(item)}</strong>
+                  <span>{item.businessName}</span>
+                  <span className={`admin-status-badge admin-status-badge--${item.status}`}>{item.status}</span>
+                  <div className="admin-compact-list__actions">
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--sm admin-btn--ghost"
+                      onClick={() => setSelectedUserId(item.userId)}
+                    >
+                      {selectedUserId === item.userId ? 'Selected' : 'View form'}
+                    </button>
+                    {item.status === 'pending' ? (
+                      <>
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn--sm admin-accept"
+                          onClick={() => {
+                            setSelectedUserId(item.userId)
+                            setApproveTarget(item)
+                          }}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn--sm admin-reject"
+                          onClick={() => {
+                            setSelectedUserId(item.userId)
+                            setRejectTarget(item.userId)
+                          }}
+                        >
+                          Reject
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
+                </article>
+              ))}
+            </div>
+            <AdminListPagination
+              page={page}
+              totalItems={queue.length}
+              pageSize={ADMIN_LIST_PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          </>
         )}
       </section>
 
       {selectedItem ? (
-        <section className="admin-panel admin-panel--kyc-form">
+        <section className="admin-panel admin-panel--compact admin-panel--kyc-form">
           <AdminKycVerificationForm
             item={selectedItem}
             detail={selectedUserId === selectedItem.userId ? detail : null}

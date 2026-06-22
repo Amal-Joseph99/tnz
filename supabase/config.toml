@@ -435,6 +435,9 @@ verify_jwt = true
 [functions.shiprocket-seller-documents]
 verify_jwt = true
 
+[functions.shiprocket-sync-pickup]
+verify_jwt = true
+
 [functions.shiprocket-track]
 verify_jwt = false
 

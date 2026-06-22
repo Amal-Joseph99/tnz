@@ -4,6 +4,7 @@ import {
   formatKycDocumentLabel,
   KYC_POLICY_ACCEPTANCE_ITEMS,
 } from '../lib/sellerKyc'
+import { downloadKycVerificationPdf } from '../lib/downloadKycPdf'
 import type { KycDetail, KycQueueItem } from '../lib/adminApprovals'
 
 type AdminKycVerificationFormProps = {
@@ -118,7 +119,17 @@ export function AdminKycVerificationForm({
   return (
     <article className="kyc-verification-form">
       <header className="kyc-verification-form__header">
-        <h2 className="kyc-verification-form__title">KYC VERIFICATION FORM</h2>
+        <div className="kyc-verification-form__header-top">
+          <h2 className="kyc-verification-form__title">KYC VERIFICATION FORM</h2>
+          <button
+            type="button"
+            className="admin-btn admin-btn--sm admin-btn--ghost"
+            disabled={loading}
+            onClick={() => downloadKycVerificationPdf(item, detail)}
+          >
+            Download PDF
+          </button>
+        </div>
         <div className="kyc-verification-form__meta">
           <div className="kyc-verification-form__meta-left">
             <p>
@@ -263,6 +274,18 @@ export function AdminKycVerificationForm({
               </button>
             </footer>
           ) : null}
+
+          <footer className="kyc-verification-form__decision">
+            <strong>Approval status</strong>
+            <span className={`kyc-verification-form__status kyc-verification-form__status--${item.status}`}>
+              {statusLabel}
+            </span>
+            {item.status === 'approved' || item.status === 'rejected' ? (
+              <p>
+                <strong>Reviewed on:</strong> {formatSubmissionDateTime(item.reviewedAt ?? '')}
+              </p>
+            ) : null}
+          </footer>
         </>
       )}
     </article>

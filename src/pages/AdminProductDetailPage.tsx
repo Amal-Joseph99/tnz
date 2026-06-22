@@ -138,12 +138,9 @@ export function AdminProductDetailPage() {
   }
 
   return (
-    <AdminDashboardShell
-      title="Product review"
-      subtitle="Full wizard submission for admin review."
-    >
-      <div className="admin-page-toolbar">
-        <Link to="/admin/products" className="admin-btn admin-btn--ghost">← Back to queue</Link>
+    <AdminDashboardShell title="Product review" hidePageHeading>
+      <div className="admin-page-toolbar admin-page-toolbar--compact">
+        <Link to="/admin/products" className="admin-btn admin-btn--sm admin-btn--ghost">← Back to products</Link>
       </div>
 
       {error ? <div className="auth-message auth-message--error">{error}</div> : null}

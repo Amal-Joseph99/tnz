@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { BellIcon, MenuIcon, XIcon } from './Icons'
+import { AdminCurrencySelect } from './AdminCurrencySelect'
 import { useAuth } from '../context/AuthContext'
 import { useCurrency } from '../context/CurrencyContext'
 
@@ -24,10 +25,11 @@ const adminNavItems = [
 type AdminDashboardShellProps = {
   title: string
   subtitle?: string
+  hidePageHeading?: boolean
   children: ReactNode
 }
 
-export function AdminDashboardShell({ title, subtitle, children }: AdminDashboardShellProps) {
+export function AdminDashboardShell({ title, subtitle, hidePageHeading = false, children }: AdminDashboardShellProps) {
   const { signOutFromConsole } = useAuth()
   const { adminCurrencyOptions, currency, loading, pricingReady, setAdminCurrency } = useCurrency()
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -42,19 +44,12 @@ export function AdminDashboardShell({ title, subtitle, children }: AdminDashboar
   const closeDrawer = () => setDrawerOpen(false)
 
   const currencySelect = (
-    <select
-      className="admin-console__currency-select"
+    <AdminCurrencySelect
       value={pricingReady ? currency : ''}
+      options={adminCurrencyOptions}
       disabled={loading || !pricingReady || adminCurrencyOptions.length === 0}
-      onChange={(event) => void setAdminCurrency(event.target.value)}
-      aria-label="Display currency"
-    >
-      {adminCurrencyOptions.map((option) => (
-        <option key={option.currencyCode} value={option.currencyCode}>
-          {option.currencyCode}
-        </option>
-      ))}
-    </select>
+      onChange={(nextCurrency) => void setAdminCurrency(nextCurrency)}
+    />
   )
 
   return (
@@ -156,10 +151,12 @@ export function AdminDashboardShell({ title, subtitle, children }: AdminDashboar
 
         <div className="admin-console__scroll">
           <main className="admin-console__content admin-console__content--bento">
-            <div className="admin-console__page-heading">
-              <h1>{title}</h1>
-              {subtitle ? <p>{subtitle}</p> : null}
-            </div>
+            {!hidePageHeading ? (
+              <div className="admin-console__page-heading">
+                <h1>{title}</h1>
+                {subtitle ? <p>{subtitle}</p> : null}
+              </div>
+            ) : null}
             {children}
           </main>
         </div>

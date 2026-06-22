@@ -128,9 +128,8 @@ export function createSku(productName: string) {
   return `AGT-${prefix}-${Math.floor(1000 + Math.random() * 9000)}`
 }
 
-export function createVariantId(size: string, color: string, index: number) {
-  if (size === 'Free Size') return 'AGT-DEFAULT-VAR'
-  return `AGT-VAR-${size.slice(0, 2).toUpperCase()}-${color.slice(0, 3).toUpperCase()}-${index + 1}`
+export function createVariantId(_size: string, _color: string, _index: number) {
+  return ''
 }
 
 export async function saveSellerProductListing(

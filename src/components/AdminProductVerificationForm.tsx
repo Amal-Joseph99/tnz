@@ -57,6 +57,19 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
+function formatReviewDateTime(iso: string | null) {
+  if (!iso) return '—'
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 export function AdminProductVerificationForm({
   item,
   detail,
@@ -78,8 +91,8 @@ export function AdminProductVerificationForm({
 
   return (
     <article className="kyc-verification-form product-verification-form">
-      <header className="kyc-verification-form__header">
-        <div className="kyc-verification-form__title">
+      <header className="kyc-verification-form__header product-verification-form__header">
+        <div className="kyc-verification-form__title product-verification-form__title">
           <h2>{item.productName}</h2>
           <p>SKU {item.sku} · HSN {item.hsnCode}</p>
         </div>
@@ -89,9 +102,16 @@ export function AdminProductVerificationForm({
             <strong>{item.sellerBusinessName}</strong>
             <p>{item.sellerEmail}</p>
           </div>
-          <span className={`kyc-verification-form__status kyc-verification-form__status--${item.approvalStatus}`}>
-            {statusLabel}
-          </span>
+          <div className="product-verification-form__status-block">
+            <span className={`kyc-verification-form__status kyc-verification-form__status--${item.approvalStatus}`}>
+              {statusLabel}
+            </span>
+            {item.approvalStatus === 'approved' || item.approvalStatus === 'rejected' ? (
+              <p className="product-verification-form__reviewed-at">
+                {formatReviewDateTime(item.reviewedAt)}
+              </p>
+            ) : null}
+          </div>
         </div>
       </header>
 

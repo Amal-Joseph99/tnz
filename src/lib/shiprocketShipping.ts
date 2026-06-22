@@ -80,6 +80,13 @@ export async function sellerFetchShipmentDocuments(orderId: number) {
   }>('shiprocket-seller-documents', { orderId })
 }
 
+export async function adminSyncWarehousePickup(userId: string, provider: string) {
+  return invokeShiprocketFunction<{
+    ok: boolean
+    pickupLocationName: string
+  }>('shiprocket-sync-pickup', { userId, provider })
+}
+
 export async function fetchCheckoutCountries() {
   if (!supabase) return []
 

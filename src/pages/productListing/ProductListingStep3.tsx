@@ -234,7 +234,7 @@ export function ProductListingStep3({ productId, onBack, onNext }: Step3Props) {
           </div>
           {draft.variants.map((variant, index) => (
             <div className="listing-variant-table__row" key={`${variant.variantId}-${index}`}>
-              <span>{variant.variantId}</span>
+              <span>{variant.variantId || 'Auto on save'}</span>
               <span>{variant.size}</span>
               <span>{variant.color}</span>
               <input

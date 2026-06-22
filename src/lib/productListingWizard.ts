@@ -374,13 +374,8 @@ export async function submitProductListingForApproval(
   return { ok: true }
 }
 
-export function buildVariantId(size: string, color: string, index: number) {
-  if (size === 'Free Size' && (!color || color === 'No Color')) {
-    return 'AGT-DEFAULT-VAR'
-  }
-  const sizePart = size.replace(/\s+/g, '').slice(0, 4).toUpperCase() || 'FREE'
-  const colorPart = color.replace(/\s+/g, '').slice(0, 3).toUpperCase() || 'NOC'
-  return `AGT-VAR-${sizePart}-${colorPart}-${index + 1}`
+export function buildVariantId(_size: string, _color: string, _index: number) {
+  return ''
 }
 
 export function validateStep1(draft: ProductListingDraft): string | null {
