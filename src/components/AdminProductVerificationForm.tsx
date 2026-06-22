@@ -192,7 +192,7 @@ export function AdminProductVerificationForm({
             ) : null}
             {videoMedia.length > 0 ? (
               <div className="admin-product-video-gallery" aria-label="Product videos">
-                {videoMedia.map((entry, index) => (
+                {videoMedia.map((entry) => (
                   <div key={entry.storagePath} className="admin-product-video-tile">
                     {mediaUrls[entry.storagePath] ? (
                       <video src={mediaUrls[entry.storagePath]} controls preload="metadata" />

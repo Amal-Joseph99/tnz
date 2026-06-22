@@ -184,7 +184,7 @@ export async function fetchProductQueue(status?: string): Promise<ProductQueueIt
       sellerEmail: String(row.seller_email),
       sellerBusinessName: String(row.seller_business_name),
     }))
-    .filter((row) => !isTestProductListing(row.productName, row.sku))
+    .filter((row: ProductQueueItem) => !isTestProductListing(row.productName, row.sku))
 }
 
 export async function reviewSellerProduct(
