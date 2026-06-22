@@ -20,7 +20,7 @@ export const legalDocuments: Record<string, LegalDocument> = {
     sections: [
       { title: 'Information we collect', paragraphs: ['We collect account details, delivery information, order history, payment references, support messages, device data, and marketplace preferences required to operate AGTRENZ.'] },
       { title: 'How we use information', paragraphs: ['We use data to process orders, provide customer and seller support, prevent fraud, improve discovery, comply with law, and send service communications.'] },
-      { title: 'Sharing', paragraphs: ['We share data with payment processors (Stripe), logistics partners (Shiprocket), cloud infrastructure providers, and sellers fulfilling your orders. We do not sell personal data.'] },
+      { title: 'Sharing', paragraphs: ['We share data with payment processors (Razorpay), logistics partners (Shiprocket), cloud infrastructure providers, and sellers fulfilling your orders. We do not sell personal data.'] },
       { title: 'Your rights', paragraphs: ['You may access, correct, or delete account data, manage marketing preferences, and contact us for privacy requests at privacy@agtrenz.com.'] },
     ],
   },
@@ -53,7 +53,7 @@ export const legalDocuments: Record<string, LegalDocument> = {
     subtitle: 'Eligibility, timelines, and refund processing for marketplace orders.',
     sections: [
       { title: 'Return eligibility', paragraphs: ['Returns may be requested after delivery within the return window shown at checkout. Items must be unused and in original packaging unless defective or incorrect.'] },
-      { title: 'Refund method', paragraphs: ['Prepaid orders refunded to the original payment method via Stripe. Cash on delivery orders are refunded via approved alternative methods where applicable.'] },
+      { title: 'Refund method', paragraphs: ['Prepaid orders refunded to the original payment method via Razorpay. Cash on delivery orders are refunded via approved alternative methods where applicable.'] },
       { title: 'Processing time', paragraphs: ['Refunds are initiated after return inspection and may take 5–10 business days to appear depending on your bank or card issuer.'] },
     ],
   },
@@ -85,7 +85,7 @@ export const legalDocuments: Record<string, LegalDocument> = {
     title: 'Buyer Protection',
     subtitle: 'How AGTRENZ helps protect buyers on every order.',
     sections: [
-      { title: 'Secure payments', paragraphs: ['Global card payments are processed by Stripe. We do not store full card numbers on AGTRENZ servers.'] },
+      { title: 'Secure payments', paragraphs: ['Online payments are processed by Razorpay. We do not store full card numbers on AGTRENZ servers.'] },
       { title: 'Order support', paragraphs: ['If an item is not delivered, is significantly not as described, or arrives damaged, contact support to open a case.'] },
       { title: 'Dispute resolution', paragraphs: ['We review order records, tracking, seller responses, and return evidence to reach a fair outcome.'] },
     ],
@@ -96,8 +96,8 @@ export const legalDocuments: Record<string, LegalDocument> = {
     title: 'Payment Terms',
     subtitle: 'Accepted payment methods, billing, and currency information.',
     sections: [
-      { title: 'Accepted methods', paragraphs: ['Stripe Checkout supports major cards, Apple Pay, and Google Pay in supported regions. India domestic orders may offer cash on delivery where serviceable.'] },
-      { title: 'Currency', paragraphs: ['Prices display in your selected marketplace currency. Stripe charges in the currency shown at checkout.'] },
+      { title: 'Accepted methods', paragraphs: ['Razorpay supports cards, UPI, netbanking, and international cards where enabled. India domestic orders may offer cash on delivery where serviceable.'] },
+      { title: 'Currency', paragraphs: ['Prices display in your selected marketplace currency. Razorpay charges in the currency shown at checkout.'] },
       { title: 'Failed payments', paragraphs: ['Orders are not confirmed until payment succeeds. Abandoned checkout sessions are automatically cancelled.'] },
     ],
   },

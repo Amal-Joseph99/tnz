@@ -1,4 +1,11 @@
 version: 1
+# Amplify Console → Environment variables (build-time only; no payment secrets here):
+#   VITE_SUPABASE_URL
+#   VITE_SUPABASE_ANON_KEY
+#   VITE_SITE_URL
+#   VITE_OPENCAGE_API_KEY
+# Payment + logistics secrets → Supabase Dashboard → Edge Functions → Secrets
+#   RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, SHIPROCKET_*, EXCHANGERATE_API_KEY, SITE_URL
 frontend:
   phases:
     preBuild:

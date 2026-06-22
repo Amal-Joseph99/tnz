@@ -32,7 +32,7 @@ export function AdminReturnsPage() {
   }
 
   return (
-    <AdminDashboardShell title="Returns" subtitle="Review buyer return requests and process Stripe refunds.">
+    <AdminDashboardShell title="Returns" subtitle="Review buyer return requests and process Razorpay refunds.">
       {error && <div className="auth-message auth-message--error">{error}</div>}
       <section className="admin-panel">
         <div className="admin-panel__header">
@@ -51,7 +51,7 @@ export function AdminReturnsPage() {
                 <div>
                   <strong>{row.order_number}</strong>
                   <p>{row.reason}</p>
-                  <span>{row.status} · {row.payment_method} · refund: {row.stripe_refund_status}</span>
+                  <span>{row.status} · {row.payment_method} · refund: {row.payment_refund_status}</span>
                 </div>
                 {row.status === 'requested' && (
                   <div className="admin-toolbar-actions">

@@ -199,7 +199,7 @@ export type AdminReturnRequest = {
   reason: string
   status: string
   admin_note: string | null
-  stripe_refund_status: string
+  payment_refund_status: string
   total_amount: number
   currency_code: string
   payment_method: string

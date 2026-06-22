@@ -13,7 +13,6 @@ dist-ssr
 *.local
 .env
 .env.*
-!.env.example
 supabase/sql/schedule_refresh_fx_rates_hourly.sql
 
 # Editor directories and files

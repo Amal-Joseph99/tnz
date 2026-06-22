@@ -60,9 +60,6 @@ Deno.serve(async (req) => {
     }
 
     const currency = body.currencyCode.trim().toUpperCase()
-    if (currency !== 'INR') {
-      return razorpayJsonResponse({ error: 'Razorpay checkout is only available for INR orders.' }, 400)
-    }
 
     let amountMinor: number
     try {
@@ -73,7 +70,7 @@ Deno.serve(async (req) => {
     }
 
     if (amountMinor < 100) {
-      return razorpayJsonResponse({ error: 'Order amount must be at least 100 paise (₹1).' }, 400)
+      return razorpayJsonResponse({ error: 'Order amount must be at least 100 in the smallest currency unit.' }, 400)
     }
 
     const { data: orderResult, error: orderError } = await userClient.rpc('create_marketplace_order', {

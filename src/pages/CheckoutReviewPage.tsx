@@ -6,7 +6,6 @@ import { useCurrency } from '../context/CurrencyContext'
 import { getCartTotals } from '../lib/checkout'
 import { createMarketplaceOrder } from '../lib/marketplaceOrders'
 import { startRazorpayCheckout } from '../lib/razorpayPayments'
-import { startStripeCheckout } from '../lib/stripePayments'
 
 export function CheckoutReviewPage() {
   const navigate = useNavigate()
@@ -30,6 +29,16 @@ export function CheckoutReviewPage() {
     setLoading(true)
     setError('')
 
+    const lineItems = items.map((item) => ({
+      productId: item.productId,
+      sellerUserId: item.sellerUserId,
+      sku: item.sku,
+      title: item.title,
+      quantity: item.quantity,
+      unitPrice: item.price,
+      variantId: item.variantId,
+    }))
+
     try {
       if (paymentMethod === 'cod') {
         const result = await createMarketplaceOrder({
@@ -43,15 +52,7 @@ export function CheckoutReviewPage() {
           totalAmount: total,
           delivery,
           shippingQuote,
-          items: items.map((item) => ({
-            productId: item.productId,
-            sellerUserId: item.sellerUserId,
-            sku: item.sku,
-            title: item.title,
-            quantity: item.quantity,
-            unitPrice: item.price,
-            variantId: item.variantId,
-          })),
+          items: lineItems,
         })
 
         if (!result.ok) {
@@ -65,37 +66,7 @@ export function CheckoutReviewPage() {
         return
       }
 
-      if (paymentMethod === 'razorpay') {
-        const razorpayResult = await startRazorpayCheckout({
-          sellerUserId: items[0].sellerUserId,
-          currencyCode: currency,
-          subtotal,
-          shippingAmount: shippingQuote.shippingCharge,
-          codChargesAmount: 0,
-          taxAmount: tax,
-          totalAmount: total,
-          delivery,
-          shippingQuote,
-          items: items.map((item) => ({
-            productId: item.productId,
-            sellerUserId: item.sellerUserId,
-            sku: item.sku,
-            title: item.title,
-            quantity: item.quantity,
-            unitPrice: item.price,
-            variantId: item.variantId,
-          })),
-        })
-
-        addPlacedOrderNumber(razorpayResult.orderNumber)
-        clearCart()
-        navigate('/checkout/confirmation', {
-          state: { orderNumber: razorpayResult.orderNumber, paymentProvider: 'razorpay' },
-        })
-        return
-      }
-
-      const stripeResult = await startStripeCheckout({
+      const razorpayResult = await startRazorpayCheckout({
         sellerUserId: items[0].sellerUserId,
         currencyCode: currency,
         subtotal,
@@ -105,19 +76,14 @@ export function CheckoutReviewPage() {
         totalAmount: total,
         delivery,
         shippingQuote,
-        items: items.map((item) => ({
-          productId: item.productId,
-          sellerUserId: item.sellerUserId,
-          sku: item.sku,
-          title: item.title,
-          quantity: item.quantity,
-          unitPrice: item.price,
-          variantId: item.variantId,
-        })),
+        items: lineItems,
       })
 
+      addPlacedOrderNumber(razorpayResult.orderNumber)
       clearCart()
-      window.location.assign(stripeResult.checkoutUrl)
+      navigate('/checkout/confirmation', {
+        state: { orderNumber: razorpayResult.orderNumber, paymentProvider: 'razorpay' },
+      })
     } catch (checkoutError) {
       setError(checkoutError instanceof Error ? checkoutError.message : 'Unable to start payment.')
     } finally {
@@ -127,9 +93,7 @@ export function CheckoutReviewPage() {
 
   const actionLabel = paymentMethod === 'cod'
     ? (loading ? 'Placing order...' : `Place order · ${formatPrice(total)}`)
-    : paymentMethod === 'razorpay'
-      ? (loading ? 'Opening Razorpay...' : `Pay with Razorpay · ${formatPrice(total)}`)
-      : (loading ? 'Redirecting to Stripe...' : `Pay with Stripe · ${formatPrice(total)}`)
+    : (loading ? 'Opening Razorpay...' : `Pay with Razorpay · ${formatPrice(total)}`)
 
   return (
     <CheckoutShell>

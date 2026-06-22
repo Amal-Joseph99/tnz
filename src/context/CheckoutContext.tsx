@@ -16,12 +16,12 @@ const STORAGE_KEY = 'agtrenz_checkout_v1'
 type StoredCheckout = {
   items: CartItem[]
   delivery: CheckoutDelivery | null
-  paymentMethod: 'stripe' | 'cod' | 'razorpay'
+  paymentMethod: 'razorpay' | 'cod'
   shippingQuote: ShippingQuote | null
   placedOrderNumbers: string[]
 }
 
-type CheckoutPaymentMethod = 'stripe' | 'cod' | 'razorpay'
+type CheckoutPaymentMethod = 'razorpay' | 'cod'
 
 type CheckoutContextValue = {
   items: CartItem[]
@@ -43,7 +43,7 @@ type CheckoutContextValue = {
 const defaultState: StoredCheckout = {
   items: [],
   delivery: null,
-  paymentMethod: 'stripe',
+  paymentMethod: 'razorpay',
   shippingQuote: null,
   placedOrderNumbers: [],
 }
@@ -55,9 +55,7 @@ function readStorage(): StoredCheckout {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return defaultState
     const parsed = JSON.parse(raw) as StoredCheckout
-    const paymentMethod = parsed.paymentMethod === 'cod' || parsed.paymentMethod === 'razorpay'
-      ? parsed.paymentMethod
-      : 'stripe'
+    const paymentMethod = parsed.paymentMethod === 'cod' ? 'cod' : 'razorpay'
 
     return {
       ...defaultState,

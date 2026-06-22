@@ -1,4 +1,4 @@
-import { getStripeClient, stripeCorsHeaders } from '../_shared/stripe.ts'
+import { createRazorpayRefund } from '../_shared/razorpay.ts'
 import { createAuthedSupabase, jsonResponse } from '../_shared/shiprocket.ts'
 
 type ReviewReturnRequest = {
@@ -9,7 +9,7 @@ type ReviewReturnRequest = {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: stripeCorsHeaders })
+    return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' } })
   }
 
   try {
@@ -35,8 +35,8 @@ Deno.serve(async (req) => {
 
     if (reviewError) return jsonResponse({ error: reviewError.message }, 400)
 
-    const needsStripeRefund = Boolean(reviewResult?.needsStripeRefund)
-    if (!needsStripeRefund) {
+    const needsPaymentRefund = Boolean(reviewResult?.needsPaymentRefund)
+    if (!needsPaymentRefund) {
       return jsonResponse({ ok: true, reviewResult })
     }
 
@@ -46,23 +46,18 @@ Deno.serve(async (req) => {
 
     if (contextError) return jsonResponse({ error: contextError.message }, 500)
 
-    const paymentIntentId = String(refundContext?.stripePaymentIntentId ?? '')
-    if (!paymentIntentId) {
-      return jsonResponse({ error: 'No Stripe payment intent found for this order.' }, 400)
+    const paymentId = String(refundContext?.razorpayPaymentId ?? '')
+    if (!paymentId) {
+      return jsonResponse({ error: 'No Razorpay payment found for this order.' }, 400)
     }
 
-    const stripe = getStripeClient()
-    const refund = await stripe.request('/refunds', {
-      method: 'POST',
-      body: new URLSearchParams({
-        payment_intent: paymentIntentId,
-      }).toString(),
-    })
-
+    const amountMinor = Number(refundContext?.amountMinor ?? 0)
+    const refund = await createRazorpayRefund(paymentId, amountMinor > 0 ? amountMinor : undefined)
     const refundId = String(refund.id ?? '')
-    const { error: completeError } = await serviceClient.rpc('complete_return_stripe_refund', {
+
+    const { error: completeError } = await serviceClient.rpc('complete_return_payment_refund', {
       p_return_request_id: body.returnRequestId,
-      p_stripe_refund_id: refundId,
+      p_refund_id: refundId,
       p_success: true,
     })
 

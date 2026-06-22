@@ -79,6 +79,29 @@ export async function createRazorpayOrder(input: {
   }
 }
 
+export async function createRazorpayRefund(paymentId: string, amountMinor?: number) {
+  const { keyId, keySecret } = getRazorpayCredentials()
+
+  const response = await fetch(`https://api.razorpay.com/v1/payments/${encodeURIComponent(paymentId)}/refund`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${btoa(`${keyId}:${keySecret}`)}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(amountMinor ? { amount: amountMinor } : {}),
+  })
+
+  const payload = await response.json()
+  if (!response.ok) {
+    const message = typeof payload?.error?.description === 'string'
+      ? payload.error.description
+      : `Razorpay refund failed (${response.status}).`
+    throw new Error(message)
+  }
+
+  return payload as { id: string }
+}
+
 export async function verifyRazorpaySignature(
   orderId: string,
   paymentId: string,
