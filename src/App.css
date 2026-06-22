@@ -9162,6 +9162,67 @@
   margin: 0 0 14px;
 }
 
+.checkout-saved-addresses {
+  margin-bottom: 18px;
+}
+
+.checkout-saved-addresses__label {
+  color: #6b7280;
+  font-size: 13px;
+  margin: 0 0 10px;
+}
+
+.checkout-saved-addresses__list {
+  display: grid;
+  gap: 10px;
+}
+
+.checkout-saved-address {
+  background: #f8fafc;
+  border: 1px solid #e8eaee;
+  border-radius: 10px;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 14px;
+  text-align: left;
+  width: 100%;
+}
+
+.checkout-saved-address--active {
+  border-color: #0f172a;
+  box-shadow: inset 0 0 0 1px #0f172a;
+}
+
+.checkout-saved-address strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.checkout-saved-address p {
+  color: #6b7280;
+  font-size: 13px;
+  margin: 0;
+}
+
+.checkout-saved-address span {
+  color: #0f172a;
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.checkout-saved-addresses__manage,
+.checkout-saved-addresses__empty {
+  color: #6b7280;
+  display: block;
+  font-size: 13px;
+  margin-top: 10px;
+}
+
 .checkout-form {
   display: flex;
   flex-direction: column;

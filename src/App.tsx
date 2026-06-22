@@ -78,6 +78,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { useEffect, useState } from 'react'
 import { showMarketplaceChrome } from './lib/authRoutes'
 import { PageBackButton } from './components/PageBackButton'
+import { ScrollToTop } from './components/ScrollToTop'
 import './App.css'
 
 function AppContent() {
@@ -98,6 +99,7 @@ function AppContent() {
 
   return (
     <CurrencyProvider>
+      <ScrollToTop />
       <div className="app">
         {marketplaceChrome && <Header />}
         {showBackButton && (

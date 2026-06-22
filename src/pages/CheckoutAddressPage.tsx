@@ -1,14 +1,30 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CheckoutShell } from '../components/CheckoutShell'
 import { useCheckout } from '../context/CheckoutContext'
 import { useCurrency } from '../context/CurrencyContext'
+import { fetchBuyerAccount, type BuyerAddress } from '../lib/marketplaceBackend'
 import { fetchCheckoutCountries, fetchShiprocketServiceability } from '../lib/shiprocketShipping'
+import { supabase } from '../lib/supabase'
+
+function formatSavedAddress(address: BuyerAddress) {
+  const lines = [
+    address.address_line1,
+    address.address_line2,
+    `${address.city}, ${address.state} ${address.postcode}`,
+    address.country_iso2,
+  ].filter(Boolean)
+
+  return lines.join(', ')
+}
 
 export function CheckoutAddressPage() {
   const { items, delivery, setDelivery, paymentMethod, shippingQuote, setShippingQuote } = useCheckout()
   const { formatDisplayAmount, toDisplayListingAmount } = useCurrency()
   const [countries, setCountries] = useState<Array<{ countryName: string; isoAlpha2: string }>>([])
+  const [savedAddresses, setSavedAddresses] = useState<BuyerAddress[]>([])
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null)
+  const [loadingAddresses, setLoadingAddresses] = useState(true)
   const [fullName, setFullName] = useState(delivery?.fullName ?? '')
   const [phone, setPhone] = useState(delivery?.phone ?? '')
   const [email, setEmail] = useState(delivery?.email ?? '')
@@ -20,10 +36,61 @@ export function CheckoutAddressPage() {
   const [countryIso2, setCountryIso2] = useState(delivery?.countryIso2 ?? 'IN')
   const [loadingQuote, setLoadingQuote] = useState(false)
   const [quoteError, setQuoteError] = useState('')
+  const prefilledRef = useRef(false)
+
+  const applyBuyerAddress = (address: BuyerAddress, accountEmail: string) => {
+    setSelectedAddressId(address.id)
+    setFullName(address.full_name)
+    setPhone(address.phone)
+    setEmail(accountEmail)
+    setAddressLine1(address.address_line1)
+    setAddressLine2(address.address_line2 ?? '')
+    setCity(address.city)
+    setState(address.state)
+    setPostcode(address.postcode)
+    setCountryIso2(address.country_iso2)
+  }
 
   useEffect(() => {
-    void fetchCheckoutCountries().then(setCountries)
-  }, [])
+    void Promise.all([
+      fetchCheckoutCountries(),
+      fetchBuyerAccount(),
+      supabase?.auth.getSession(),
+    ]).then(([countryRows, { profile, addresses }, sessionResult]) => {
+      setCountries(countryRows)
+      setSavedAddresses(addresses)
+
+      const accountEmail = sessionResult?.data.session?.user.email ?? ''
+
+      if (!prefilledRef.current) {
+        prefilledRef.current = true
+
+        if (delivery) {
+          const matched = addresses.find((address) =>
+            address.full_name === delivery.fullName
+            && address.address_line1 === delivery.addressLine1
+            && address.postcode === delivery.postcode,
+          )
+          if (matched) {
+            setSelectedAddressId(matched.id)
+          }
+        } else {
+          const defaultAddress = addresses.find((address) => address.is_default) ?? addresses[0]
+          if (defaultAddress) {
+            applyBuyerAddress(defaultAddress, accountEmail)
+          } else {
+            setEmail(accountEmail)
+            if (profile) {
+              setFullName(profile.full_name)
+              setPhone(profile.phone ?? '')
+            }
+          }
+        }
+      }
+
+      setLoadingAddresses(false)
+    })
+  }, [delivery])
 
   const sellerUserId = items[0]?.sellerUserId
   const isInternational = countryIso2 !== 'IN'
@@ -88,14 +155,64 @@ export function CheckoutAddressPage() {
           <h2>Delivery address</h2>
         </div>
 
+        {loadingAddresses ? (
+          <p>Loading saved addresses...</p>
+        ) : savedAddresses.length > 0 ? (
+          <div className="checkout-saved-addresses">
+            <p className="checkout-saved-addresses__label">Saved addresses</p>
+            <div className="checkout-saved-addresses__list">
+              {savedAddresses.map((address) => (
+                <button
+                  key={address.id}
+                  type="button"
+                  className={
+                    selectedAddressId === address.id
+                      ? 'checkout-saved-address checkout-saved-address--active'
+                      : 'checkout-saved-address'
+                  }
+                  onClick={() => applyBuyerAddress(address, email)}
+                >
+                  {address.is_default && <span>Default</span>}
+                  <strong>{address.full_name}</strong>
+                  <p>{formatSavedAddress(address)}</p>
+                  <p>{address.phone}</p>
+                </button>
+              ))}
+            </div>
+            <Link to="/profile" className="checkout-saved-addresses__manage">Manage addresses</Link>
+          </div>
+        ) : (
+          <p className="checkout-saved-addresses__empty">
+            No saved address yet.{' '}
+            <Link to="/profile">Add one in your profile</Link>
+            {' '}to use it at checkout next time.
+          </p>
+        )}
+
         <form className="checkout-form checkout-form--grid" onSubmit={(event) => event.preventDefault()}>
           <label>
             Full name
-            <input type="text" value={fullName} onChange={(event) => setFullName(event.target.value)} required />
+            <input
+              type="text"
+              value={fullName}
+              onChange={(event) => {
+                setSelectedAddressId(null)
+                setFullName(event.target.value)
+              }}
+              required
+            />
           </label>
           <label>
             Phone
-            <input type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} required />
+            <input
+              type="tel"
+              value={phone}
+              onChange={(event) => {
+                setSelectedAddressId(null)
+                setPhone(event.target.value)
+              }}
+              required
+            />
           </label>
           <label className="checkout-form__full">
             Email
@@ -103,27 +220,73 @@ export function CheckoutAddressPage() {
           </label>
           <label className="checkout-form__full">
             Address line 1
-            <input type="text" value={addressLine1} onChange={(event) => setAddressLine1(event.target.value)} required />
+            <input
+              type="text"
+              value={addressLine1}
+              onChange={(event) => {
+                setSelectedAddressId(null)
+                setAddressLine1(event.target.value)
+              }}
+              required
+            />
           </label>
           <label className="checkout-form__full">
             Address line 2
-            <input type="text" value={addressLine2} onChange={(event) => setAddressLine2(event.target.value)} />
+            <input
+              type="text"
+              value={addressLine2}
+              onChange={(event) => {
+                setSelectedAddressId(null)
+                setAddressLine2(event.target.value)
+              }}
+            />
           </label>
           <label>
             City
-            <input type="text" value={city} onChange={(event) => setCity(event.target.value)} required />
+            <input
+              type="text"
+              value={city}
+              onChange={(event) => {
+                setSelectedAddressId(null)
+                setCity(event.target.value)
+              }}
+              required
+            />
           </label>
           <label>
             State
-            <input type="text" value={state} onChange={(event) => setState(event.target.value)} required />
+            <input
+              type="text"
+              value={state}
+              onChange={(event) => {
+                setSelectedAddressId(null)
+                setState(event.target.value)
+              }}
+              required
+            />
           </label>
           <label>
             PIN / postal code
-            <input type="text" value={postcode} onChange={(event) => setPostcode(event.target.value)} required={!isInternational} />
+            <input
+              type="text"
+              value={postcode}
+              onChange={(event) => {
+                setSelectedAddressId(null)
+                setPostcode(event.target.value)
+              }}
+              required={!isInternational}
+            />
           </label>
           <label>
             Country
-            <select value={countryIso2} onChange={(event) => setCountryIso2(event.target.value)} required>
+            <select
+              value={countryIso2}
+              onChange={(event) => {
+                setSelectedAddressId(null)
+                setCountryIso2(event.target.value)
+              }}
+              required
+            >
               {countries.map((country) => (
                 <option key={country.isoAlpha2} value={country.isoAlpha2}>
                   {country.countryName}
