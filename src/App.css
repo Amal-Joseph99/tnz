@@ -2189,9 +2189,75 @@
 }
 
 .seller-status-list span {
-  color: #15803d;
   font-size: 12px;
   font-weight: 700;
+}
+
+.seller-status-value {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.seller-status-value--success {
+  color: #15803d;
+}
+
+.seller-status-value--pending {
+  color: #b45309;
+}
+
+.seller-status-value--muted {
+  color: #64748b;
+}
+
+.seller-status-value--danger {
+  color: #b91c1c;
+}
+
+.seller-onboarding-banner {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.seller-onboarding-banner strong {
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.seller-onboarding-banner span {
+  color: #475569;
+}
+
+.seller-onboarding-banner a {
+  color: #08428c;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.seller-onboarding-banner--ready {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+}
+
+.seller-onboarding-banner--ready strong {
+  color: #166534;
+}
+
+.seller-onboarding-banner--ready span {
+  color: #15803d;
+}
+
+.seller-onboarding-banner--pending {
+  border: 1px solid #fde68a;
+  background: #fffbeb;
+}
+
+.seller-kpi-strong--success {
+  color: #15803d;
 }
 
 .seller-action-list button {

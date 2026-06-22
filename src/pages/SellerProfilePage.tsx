@@ -75,7 +75,11 @@ export function SellerProfilePage() {
           <div className="seller-console-card__header">
             <div>
               <h2>KYC verification</h2>
-              <p>Complete KYC before warehouse setup and product listing.</p>
+              <p>
+                {workflow.kycStatus === 'approved'
+                  ? 'Your business identity is verified with AGTRENZ.'
+                  : 'Complete KYC before warehouse setup and product listing.'}
+              </p>
             </div>
           </div>
           <div className="seller-status-list">

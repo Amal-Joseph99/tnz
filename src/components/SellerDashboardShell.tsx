@@ -83,7 +83,7 @@ export function SellerDashboardShell({ children }: SellerDashboardShellProps) {
 
         <footer className="seller-console__bar seller-console__footer">
           <span>AGTRENZ Seller Central</span>
-          <span>Secure dashboard access for verified sellers only.</span>
+          <span>Manage your store, orders, and payouts.</span>
         </footer>
       </div>
     </section>
