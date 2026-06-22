@@ -7629,6 +7629,9 @@
 }
 
 .admin-console__sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
   background: #0f172a;
   color: #fff;
   display: flex;
@@ -7686,7 +7689,29 @@
   background: var(--admin-bento-canvas, #ececf1);
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  min-height: 100vh;
   min-width: 0;
+  overflow: hidden;
+}
+
+.admin-console__bar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 58px;
+  min-height: 58px;
+  max-height: 58px;
+  padding: 0 28px;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #08428c;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+  z-index: 30;
 }
 
 .admin-console__mobile-bar {
@@ -7695,10 +7720,57 @@
 
 .admin-console__header {
   align-items: center;
-  background: transparent;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
   display: flex;
   justify-content: space-between;
-  padding: 18px 24px 6px;
+}
+
+.admin-console__header--desktop {
+  display: flex;
+}
+
+.admin-console__header-brand {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.admin-console__footer {
+  margin-top: auto;
+  border-top-width: 1px;
+  border-top-style: solid;
+}
+
+.admin-console__footer span:last-child {
+  color: rgba(255, 255, 255, 0.72);
+  white-space: nowrap;
+}
+
+.admin-console__footer span:first-child {
+  white-space: nowrap;
+}
+
+.admin-console__page-heading {
+  padding: 0 0 14px;
+}
+
+.admin-console__page-heading h1 {
+  margin: 0;
+  color: #111827;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.admin-console__page-heading p {
+  margin: 4px 0 0;
+  color: var(--admin-bento-muted, #6b7280);
+  font-size: 13px;
+  line-height: 1.4;
+  max-width: 48ch;
 }
 
 .admin-console__header--bento {
@@ -7757,24 +7829,25 @@
 
 .admin-console__content {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 16px;
-  padding: 8px 24px 28px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 24px 24px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .admin-console__content--bento {
-  gap: 0;
-  padding-top: 0;
+  gap: 14px;
+  padding-top: 18px;
 }
 
 .admin-console__footer {
-  border-top: 1px solid rgba(17, 24, 39, 0.08);
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.88);
   display: flex;
   font-size: 11px;
   justify-content: space-between;
-  margin-top: auto;
-  padding: 12px 24px;
 }
 
 .admin-console__header-actions {
@@ -7787,11 +7860,11 @@
 
 .admin-console__notification {
   align-items: center;
-  background: var(--admin-bento-surface, #fff);
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: 14px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-  color: #111827;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  box-shadow: none;
+  color: #fff;
   display: inline-flex;
   font-size: 0;
   gap: 0;
@@ -7826,10 +7899,10 @@
 
 .admin-console__currency-select {
   appearance: none;
-  background: var(--admin-bento-surface, #fff);
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: 12px;
-  color: #111827;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  color: #fff;
   font-size: 12px;
   font-weight: 700;
   height: 40px;
@@ -9167,44 +9240,57 @@
   }
 
   .admin-console__mobile-bar {
-    align-items: center;
-    background: var(--admin-bento-surface, #fff);
-    border-bottom: 1px solid rgba(17, 24, 39, 0.08);
     display: grid;
     gap: 10px;
     grid-template-columns: auto 1fr auto;
-    padding: 12px 14px;
-    position: sticky;
-    top: 0;
-    z-index: 40;
+    padding: 0 14px;
   }
 
-  .admin-console__menu-btn {
+  .admin-console__header--desktop {
+    display: none;
+  }
+
+  .admin-console__content {
+    padding: 14px;
+  }
+
+  .admin-console__bar {
+    padding: 0 14px;
+  }
+
+  .admin-console__footer {
+    flex-direction: row;
     align-items: center;
-    background: var(--admin-bento-canvas, #ececf1);
-    border: 0;
-    border-radius: 14px;
-    color: #111827;
-    cursor: pointer;
-    display: inline-flex;
-    height: 42px;
-    justify-content: center;
-    width: 42px;
-  }
-
-  .admin-console__menu-btn svg {
-    height: 18px;
-    width: 18px;
+    gap: 8px;
   }
 
   .admin-console__mobile-title {
-    font-size: 17px;
+    color: #fff;
+    font-size: 15px;
     font-weight: 700;
     margin: 0;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .admin-console__menu-btn {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 10px;
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    height: 40px;
+    justify-content: center;
+    width: 40px;
+  }
+
+  .admin-console__menu-btn svg {
+    height: 18px;
+    width: 18px;
   }
 
   .admin-console__mobile-actions {
@@ -9214,24 +9300,23 @@
   }
 
   .admin-console__mobile-actions .admin-console__currency-select {
-    background: var(--admin-bento-canvas, #ececf1);
-    border: 0;
-    height: 42px;
+    height: 40px;
     min-width: 68px;
     padding: 0 24px 0 8px;
   }
 
   .admin-console__mobile-bell {
     align-items: center;
-    background: var(--admin-bento-canvas, #ececf1);
-    border-radius: 14px;
-    color: #111827;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 10px;
+    color: #fff;
     display: inline-flex;
-    height: 42px;
+    height: 40px;
     justify-content: center;
     position: relative;
     text-decoration: none;
-    width: 42px;
+    width: 40px;
   }
 
   .admin-console__mobile-bell svg {
@@ -9254,14 +9339,6 @@
     position: absolute;
     right: 4px;
     top: 4px;
-  }
-
-  .admin-console__header {
-    display: none;
-  }
-
-  .admin-console__content {
-    padding: 8px 14px 24px;
   }
 
   .admin-bento {

@@ -121,7 +121,7 @@ export function AdminDashboardShell({ title, subtitle, children }: AdminDashboar
       </aside>
 
       <div className="admin-console__workspace">
-        <header className="admin-console__mobile-bar">
+        <header className="admin-console__bar admin-console__mobile-bar">
           <button
             type="button"
             className="admin-console__menu-btn"
@@ -143,11 +143,8 @@ export function AdminDashboardShell({ title, subtitle, children }: AdminDashboar
           </div>
         </header>
 
-        <header className="admin-console__header admin-console__header--bento">
-          <div className="admin-console__header-copy">
-            <h1>{title}</h1>
-            {subtitle ? <p>{subtitle}</p> : null}
-          </div>
+        <header className="admin-console__bar admin-console__header admin-console__header--desktop">
+          <span className="admin-console__header-brand">AGTRENZ Admin Console</span>
           <div className="admin-console__header-actions">
             {currencySelect}
             <Link to="/admin/notifications" className="admin-console__notification" aria-label="Alerts">
@@ -157,7 +154,18 @@ export function AdminDashboardShell({ title, subtitle, children }: AdminDashboar
           </div>
         </header>
 
-        <main className="admin-console__content admin-console__content--bento">{children}</main>
+        <main className="admin-console__content admin-console__content--bento">
+          <div className="admin-console__page-heading">
+            <h1>{title}</h1>
+            {subtitle ? <p>{subtitle}</p> : null}
+          </div>
+          {children}
+        </main>
+
+        <footer className="admin-console__bar admin-console__footer">
+          <span>AGTRENZ Admin Console</span>
+          <span>Manage marketplace operations and approvals.</span>
+        </footer>
       </div>
     </section>
   )
