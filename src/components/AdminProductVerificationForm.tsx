@@ -177,23 +177,32 @@ export function AdminProductVerificationForm({
             <p className="product-review-meta">
               {imageMedia.length} image(s) · {videoMedia.length} video(s) · {detail.variants.length} variant(s)
             </p>
-            <div className="listing-media-grid">
-              {detail.media.map((entry) => (
-                <article key={entry.storagePath} className="listing-media-card">
-                  <strong>{entry.mediaType}</strong>
-                  <p>{entry.fileName}</p>
-                  {mediaUrls[entry.storagePath] ? (
-                    entry.mimeType.startsWith('video/') ? (
-                      <video src={mediaUrls[entry.storagePath]} controls />
+            {imageMedia.length > 0 ? (
+              <div className="admin-product-media-gallery" aria-label="Product images">
+                {imageMedia.map((entry, index) => (
+                  <div key={entry.storagePath} className="admin-product-media-tile">
+                    {mediaUrls[entry.storagePath] ? (
+                      <img src={mediaUrls[entry.storagePath]} alt={`Product image ${index + 1}`} loading="lazy" />
                     ) : (
-                      <img src={mediaUrls[entry.storagePath]} alt={entry.fileName} />
-                    )
-                  ) : (
-                    <span>Preview unavailable</span>
-                  )}
-                </article>
-              ))}
-            </div>
+                      <span className="admin-product-media-tile__placeholder" aria-hidden="true" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {videoMedia.length > 0 ? (
+              <div className="admin-product-video-gallery" aria-label="Product videos">
+                {videoMedia.map((entry, index) => (
+                  <div key={entry.storagePath} className="admin-product-video-tile">
+                    {mediaUrls[entry.storagePath] ? (
+                      <video src={mediaUrls[entry.storagePath]} controls preload="metadata" />
+                    ) : (
+                      <span className="admin-product-media-tile__placeholder" aria-hidden="true" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : null}
             <div className="variant-table">
               <div className="variant-table__row variant-table__row--head">
                 <span>Variant ID</span>

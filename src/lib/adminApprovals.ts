@@ -21,6 +21,14 @@ export type KycQueueItem = {
   phone: string
 }
 
+type MutationResult = { ok: true } | { ok: false; message: string }
+
+export function isTestProductListing(productName: string, sku = '') {
+  const name = productName.trim()
+  const normalizedSku = sku.trim()
+  return name.startsWith('E2E Test') || normalizedSku.startsWith('SKUAT')
+}
+
 export type ProductQueueItem = {
   id: number
   userId: string
@@ -38,8 +46,6 @@ export type ProductQueueItem = {
   sellerEmail: string
   sellerBusinessName: string
 }
-
-type MutationResult = { ok: true } | { ok: false; message: string }
 
 export type RejectionTemplate = {
   templateKey: string
@@ -160,23 +166,25 @@ export async function fetchProductQueue(status?: string): Promise<ProductQueueIt
 
   if (error || !data) return []
 
-  return data.map((row: Record<string, unknown>) => ({
-    id: Number(row.id),
-    userId: String(row.user_id),
-    sku: String(row.sku),
-    productName: String(row.product_name),
-    categoryName: String(row.category_name),
-    subCategoryName: String(row.sub_category_name),
-    productTypeName: String(row.product_type_name),
-    hsnCode: String(row.hsn_code),
-    brandName: String(row.brand_name),
-    approvalStatus: String(row.approval_status),
-    submittedAt: row.submitted_at ? String(row.submitted_at) : null,
-    reviewedAt: row.reviewed_at ? String(row.reviewed_at) : null,
-    rejectionReason: row.rejection_reason ? String(row.rejection_reason) : null,
-    sellerEmail: String(row.seller_email),
-    sellerBusinessName: String(row.seller_business_name),
-  }))
+  return data
+    .map((row: Record<string, unknown>) => ({
+      id: Number(row.id),
+      userId: String(row.user_id),
+      sku: String(row.sku),
+      productName: String(row.product_name),
+      categoryName: String(row.category_name),
+      subCategoryName: String(row.sub_category_name),
+      productTypeName: String(row.product_type_name),
+      hsnCode: String(row.hsn_code),
+      brandName: String(row.brand_name),
+      approvalStatus: String(row.approval_status),
+      submittedAt: row.submitted_at ? String(row.submitted_at) : null,
+      reviewedAt: row.reviewed_at ? String(row.reviewed_at) : null,
+      rejectionReason: row.rejection_reason ? String(row.rejection_reason) : null,
+      sellerEmail: String(row.seller_email),
+      sellerBusinessName: String(row.seller_business_name),
+    }))
+    .filter((row) => !isTestProductListing(row.productName, row.sku))
 }
 
 export async function reviewSellerProduct(

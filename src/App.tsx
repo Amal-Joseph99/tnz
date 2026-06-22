@@ -14,6 +14,7 @@ import { AdminKycPage } from './pages/AdminKycPage'
 import { AdminNotificationsPage } from './pages/AdminNotificationsPage'
 import { AdminOrdersPage } from './pages/AdminOrdersPage'
 import { AdminProductsPage } from './pages/AdminProductsPage'
+import { AdminProductDetailPage } from './pages/AdminProductDetailPage'
 import { AdminSellersPage } from './pages/AdminSellersPage'
 import { AdminWarehousesPage } from './pages/AdminWarehousesPage'
 import { AdminSettingsPage } from './pages/AdminSettingsPage'
@@ -160,6 +161,7 @@ function AppContent() {
               <Route path="/admin/warehouses" element={<RequireAdminAuth><AdminWarehousesPage /></RequireAdminAuth>} />
               <Route path="/admin/kyc" element={<RequireAdminAuth><AdminKycPage /></RequireAdminAuth>} />
               <Route path="/admin/products" element={<RequireAdminAuth><AdminProductsPage /></RequireAdminAuth>} />
+              <Route path="/admin/products/:productId" element={<RequireAdminAuth><AdminProductDetailPage /></RequireAdminAuth>} />
               <Route path="/admin/categories" element={<RequireAdminAuth><AdminCategoriesPage /></RequireAdminAuth>} />
               <Route path="/admin/homepage-sections" element={<RequireAdminAuth><AdminStorefrontSectionsPage /></RequireAdminAuth>} />
               <Route path="/admin/orders" element={<RequireAdminAuth><AdminOrdersPage /></RequireAdminAuth>} />
