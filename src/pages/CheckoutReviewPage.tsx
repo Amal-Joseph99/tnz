@@ -5,6 +5,7 @@ import { useCheckout } from '../context/CheckoutContext'
 import { useCurrency } from '../context/CurrencyContext'
 import { getCartTotals } from '../lib/checkout'
 import { createMarketplaceOrder } from '../lib/marketplaceOrders'
+import { startRazorpayCheckout } from '../lib/razorpayPayments'
 import { startStripeCheckout } from '../lib/stripePayments'
 
 export function CheckoutReviewPage() {
@@ -64,6 +65,36 @@ export function CheckoutReviewPage() {
         return
       }
 
+      if (paymentMethod === 'razorpay') {
+        const razorpayResult = await startRazorpayCheckout({
+          sellerUserId: items[0].sellerUserId,
+          currencyCode: currency,
+          subtotal,
+          shippingAmount: shippingQuote.shippingCharge,
+          codChargesAmount: 0,
+          taxAmount: tax,
+          totalAmount: total,
+          delivery,
+          shippingQuote,
+          items: items.map((item) => ({
+            productId: item.productId,
+            sellerUserId: item.sellerUserId,
+            sku: item.sku,
+            title: item.title,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            variantId: item.variantId,
+          })),
+        })
+
+        addPlacedOrderNumber(razorpayResult.orderNumber)
+        clearCart()
+        navigate('/checkout/confirmation', {
+          state: { orderNumber: razorpayResult.orderNumber, paymentProvider: 'razorpay' },
+        })
+        return
+      }
+
       const stripeResult = await startStripeCheckout({
         sellerUserId: items[0].sellerUserId,
         currencyCode: currency,
@@ -96,7 +127,9 @@ export function CheckoutReviewPage() {
 
   const actionLabel = paymentMethod === 'cod'
     ? (loading ? 'Placing order...' : `Place order · ${formatPrice(total)}`)
-    : (loading ? 'Redirecting to Stripe...' : `Pay with Stripe · ${formatPrice(total)}`)
+    : paymentMethod === 'razorpay'
+      ? (loading ? 'Opening Razorpay...' : `Pay with Razorpay · ${formatPrice(total)}`)
+      : (loading ? 'Redirecting to Stripe...' : `Pay with Stripe · ${formatPrice(total)}`)
 
   return (
     <CheckoutShell>

@@ -6,7 +6,8 @@ export function CheckoutConfirmationPage() {
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const sessionId = searchParams.get('session_id')
-  const stateOrderNumber = (location.state as { orderNumber?: string } | null)?.orderNumber
+  const stateOrderNumber = (location.state as { orderNumber?: string; paymentProvider?: string } | null)?.orderNumber
+  const paymentProvider = (location.state as { paymentProvider?: string } | null)?.paymentProvider
   const [orderNumber, setOrderNumber] = useState(stateOrderNumber ?? '')
   const [loading, setLoading] = useState(Boolean(sessionId))
   const [error, setError] = useState('')
@@ -34,13 +35,15 @@ export function CheckoutConfirmationPage() {
       <div className="container checkout-confirmation-page__inner">
         <div className="checkout-confirmation-card">
           <span className="checkout-confirmation-card__badge">
-            {sessionId ? 'Payment received' : 'Order placed'}
+            {sessionId || paymentProvider === 'razorpay' ? 'Payment received' : 'Order placed'}
           </span>
           <h1>Thank you for your purchase</h1>
           <p>
             {sessionId
               ? 'Your Stripe payment was successful. The order is awaiting seller acceptance.'
-              : 'Your India-origin order is awaiting seller acceptance.'}
+              : paymentProvider === 'razorpay'
+                ? 'Your Razorpay payment was successful. The order is awaiting seller acceptance.'
+                : 'Your India-origin order is awaiting seller acceptance.'}
           </p>
           {loading && <p>Confirming payment...</p>}
           {error && <div className="auth-message auth-message--error">{error}</div>}

@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom'
 import { CheckoutShell } from '../components/CheckoutShell'
 import { useCheckout } from '../context/CheckoutContext'
+import { useCurrency } from '../context/CurrencyContext'
 
 export function CheckoutPaymentPage() {
   const { paymentMethod, setPaymentMethod, delivery } = useCheckout()
+  const { currency } = useCurrency()
   const isInternational = delivery?.countryIso2 && delivery.countryIso2 !== 'IN'
+  const showRazorpay = !isInternational && currency === 'INR'
 
   return (
     <CheckoutShell>
@@ -21,6 +24,15 @@ export function CheckoutPaymentPage() {
               <span>Global cards, Apple Pay, Google Pay · charged in your display currency</span>
             </div>
           </label>
+          {showRazorpay && (
+            <label className={paymentMethod === 'razorpay' ? 'checkout-option checkout-option--active' : 'checkout-option'}>
+              <input type="radio" name="payment" value="razorpay" checked={paymentMethod === 'razorpay'} onChange={() => setPaymentMethod('razorpay')} />
+              <div>
+                <strong>Pay with Razorpay</strong>
+                <span>UPI, cards, netbanking · India domestic · INR</span>
+              </div>
+            </label>
+          )}
           {!isInternational && (
             <label className={paymentMethod === 'cod' ? 'checkout-option checkout-option--active' : 'checkout-option'}>
               <input type="radio" name="payment" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} />

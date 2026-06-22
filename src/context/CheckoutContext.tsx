@@ -16,15 +16,17 @@ const STORAGE_KEY = 'agtrenz_checkout_v1'
 type StoredCheckout = {
   items: CartItem[]
   delivery: CheckoutDelivery | null
-  paymentMethod: 'stripe' | 'cod'
+  paymentMethod: 'stripe' | 'cod' | 'razorpay'
   shippingQuote: ShippingQuote | null
   placedOrderNumbers: string[]
 }
 
+type CheckoutPaymentMethod = 'stripe' | 'cod' | 'razorpay'
+
 type CheckoutContextValue = {
   items: CartItem[]
   delivery: CheckoutDelivery | null
-  paymentMethod: 'stripe' | 'cod'
+  paymentMethod: CheckoutPaymentMethod
   shippingQuote: ShippingQuote | null
   placedOrderNumbers: string[]
   itemCount: number
@@ -33,7 +35,7 @@ type CheckoutContextValue = {
   removeItem: (productId: number) => void
   clearCart: () => void
   setDelivery: (delivery: CheckoutDelivery) => void
-  setPaymentMethod: (method: 'stripe' | 'cod') => void
+  setPaymentMethod: (method: CheckoutPaymentMethod) => void
   setShippingQuote: (quote: ShippingQuote | null) => void
   addPlacedOrderNumber: (orderNumber: string) => void
 }
@@ -53,9 +55,14 @@ function readStorage(): StoredCheckout {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return defaultState
     const parsed = JSON.parse(raw) as StoredCheckout
+    const paymentMethod = parsed.paymentMethod === 'cod' || parsed.paymentMethod === 'razorpay'
+      ? parsed.paymentMethod
+      : 'stripe'
+
     return {
       ...defaultState,
       ...parsed,
+      paymentMethod,
       items: Array.isArray(parsed.items) ? parsed.items : [],
       placedOrderNumbers: Array.isArray(parsed.placedOrderNumbers) ? parsed.placedOrderNumbers : [],
     }
@@ -136,7 +143,7 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     setState((current) => ({ ...current, delivery, shippingQuote: null }))
   }, [])
 
-  const setPaymentMethod = useCallback((paymentMethod: 'stripe' | 'cod') => {
+  const setPaymentMethod = useCallback((paymentMethod: CheckoutPaymentMethod) => {
     setState((current) => ({ ...current, paymentMethod, shippingQuote: null }))
   }, [])
 
