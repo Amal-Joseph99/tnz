@@ -47,13 +47,14 @@ export function CheckoutReviewPage() {
   const isDomesticIndia = delivery?.countryIso2 === 'IN'
   const codAllowed = Boolean(isDomesticIndia && shippingQuote?.codAvailable)
   const listingPrepaid = getListingOrderTotals(items, shippingQuote)
-  const listingCod = getListingOrderTotals(items, codQuote ?? (codAllowed ? {
-    ...shippingQuote!,
-    shippingCharge: shippingQuote!.shippingCharge,
-    codCharges: codSurchargeAmount(shippingQuote!, codQuote),
-    totalShippingCharge: shippingQuote!.totalShippingCharge + codSurchargeAmount(shippingQuote!, codQuote),
+  const codSurcharge = shippingQuote ? codSurchargeAmount(shippingQuote, codQuote) : 0
+  const listingCod = getListingOrderTotals(items, codQuote ?? (codAllowed && shippingQuote ? {
+    ...shippingQuote,
+    shippingCharge: shippingQuote.shippingCharge,
+    codCharges: codSurcharge,
+    totalShippingCharge: shippingQuote.totalShippingCharge + codSurcharge,
   } : null))
-  const codExtraInr = codSurchargeAmount(shippingQuote!, codQuote)
+  const codExtraInr = codSurcharge
   const codExtraDisplay = toDisplayListingAmount(codExtraInr, 'INR')
   const codTotalDisplay = toDisplayListingAmount(listingCod.total, 'INR')
 
