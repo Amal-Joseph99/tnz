@@ -203,7 +203,7 @@ export function ProductListingWizardPage() {
 
   if (loading || !workflow || !options) {
     return (
-      <SellerDashboardShell>
+      <SellerDashboardShell title={editingProductId ? 'Edit product' : 'Add product'} hidePageHeading>
         <p>Loading...</p>
       </SellerDashboardShell>
     )
@@ -248,9 +248,16 @@ export function ProductListingWizardPage() {
   }
 
   return (
-    <SellerDashboardShell>
+    <SellerDashboardShell
+      title={editingProductId ? 'Edit product' : 'Add product'}
+      hidePageHeading
+    >
       <ProductListingDraftProvider value={providerValue}>
-        <ProductListingWizardShell currentStep={currentStep} sku={draft.sku}>
+        <ProductListingWizardShell
+          currentStep={currentStep}
+          sku={draft.sku}
+          mode={editingProductId ? 'edit' : 'create'}
+        >
           {error && <div className="auth-message auth-message--error">{error}</div>}
           {autoSaveMessage && <div className="auth-message auth-message--success">{autoSaveMessage}</div>}
 

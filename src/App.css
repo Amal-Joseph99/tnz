@@ -3871,19 +3871,62 @@
 .product-listing-wizard {
   display: grid;
   gap: 16px;
+  border-radius: var(--admin-bento-radius, 22px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
 }
 
-.product-listing-wizard__top {
+.product-listing-wizard__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
+.product-listing-wizard__back {
+  flex-shrink: 0;
+}
+
 .product-listing-wizard__sku {
   color: #0f172a;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
+}
+
+.product-listing-wizard__mobile-progress {
+  display: none;
+}
+
+.product-listing-wizard__mobile-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.product-listing-wizard__mobile-copy span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.product-listing-wizard__mobile-copy strong {
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.product-listing-wizard__progress-track {
+  height: 6px;
+  margin-top: 10px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.product-listing-wizard__progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #08428c, #0059b8);
+  transition: width 0.24s ease;
 }
 
 .product-listing-wizard__steps {
@@ -3900,7 +3943,7 @@
   gap: 4px;
   padding: 10px 12px;
   border: 1px solid #dbe3ee;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #f8fafc;
   color: #64748b;
   font-size: 11px;
@@ -3916,15 +3959,37 @@
   font-weight: 700;
 }
 
+.product-listing-wizard__step strong {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .product-listing-wizard__step--active {
-  border-color: #1d4ed8;
+  border-color: #08428c;
   background: #eff6ff;
-  color: #1d4ed8;
+  color: #08428c;
+}
+
+.product-listing-wizard__step--active span {
+  background: #08428c;
+  color: #fff;
 }
 
 .product-listing-wizard__step--complete {
   border-color: #16a34a;
   color: #166534;
+}
+
+.product-listing-wizard__content {
+  display: grid;
+  gap: 14px;
+}
+
+.product-listing-wizard .seller-console-card.listing-step {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
 }
 
 .product-listing-wizard__nav {
@@ -4100,7 +4165,14 @@
 }
 
 @media (max-width: 960px) {
-  .product-listing-wizard__steps,
+  .product-listing-wizard__mobile-progress {
+    display: block;
+  }
+
+  .product-listing-wizard__steps {
+    display: none;
+  }
+
   .listing-form-grid,
   .listing-yes-no-grid,
   .listing-review-grid {

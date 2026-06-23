@@ -17,7 +17,8 @@ const sellerNavItems = [
 
 function resolveSellerPageTitle(pathname: string) {
   if (/^\/seller\/orders\/\d+$/.test(pathname)) return 'Order details'
-  if (pathname.startsWith('/seller/products/')) return 'Product listing'
+  if (pathname.startsWith('/seller/products/new/')) return 'Add product'
+  if (/^\/seller\/products\/\d+\/edit/.test(pathname)) return 'Edit product'
 
   const item = sellerNavItems.find((nav) => pathname === nav.to || pathname.startsWith(`${nav.to}/`))
   return item?.label ?? 'Seller Central'
