@@ -131,6 +131,20 @@ export function roundUsd(amount: number) {
   return Math.round(amount * 100) / 100
 }
 
+export function roundMoney(amount: number) {
+  return Math.round(amount * 100) / 100
+}
+
+export async function amountForShiprocket(
+  supabase: SupabaseClient,
+  amount: number,
+  currencyCode: string,
+) {
+  const code = currencyCode.trim().toUpperCase()
+  if (code === 'INR') return roundMoney(amount)
+  return convertAmountToUsd(supabase, amount, code)
+}
+
 export async function convertAmountToUsd(
   supabase: SupabaseClient,
   amount: number,
@@ -339,4 +353,81 @@ export async function assertSellerOwnsOrder(serviceClient: SupabaseClient, order
 
   if (error) throw new Error(error.message)
   if (!data || data.seller_user_id !== userId) throw new Error('Order not found.')
+}
+
+export async function isAdminAccount(serviceClient: SupabaseClient, userId: string) {
+  const { data, error } = await serviceClient
+    .from('staff_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('role', 'admin')
+    .maybeSingle()
+
+  if (error) throw new Error(error.message)
+  return Boolean(data)
+}
+
+export async function assertFulfillmentAccess(serviceClient: SupabaseClient, orderId: number, userId: string) {
+  if (await isAdminAccount(serviceClient, userId)) return
+  await assertSellerOwnsOrder(serviceClient, orderId, userId)
+}
+
+type ShiprocketOrderRow = Record<string, unknown> & {
+  marketplace_order_items?: Array<Record<string, unknown>>
+}
+
+export async function buildShiprocketCreateOrderPayload(
+  serviceClient: SupabaseClient,
+  order: ShiprocketOrderRow,
+  pickupLocationName: string,
+  settings: ShippingProviderSettings,
+) {
+  const orderCurrency = String(order.currency_code ?? 'INR')
+  const paymentMethod = order.payment_method === 'cod' ? 'COD' : 'Prepaid'
+  const items = await Promise.all(
+    (order.marketplace_order_items ?? []).map(async (item) => ({
+      name: item.product_name,
+      sku: item.sku,
+      units: item.quantity,
+      selling_price: String(await amountForShiprocket(serviceClient, Number(item.unit_price), orderCurrency)),
+      hsn: item.hsn_code ?? '',
+    })),
+  )
+
+  const subTotal = await amountForShiprocket(serviceClient, Number(order.subtotal_amount), orderCurrency)
+  const shippingCharges = await amountForShiprocket(serviceClient, Number(order.shipping_amount), orderCurrency)
+
+  return {
+    order_id: order.order_number,
+    order_date: new Date(String(order.created_at)).toISOString().slice(0, 10),
+    pickup_location: pickupLocationName,
+    billing_customer_name: order.delivery_full_name,
+    billing_last_name: '',
+    billing_address: order.delivery_address_line1,
+    billing_address_2: order.delivery_address_line2 ?? '',
+    billing_city: order.delivery_city,
+    billing_state: order.delivery_state,
+    billing_pincode: order.delivery_postcode,
+    billing_country: order.delivery_country_iso2 === settings.origin_country_iso2 ? 'India' : order.delivery_country_iso2,
+    billing_email: order.delivery_email,
+    billing_phone: order.delivery_phone,
+    shipping_is_billing: 1,
+    payment_method: paymentMethod,
+    sub_total: subTotal,
+    shipping_charges: shippingCharges,
+    order_items: items,
+    weight: Number(order.package_weight_kg),
+    length: Number(order.package_length_cm ?? 10),
+    breadth: Number(order.package_width_cm ?? 10),
+    height: Number(order.package_height_cm ?? 10),
+  }
+}
+
+export function extractShiprocketIds(created: Record<string, unknown>) {
+  const data = created.data && typeof created.data === 'object'
+    ? created.data as Record<string, unknown>
+    : null
+  const shiprocketOrderId = Number(created.order_id ?? data?.order_id ?? 0)
+  const shiprocketShipmentId = Number(created.shipment_id ?? data?.shipment_id ?? 0)
+  return { shiprocketOrderId, shiprocketShipmentId }
 }

@@ -12,7 +12,6 @@ import {
   getShipmentRow,
   type MarketplaceOrderRow,
 } from '../lib/marketplaceOrders'
-import { adminPushOrderToShiprocket } from '../lib/shiprocketShipping'
 
 export function AdminOrdersPage() {
   const navigate = useNavigate()
@@ -20,9 +19,6 @@ export function AdminOrdersPage() {
   const [orders, setOrders] = useState<MarketplaceOrderRow[]>([])
   const [thumbnails, setThumbnails] = useState<Map<number, string>>(new Map())
   const [loading, setLoading] = useState(true)
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
-  const [pushingOrderId, setPushingOrderId] = useState<number | null>(null)
 
   const loadOrders = async () => {
     const rows = await fetchAdminOrders()
@@ -44,27 +40,8 @@ export function AdminOrdersPage() {
     [orders],
   )
 
-  const pushToShiprocket = async (orderId: number) => {
-    setError('')
-    setMessage('')
-    setPushingOrderId(orderId)
-
-    try {
-      const result = await adminPushOrderToShiprocket(orderId)
-      setMessage(`Shiprocket order created. AWB ${result.awbCode}`)
-      await loadOrders()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Shiprocket push failed.')
-    } finally {
-      setPushingOrderId(null)
-    }
-  }
-
   return (
     <AdminDashboardShell title="Orders" subtitle="Confirmed marketplace orders and Shiprocket dispatch.">
-      {error && <div className="auth-message auth-message--error">{error}</div>}
-      {message && <div className="auth-message auth-message--success">{message}</div>}
-
       <section className="admin-bento">
         <article className="admin-bento__cell admin-bento__cell--stat">
           <span>Confirmed orders</span>
@@ -79,7 +56,7 @@ export function AdminOrdersPage() {
       <section className="admin-panel">
         <div className="admin-panel__header">
           <h2>Order operations</h2>
-          <p>Only paid or placed COD orders are shown. Unpaid checkouts are hidden.</p>
+          <p>Only paid or placed COD orders are shown. Open an order to sync, create shipment, and download documents.</p>
         </div>
 
         {loading ? (
@@ -93,7 +70,6 @@ export function AdminOrdersPage() {
               const productId = getOrderThumbnailProductId(order)
               const imageUrl = productId ? thumbnails.get(productId) : undefined
               const shipment = getShipmentRow(order)
-              const canPush = order.status === 'seller_accepted' || order.status === 'shiprocket_pending'
 
               return (
                 <article key={order.id} className="seller-order-list__row">
@@ -123,26 +99,17 @@ export function AdminOrdersPage() {
                   <div className="seller-order-list__status">
                     <span className="seller-order-list__badge">{formatOrderStatus(order.status)}</span>
                     <small>{formatPaymentMethod(order.payment_method)}</small>
+                    {order.shipping_courier_name && <small>{order.shipping_courier_name}</small>}
                     {shipment?.awb_code && <small>AWB: {shipment.awb_code}</small>}
                   </div>
 
                   <div className="seller-order-list__actions">
-                    {canPush && (
-                      <button
-                        type="button"
-                        className="admin-btn"
-                        disabled={pushingOrderId === order.id}
-                        onClick={() => void pushToShiprocket(order.id)}
-                      >
-                        {pushingOrderId === order.id ? 'Creating…' : 'Create on Shiprocket'}
-                      </button>
-                    )}
                     <button
                       type="button"
-                      className="admin-btn admin-btn--ghost"
+                      className="admin-btn"
                       onClick={() => navigate(`/admin/orders/${order.id}`)}
                     >
-                      View
+                      Manage
                     </button>
                   </div>
                 </article>

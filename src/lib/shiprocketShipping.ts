@@ -32,7 +32,10 @@ async function invokeShiprocketFunction<T>(functionName: string, body: unknown):
 
   const { data, error } = await supabase.functions.invoke(functionName, { body: body as Record<string, unknown> })
   if (error) {
-    throw new Error(error.message)
+    const serverMessage = data && typeof data === 'object' && 'error' in data
+      ? String((data as { error: string }).error)
+      : error.message
+    throw new Error(serverMessage)
   }
 
   if (data && typeof data === 'object' && 'error' in data && typeof (data as { error: string }).error === 'string') {
@@ -63,6 +66,7 @@ export async function trackShiprocketOrder(input: { orderId?: number; orderNumbe
   }>('shiprocket-track', input)
 }
 
+/** @deprecated Use adminSyncOrderToShiprocket + adminAssignShiprocketShipment */
 export async function adminPushOrderToShiprocket(orderId: number) {
   return invokeShiprocketFunction<{
     ok: boolean
@@ -72,12 +76,35 @@ export async function adminPushOrderToShiprocket(orderId: number) {
   }>('shiprocket-admin-push-order', { orderId })
 }
 
-export async function sellerFetchShipmentDocuments(orderId: number) {
+export async function adminSyncOrderToShiprocket(orderId: number) {
+  return invokeShiprocketFunction<{
+    ok: boolean
+    shiprocketOrderId: number
+    shiprocketShipmentId: number
+    alreadySynced?: boolean
+  }>('shiprocket-sync-order', { orderId })
+}
+
+export async function adminAssignShiprocketShipment(orderId: number) {
+  return invokeShiprocketFunction<{
+    ok: boolean
+    awbCode: string
+    courierName?: string | null
+    alreadyAssigned?: boolean
+  }>('shiprocket-assign-shipment', { orderId })
+}
+
+export async function fetchShipmentDocument(orderId: number, documentType: 'label' | 'manifest' | 'all' = 'all') {
   return invokeShiprocketFunction<{
     ok: boolean
     labelUrl: string | null
     manifestUrl: string | null
-  }>('shiprocket-seller-documents', { orderId })
+  }>('shiprocket-seller-documents', { orderId, documentType })
+}
+
+/** @deprecated Use fetchShipmentDocument */
+export async function sellerFetchShipmentDocuments(orderId: number) {
+  return fetchShipmentDocument(orderId, 'all')
 }
 
 export async function adminSyncWarehousePickup(userId: string, provider: string) {

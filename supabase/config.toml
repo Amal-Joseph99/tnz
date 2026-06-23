@@ -429,6 +429,12 @@ verify_jwt = false
 [functions.shiprocket-serviceability]
 verify_jwt = true
 
+[functions.shiprocket-sync-order]
+verify_jwt = true
+
+[functions.shiprocket-assign-shipment]
+verify_jwt = true
+
 [functions.shiprocket-admin-push-order]
 verify_jwt = true
 

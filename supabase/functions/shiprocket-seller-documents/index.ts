@@ -1,5 +1,5 @@
 import {
-  assertSellerOwnsOrder,
+  assertFulfillmentAccess,
   corsHeaders,
   createAuthedSupabase,
   getShiprocketToken,
@@ -10,6 +10,7 @@ import {
 
 type DocumentsRequest = {
   orderId: number
+  documentType?: 'label' | 'manifest' | 'all'
 }
 
 Deno.serve(async (req) => {
@@ -22,7 +23,9 @@ Deno.serve(async (req) => {
     const body = await req.json() as DocumentsRequest
     if (!body.orderId) return jsonResponse({ error: 'orderId is required.' }, 400)
 
-    await assertSellerOwnsOrder(serviceClient, body.orderId, user.id)
+    await assertFulfillmentAccess(serviceClient, body.orderId, user.id)
+
+    const documentType = body.documentType ?? 'all'
 
     const { data: order, error: orderError } = await serviceClient
       .from('marketplace_orders')
@@ -32,7 +35,7 @@ Deno.serve(async (req) => {
 
     if (orderError) return jsonResponse({ error: orderError.message }, 500)
     if (!order || !['shiprocket_created', 'packed', 'shipped', 'delivered'].includes(order.status)) {
-      return jsonResponse({ error: 'Shiprocket documents are available after admin creates the shipment.' }, 400)
+      return jsonResponse({ error: 'Shipping documents are available after the shipment is created.' }, 400)
     }
 
     const { data: shipment, error: shipmentError } = await serviceClient
@@ -49,48 +52,53 @@ Deno.serve(async (req) => {
     const settings = await loadShiprocketSettings(serviceClient)
     const token = await getShiprocketToken(serviceClient, settings)
 
-    const labelPayload = await shiprocketRequest(settings, token, settings.generate_label_path, {
-      method: 'POST',
-      body: JSON.stringify({ shipment_id: [shipment.shiprocket_shipment_id] }),
-    })
+    let labelUrl = shipment.label_url as string | null
+    let manifestUrl = shipment.manifest_url as string | null
 
-    const manifestGenerated = await shiprocketRequest(settings, token, settings.generate_manifest_path, {
-      method: 'POST',
-      body: JSON.stringify({ shipment_id: [shipment.shiprocket_shipment_id] }),
-    })
-
-    const manifestId = manifestGenerated.manifest_id ?? manifestGenerated.data?.manifest_id
-    let manifestUrl = shipment.manifest_url
-
-    if (manifestId) {
-      const manifestPrinted = await shiprocketRequest(settings, token, settings.print_manifest_path, {
+    if (documentType === 'label' || documentType === 'all') {
+      const labelPayload = await shiprocketRequest(settings, token, settings.generate_label_path, {
         method: 'POST',
-        body: JSON.stringify({ manifest_id: manifestId }),
+        body: JSON.stringify({ shipment_id: [shipment.shiprocket_shipment_id] }),
       })
-      manifestUrl = manifestPrinted.manifest_url ?? manifestPrinted.data?.manifest_url ?? manifestUrl
+
+      labelUrl = labelPayload.label_url
+        ?? labelPayload.data?.label_url
+        ?? labelPayload.response?.data?.label_url
+        ?? labelUrl
     }
 
-    const labelUrl = labelPayload.label_url
-      ?? labelPayload.data?.label_url
-      ?? labelPayload.response?.data?.label_url
-      ?? shipment.label_url
+    if (documentType === 'manifest' || documentType === 'all') {
+      const manifestGenerated = await shiprocketRequest(settings, token, settings.generate_manifest_path, {
+        method: 'POST',
+        body: JSON.stringify({ shipment_id: [shipment.shiprocket_shipment_id] }),
+      })
+
+      const manifestId = manifestGenerated.manifest_id ?? manifestGenerated.data?.manifest_id
+      if (manifestId) {
+        const manifestPrinted = await shiprocketRequest(settings, token, settings.print_manifest_path, {
+          method: 'POST',
+          body: JSON.stringify({ manifest_id: manifestId }),
+        })
+        manifestUrl = manifestPrinted.manifest_url ?? manifestPrinted.data?.manifest_url ?? manifestUrl
+      }
+    }
 
     const { error: updateError } = await serviceClient.rpc('update_shipment_documents', {
       p_order_id: body.orderId,
-      p_label_url: labelUrl ?? '',
-      p_manifest_url: manifestUrl ?? '',
+      p_label_url: documentType === 'manifest' ? null : (labelUrl ?? ''),
+      p_manifest_url: documentType === 'label' ? null : (manifestUrl ?? ''),
     })
 
     if (updateError) return jsonResponse({ error: updateError.message }, 500)
 
     return jsonResponse({
       ok: true,
-      labelUrl,
-      manifestUrl,
+      labelUrl: documentType === 'manifest' ? null : labelUrl,
+      manifestUrl: documentType === 'label' ? null : manifestUrl,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
-    const status = message === 'Unauthorized' ? 401 : 500
+    const status = message === 'Unauthorized' ? 401 : message === 'Order not found.' ? 403 : 500
     return jsonResponse({ error: message }, status)
   }
 })

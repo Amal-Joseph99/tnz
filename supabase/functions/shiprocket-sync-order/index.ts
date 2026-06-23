@@ -10,7 +10,7 @@ import {
   shiprocketRequest,
 } from '../_shared/shiprocket.ts'
 
-type PushOrderRequest = {
+type SyncOrderRequest = {
   orderId: number
 }
 
@@ -23,14 +23,15 @@ Deno.serve(async (req) => {
     const { user, serviceClient } = await createAuthedSupabase(req)
     await assertAdmin(serviceClient, user.id)
 
-    const body = await req.json() as PushOrderRequest
+    const body = await req.json() as SyncOrderRequest
     if (!body.orderId) return jsonResponse({ error: 'orderId is required.' }, 400)
 
     const { data: order, error: orderError } = await serviceClient
       .from('marketplace_orders')
       .select(`
         *,
-        marketplace_order_items (*)
+        marketplace_order_items (*),
+        marketplace_order_shipments (shiprocket_order_id, shiprocket_shipment_id, awb_code)
       `)
       .eq('id', body.orderId)
       .maybeSingle()
@@ -38,12 +39,29 @@ Deno.serve(async (req) => {
     if (orderError) return jsonResponse({ error: orderError.message }, 500)
     if (!order) return jsonResponse({ error: 'Order not found.' }, 404)
     if (order.status !== 'seller_accepted' && order.status !== 'shiprocket_pending') {
-      return jsonResponse({ error: 'Order must be seller-accepted before Shiprocket push.' }, 400)
+      return jsonResponse({ error: 'Order must be seller-accepted before Shiprocket sync.' }, 400)
+    }
+
+    const existingShipment = Array.isArray(order.marketplace_order_shipments)
+      ? order.marketplace_order_shipments[0]
+      : order.marketplace_order_shipments
+
+    if (existingShipment?.shiprocket_shipment_id && !existingShipment.awb_code) {
+      return jsonResponse({
+        ok: true,
+        shiprocketOrderId: existingShipment.shiprocket_order_id,
+        shiprocketShipmentId: existingShipment.shiprocket_shipment_id,
+        alreadySynced: true,
+      })
+    }
+
+    if (existingShipment?.awb_code) {
+      return jsonResponse({ error: 'Shipment already created on Shiprocket.' }, 400)
     }
 
     const { data: warehouse, error: warehouseError } = await serviceClient
       .from('seller_warehouses')
-      .select('shiprocket_pickup_location_name, warehouse_name')
+      .select('shiprocket_pickup_location_name')
       .eq('user_id', order.seller_user_id)
       .maybeSingle()
 
@@ -54,9 +72,6 @@ Deno.serve(async (req) => {
 
     const settings = await loadShiprocketSettings(serviceClient)
     const token = await getShiprocketToken(serviceClient, settings)
-
-    await serviceClient.rpc('admin_mark_shiprocket_pending', { p_order_id: body.orderId })
-
     const createPayload = await buildShiprocketCreateOrderPayload(
       serviceClient,
       order,
@@ -70,40 +85,22 @@ Deno.serve(async (req) => {
     })
 
     const { shiprocketOrderId, shiprocketShipmentId } = extractShiprocketIds(created as Record<string, unknown>)
-
     if (!shiprocketShipmentId) {
       return jsonResponse({ error: 'Shiprocket order created but shipment id was missing.' }, 502)
     }
 
-    const assignPayload: Record<string, unknown> = {
-      shipment_id: shiprocketShipmentId,
-    }
-    if (order.shipping_courier_company_id) {
-      assignPayload.courier_id = order.shipping_courier_company_id
-    }
-
-    const assigned = await shiprocketRequest(settings, token, settings.assign_awb_path, {
-      method: 'POST',
-      body: JSON.stringify(assignPayload),
-    })
-
-    const awbCode = String(assigned.response?.data?.awb_code ?? assigned.awb_code ?? assigned.data?.awb_code ?? '')
-
-    const { error: completeError } = await serviceClient.rpc('admin_complete_shiprocket_push', {
+    const { error: syncError } = await serviceClient.rpc('admin_record_shiprocket_sync', {
       p_order_id: body.orderId,
       p_shiprocket_order_id: shiprocketOrderId || null,
       p_shiprocket_shipment_id: shiprocketShipmentId,
-      p_awb_code: awbCode,
-      p_courier_name: order.shipping_courier_name,
     })
 
-    if (completeError) return jsonResponse({ error: completeError.message }, 500)
+    if (syncError) return jsonResponse({ error: syncError.message }, 500)
 
     return jsonResponse({
       ok: true,
       shiprocketOrderId,
       shiprocketShipmentId,
-      awbCode,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'

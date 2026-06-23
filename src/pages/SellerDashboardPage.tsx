@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { SellerDashboardShell } from '../components/SellerDashboardShell'
-import { PanelEmptyState } from '../components/PanelEmptyState'
+import { useCurrency } from '../context/CurrencyContext'
 import { fetchSellerAccountProfile, fetchSellerKycSubmission } from '../lib/sellerKyc'
 import {
   computeSellerProductCatalogueStats,
@@ -35,11 +35,21 @@ function kycStatusTone(status: SellerWorkflowState['kycStatus']): StatusTone {
   return 'muted'
 }
 
-function StatusValue({ tone, children }: { tone: StatusTone; children: string }) {
-  return <span className={`seller-status-value seller-status-value--${tone}`}>{children}</span>
+function StatusPill({ tone, children }: { tone: StatusTone; children: string }) {
+  if (tone === 'success') {
+    return <span className="admin-status-pill admin-status-pill--ok">{children}</span>
+  }
+  if (tone === 'pending') {
+    return <span className="admin-status-pill admin-status-pill--warn">{children}</span>
+  }
+  if (tone === 'danger') {
+    return <span className="admin-status-pill admin-status-pill--warn">{children}</span>
+  }
+  return <span className="admin-status-pill">{children}</span>
 }
 
 export function SellerDashboardPage() {
+  const { formatListingPrice } = useCurrency()
   const [workflow, setWorkflow] = useState<SellerWorkflowState | null>(null)
   const [profile, setProfile] = useState({ businessName: '', email: '' })
   const [payoutConnected, setPayoutConnected] = useState(false)
@@ -87,7 +97,7 @@ export function SellerDashboardPage() {
 
   if (loading || !workflow) {
     return (
-      <SellerDashboardShell>
+      <SellerDashboardShell title="Dashboard">
         <p>Loading dashboard...</p>
       </SellerDashboardShell>
     )
@@ -101,111 +111,107 @@ export function SellerDashboardPage() {
       : 'Add your warehouse address to list products'
 
   return (
-    <SellerDashboardShell>
-      {onboardingComplete ? (
-        <div className="seller-onboarding-banner seller-onboarding-banner--ready">
-          <strong>Your seller account is active.</strong>
-          <span>KYC verified, warehouse added — you can list products and manage orders.</span>
-        </div>
-      ) : (
-        <div className="seller-onboarding-banner seller-onboarding-banner--pending">
-          <strong>Finish seller setup</strong>
-          <span>
-            {workflow.kycStatus !== 'approved' ? (
-              <>
-                Complete <Link to="/seller/kyc">KYC verification</Link> first.
-              </>
-            ) : null}
-            {workflow.kycStatus !== 'approved' && !workflow.warehouseCompleted ? ' Then ' : null}
-            {!workflow.warehouseCompleted ? (
-              <>
-                Add your <Link to="/seller/warehouse">warehouse address</Link>.
-              </>
-            ) : null}
-          </span>
-        </div>
-      )}
+    <SellerDashboardShell title="Dashboard">
+      <section className="admin-bento" aria-label="Seller dashboard overview">
+        {onboardingComplete ? (
+          <div className="admin-bento__alert seller-onboarding-banner seller-onboarding-banner--ready">
+            <strong>Your seller account is active.</strong>
+            <span>KYC verified, warehouse added — you can list products and manage orders.</span>
+          </div>
+        ) : (
+          <div className="admin-bento__alert seller-onboarding-banner seller-onboarding-banner--pending">
+            <strong>Finish seller setup</strong>
+            <span>
+              {workflow.kycStatus !== 'approved' ? (
+                <>
+                  Complete <Link to="/seller/kyc">KYC verification</Link> first.
+                </>
+              ) : null}
+              {workflow.kycStatus !== 'approved' && !workflow.warehouseCompleted ? ' Then ' : null}
+              {!workflow.warehouseCompleted ? (
+                <>
+                  Add your <Link to="/seller/warehouse">warehouse address</Link>.
+                </>
+              ) : null}
+            </span>
+          </div>
+        )}
 
-      <section className="seller-kpi-grid">
-        <article>
+        <article className="admin-bento__cell admin-bento__cell--stat admin-bento__cell--stat-note admin-bento__cell--accent-blue">
           <span>Today revenue</span>
-          <strong>₹0</strong>
+          <strong>{formatListingPrice(0, 'INR')}</strong>
           <p>No sales recorded yet</p>
         </article>
-        <article>
+
+        <article className="admin-bento__cell admin-bento__cell--stat admin-bento__cell--stat-note admin-bento__cell--accent-amber">
           <span>Open orders</span>
           <strong>0</strong>
           <p>No orders awaiting action</p>
         </article>
-        <article>
+
+        <article className="admin-bento__cell admin-bento__cell--stat admin-bento__cell--stat-note admin-bento__cell--accent-violet">
           <span>Active products</span>
           <strong>{productStats.liveProducts}</strong>
           <p>{productStats.liveProducts ? 'Approved listings live' : 'No published listings'}</p>
         </article>
-        <article>
+
+        <article className="admin-bento__cell admin-bento__cell--stat admin-bento__cell--stat-note admin-bento__cell--accent-slate">
           <span>Seller health</span>
-          <strong className={onboardingComplete ? 'seller-kpi-strong--success' : undefined}>
-            {sellerHealthLabel}
-          </strong>
+          <strong>{sellerHealthLabel}</strong>
           <p>{sellerHealthDetail}</p>
         </article>
-      </section>
 
-      <section className="seller-console-grid">
-        <article className="seller-console-card seller-console-card--wide">
-          <div className="seller-console-card__header">
-            <div>
-              <h2>Sales performance</h2>
-              <p>Revenue trend for the current week</p>
-            </div>
+        <article className="admin-bento__cell admin-bento__cell--wide admin-bento__cell--tall">
+          <div className="admin-bento__head">
+            <h2>Sales performance</h2>
+            <Link to="/seller/orders" className="admin-btn admin-btn--ghost">Orders</Link>
           </div>
-          <PanelEmptyState
-            title="No sales data yet"
-            message="Charts will appear after your first orders are placed."
-          />
+          <div className="admin-bento__empty">Charts will appear after your first orders are placed.</div>
         </article>
 
-        <article className="seller-console-card">
-          <div className="seller-console-card__header">
-            <div>
-              <h2>Account status</h2>
-              <p>Compliance and verification</p>
-            </div>
-            {onboardingComplete ? (
-              <span className="seller-badge seller-badge--success">Ready to sell</span>
-            ) : null}
-          </div>
-          <div className="seller-status-list">
+        <article className="admin-bento__cell">
+          <h2 className="admin-bento__title">Account status</h2>
+          <div className="admin-status-list">
             <div>
               <strong>Email verified</strong>
-              <StatusValue tone={profile.email ? 'success' : 'muted'}>
+              <StatusPill tone={profile.email ? 'success' : 'muted'}>
                 {profile.email ? 'Verified' : 'Unknown'}
-              </StatusValue>
+              </StatusPill>
             </div>
             <div>
               <strong>KYC verification</strong>
-              <StatusValue tone={kycStatusTone(workflow.kycStatus)}>
+              <StatusPill tone={kycStatusTone(workflow.kycStatus)}>
                 {kycStatusLabel(workflow.kycStatus)}
-              </StatusValue>
+              </StatusPill>
             </div>
             <div>
               <strong>Warehouse</strong>
-              <StatusValue tone={workflow.warehouseCompleted ? 'success' : 'pending'}>
+              <StatusPill tone={workflow.warehouseCompleted ? 'success' : 'pending'}>
                 {workflow.warehouseCompleted ? 'Added' : 'Not added'}
-              </StatusValue>
+              </StatusPill>
             </div>
             <div>
               <strong>Business profile</strong>
-              <StatusValue tone={profile.businessName ? 'success' : 'muted'}>
+              <StatusPill tone={profile.businessName ? 'success' : 'muted'}>
                 {profile.businessName || 'Not provided'}
-              </StatusValue>
+              </StatusPill>
             </div>
             <div>
               <strong>Payout method</strong>
-              <StatusValue tone={payoutConnected ? 'success' : 'pending'}>
+              <StatusPill tone={payoutConnected ? 'success' : 'pending'}>
                 {payoutConnected ? 'Connected' : 'Not connected'}
-              </StatusValue>
+              </StatusPill>
             </div>
+          </div>
+        </article>
+
+        <article className="admin-bento__cell">
+          <h2 className="admin-bento__title">Quick links</h2>
+          <div className="admin-action-list">
+            <Link to="/seller/products">Products ({productStats.liveProducts})</Link>
+            <Link to="/seller/orders">Orders</Link>
+            <Link to="/seller/kyc">KYC verification</Link>
+            <Link to="/seller/wallet">Wallet</Link>
           </div>
         </article>
       </section>

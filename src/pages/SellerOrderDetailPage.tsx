@@ -2,18 +2,16 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { SellerProductConfirmDialog } from '../components/SellerProductConfirmDialog'
 import { SellerDashboardShell } from '../components/SellerDashboardShell'
+import { OrderFulfillmentPanel } from '../components/OrderFulfillmentPanel'
 import { useCurrency } from '../context/CurrencyContext'
 import {
   fetchOrderProductThumbnails,
   fetchSellerOrder,
   formatOrderStatus,
   formatPaymentMethod,
-  getShipmentRow,
-  sellerMarkOrderPacked,
   sellerRespondToOrder,
   type MarketplaceOrderRow,
 } from '../lib/marketplaceOrders'
-import { sellerFetchShipmentDocuments } from '../lib/shiprocketShipping'
 
 type ConfirmState = {
   action: 'accept' | 'reject'
@@ -74,32 +72,6 @@ export function SellerOrderDetailPage() {
     await loadOrder()
   }
 
-  const downloadDocs = async () => {
-    if (!order) return
-    setError('')
-    try {
-      const result = await sellerFetchShipmentDocuments(order.id)
-      if (result.labelUrl) window.open(result.labelUrl, '_blank', 'noopener,noreferrer')
-      if (result.manifestUrl) window.open(result.manifestUrl, '_blank', 'noopener,noreferrer')
-      setMessage('Label and manifest ready.')
-      await loadOrder()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to fetch documents.')
-    }
-  }
-
-  const markPacked = async () => {
-    if (!order) return
-    setError('')
-    const result = await sellerMarkOrderPacked(order.id)
-    if (!result.ok) {
-      setError(result.message)
-      return
-    }
-    setMessage('Order marked packed.')
-    await loadOrder()
-  }
-
   if (loading) {
     return (
       <SellerDashboardShell>
@@ -120,7 +92,6 @@ export function SellerOrderDetailPage() {
     )
   }
 
-  const shipment = getShipmentRow(order)
   const canRespond = order.status === 'pending_seller_acceptance'
   const addressLines = [
     order.delivery_address_line1,
@@ -183,6 +154,15 @@ export function SellerOrderDetailPage() {
           </article>
         </div>
 
+        <OrderFulfillmentPanel
+          order={order}
+          mode="seller"
+          formatListingPrice={formatListingPrice}
+          onOrderUpdated={loadOrder}
+          onError={setError}
+          onMessage={setMessage}
+        />
+
         <div className="seller-order-detail__items">
           <h3>Items</h3>
           <div className="seller-order-detail__item-list">
@@ -215,23 +195,6 @@ export function SellerOrderDetailPage() {
             <strong>{formatListingPrice(order.total_amount, order.currency_code)}</strong>
           </div>
         </div>
-
-        {shipment?.awb_code && (
-          <p className="seller-order-detail__awb">AWB: {shipment.awb_code}</p>
-        )}
-
-        {['shiprocket_created', 'packed', 'shipped', 'delivered'].includes(order.status) && (
-          <div className="seller-order-detail__fulfillment">
-            <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void downloadDocs()}>
-              Label / manifest
-            </button>
-            {order.status === 'shiprocket_created' && (
-              <button type="button" className="admin-accept" onClick={() => void markPacked()}>
-                Mark packed
-              </button>
-            )}
-          </div>
-        )}
 
         {order.seller_response_note && (
           <p className="seller-order-detail__note">Seller note: {order.seller_response_note}</p>

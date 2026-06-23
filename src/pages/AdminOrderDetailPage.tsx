@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { AdminDashboardShell } from '../components/AdminDashboardShell'
+import { OrderFulfillmentPanel } from '../components/OrderFulfillmentPanel'
 import { useCurrency } from '../context/CurrencyContext'
 import {
   fetchAdminOrder,
   fetchOrderProductThumbnails,
   formatOrderStatus,
   formatPaymentMethod,
-  getShipmentRow,
   type MarketplaceOrderRow,
 } from '../lib/marketplaceOrders'
-import { adminPushOrderToShiprocket } from '../lib/shiprocketShipping'
 
 const PRODUCT_PLACEHOLDER =
   'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%23f3f4f6" width="80" height="80"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="sans-serif" font-size="10"%3EAGTRENZ%3C/text%3E%3C/svg%3E'
@@ -23,7 +22,6 @@ export function AdminOrderDetailPage() {
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
-  const [pushing, setPushing] = useState(false)
 
   const parsedOrderId = Number(orderId)
 
@@ -46,23 +44,6 @@ export function AdminOrderDetailPage() {
     void loadOrder().finally(() => setLoading(false))
   }, [parsedOrderId])
 
-  const pushToShiprocket = async () => {
-    if (!order) return
-    setPushing(true)
-    setError('')
-    setMessage('')
-
-    try {
-      const result = await adminPushOrderToShiprocket(order.id)
-      setMessage(`Shiprocket order created. AWB ${result.awbCode}`)
-      await loadOrder()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Shiprocket push failed.')
-    } finally {
-      setPushing(false)
-    }
-  }
-
   if (loading) {
     return (
       <AdminDashboardShell title="Order details">
@@ -83,8 +64,6 @@ export function AdminOrderDetailPage() {
     )
   }
 
-  const shipment = getShipmentRow(order)
-  const canPush = order.status === 'seller_accepted' || order.status === 'shiprocket_pending'
   const addressLines = [
     order.delivery_address_line1,
     order.delivery_address_line2,
@@ -104,12 +83,16 @@ export function AdminOrderDetailPage() {
             <h2>{order.order_number}</h2>
             <p>{formatOrderStatus(order.status)}</p>
           </div>
-          {canPush && (
-            <button type="button" className="admin-btn" disabled={pushing} onClick={() => void pushToShiprocket()}>
-              {pushing ? 'Creating on Shiprocket…' : 'Create on Shiprocket'}
-            </button>
-          )}
         </div>
+
+        <OrderFulfillmentPanel
+          order={order}
+          mode="admin"
+          formatListingPrice={formatListingPrice}
+          onOrderUpdated={loadOrder}
+          onError={setError}
+          onMessage={setMessage}
+        />
 
         <div className="seller-order-detail__grid">
           <article className="seller-order-detail__card">
@@ -174,10 +157,6 @@ export function AdminOrderDetailPage() {
             <strong>{formatListingPrice(order.total_amount, order.currency_code)}</strong>
           </div>
         </div>
-
-        {shipment?.awb_code && (
-          <p className="seller-order-detail__awb">AWB: {shipment.awb_code}</p>
-        )}
 
         {order.seller_response_note && (
           <p className="seller-order-detail__note">Seller note: {order.seller_response_note}</p>

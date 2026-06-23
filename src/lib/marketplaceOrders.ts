@@ -40,6 +40,7 @@ export type MarketplaceOrderRow = {
   delivery_country_iso2: string
   shipping_estimated_delivery: string | null
   shipping_courier_name: string | null
+  shipping_courier_company_id: number | null
   seller_response_note?: string | null
   seller_responded_at?: string | null
   packed_at?: string | null
@@ -54,11 +55,15 @@ export type MarketplaceOrderRow = {
     line_total: number
   }>
   marketplace_order_shipments?: Array<{
+    shiprocket_order_id: number | null
+    shiprocket_shipment_id: number | null
     awb_code: string | null
     label_url: string | null
     manifest_url: string | null
     tracking_payload: unknown
   }> | {
+    shiprocket_order_id: number | null
+    shiprocket_shipment_id: number | null
     awb_code: string | null
     label_url: string | null
     manifest_url: string | null
@@ -117,12 +122,13 @@ const orderSelect = `
   delivery_country_iso2,
   shipping_estimated_delivery,
   shipping_courier_name,
+  shipping_courier_company_id,
   seller_response_note,
   seller_responded_at,
   packed_at,
   created_at,
   marketplace_order_items (product_id, product_name, sku, quantity, unit_price, line_total),
-  marketplace_order_shipments (awb_code, label_url, manifest_url, tracking_payload)
+  marketplace_order_shipments (shiprocket_order_id, shiprocket_shipment_id, awb_code, label_url, manifest_url, tracking_payload)
 `
 
 export function isConfirmedSellerOrder(order: Pick<MarketplaceOrderRow, 'status' | 'payment_method' | 'payment_status'>) {
