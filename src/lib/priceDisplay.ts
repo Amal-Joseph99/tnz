@@ -15,3 +15,18 @@ export function convertListingAmountToDisplay(
 
   return (amount / listingRate) * displayRate
 }
+
+export function formatNativeCurrencyAmount(
+  amount: number,
+  _currencyCode: string,
+  symbol: string,
+  decimalPlaces = 2,
+): string {
+  if (!Number.isFinite(amount)) return '—'
+
+  const decimals = Math.max(0, decimalPlaces)
+  return `${symbol}${amount.toLocaleString(undefined, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  })}`
+}

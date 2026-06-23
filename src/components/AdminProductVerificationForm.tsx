@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
   aboutProductBullets,
   DANGEROUS_GOODS_FIELDS,
@@ -13,6 +13,8 @@ import {
 } from '../lib/productListingDisplay'
 import type { ProductListingWizardOptions } from '../lib/productListingWizard'
 import type { AdminProductDetail, ProductQueueItem } from '../lib/adminApprovals'
+import { fetchCurrencyPackage, type CurrencyPackage } from '../lib/currencyConfig'
+import { formatNativeCurrencyAmount } from '../lib/priceDisplay'
 
 type AdminProductVerificationFormProps = {
   item: ProductQueueItem
@@ -81,6 +83,46 @@ export function AdminProductVerificationForm({
   onReject,
 }: AdminProductVerificationFormProps) {
   const product = detail?.product ?? {}
+  const [listingCurrency, setListingCurrency] = useState<CurrencyPackage | null>(null)
+
+  const sellerCurrencyCode = String(
+    product.sellerBaseCurrencyCode
+      ?? product.base_currency_code
+      ?? 'INR',
+  ).toUpperCase()
+
+  useEffect(() => {
+    let active = true
+
+    void fetchCurrencyPackage(sellerCurrencyCode)
+      .then((pkg) => {
+        if (active) setListingCurrency(pkg)
+      })
+      .catch(() => {
+        if (active) setListingCurrency(null)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [sellerCurrencyCode])
+
+  const formatSellerPrice = useMemo(
+    () => (amount: number) => {
+      if (listingCurrency) {
+        return formatNativeCurrencyAmount(
+          amount,
+          listingCurrency.currencyCode,
+          listingCurrency.symbol,
+          listingCurrency.decimalPlaces,
+        )
+      }
+
+      return formatNativeCurrencyAmount(amount, sellerCurrencyCode, sellerCurrencyCode)
+    },
+    [listingCurrency, sellerCurrencyCode],
+  )
+
   const canDecide = item.approvalStatus === 'pending' && onApprove && onReject
   const statusLabel = item.approvalStatus.replaceAll('_', ' ').toUpperCase()
   const aboutBullets = aboutProductBullets(product)
@@ -196,6 +238,8 @@ export function AdminProductVerificationForm({
           <Section title="4. Images & variants">
             <p className="product-review-meta">
               {imageMedia.length} image(s) · {videoMedia.length} video(s) · {detail.variants.length} variant(s)
+              {' · '}
+              Prices in {listingCurrency?.symbol ?? sellerCurrencyCode} ({sellerCurrencyCode})
             </p>
             {imageMedia.length > 0 ? (
               <div className="admin-product-media-gallery" aria-label="Product images">
@@ -238,8 +282,8 @@ export function AdminProductVerificationForm({
                   <span>{variant.variantId}</span>
                   <span>{variant.size}</span>
                   <span>{variant.color}</span>
-                  <span>{variant.mrp}</span>
-                  <span>{variant.sellingPrice}</span>
+                  <span>{formatSellerPrice(variant.mrp)}</span>
+                  <span>{formatSellerPrice(variant.sellingPrice)}</span>
                   <span>{variant.stock}</span>
                   <span>
                     {variant.imageStoragePath && variantImageUrls[variant.imageStoragePath] ? (

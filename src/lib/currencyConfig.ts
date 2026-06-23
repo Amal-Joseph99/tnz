@@ -123,3 +123,19 @@ export async function setAdminCurrencyPreference(currencyCode: string): Promise<
 
   return mapCurrencyPackage(data as Record<string, unknown>)
 }
+
+export async function fetchCurrencyPackage(currencyCode: string): Promise<CurrencyPackage> {
+  if (!supabase) {
+    throw new Error('Supabase is not configured.')
+  }
+
+  const { data, error } = await supabase.rpc('get_currency_package', {
+    p_currency_code: currencyCode,
+  })
+
+  if (error || !data || typeof data !== 'object') {
+    throw new Error(error?.message ?? 'Unable to load currency package.')
+  }
+
+  return mapCurrencyPackage(data as Record<string, unknown>)
+}
