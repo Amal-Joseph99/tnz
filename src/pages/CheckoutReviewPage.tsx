@@ -34,6 +34,7 @@ export function CheckoutReviewPage() {
     setShippingQuote,
     setPaymentMethod,
     addPlacedOrderNumber,
+    clearCart,
   } = useCheckout()
   const { subtotal, shipping, total } = getCartTotals(items, shippingQuote, {
     toDisplayAmount: toDisplayListingAmount,
@@ -125,6 +126,7 @@ export function CheckoutReviewPage() {
 
   const goToSuccess = (orderNumber: string, paymentMethod: 'razorpay' | 'cod') => {
     addPlacedOrderNumber(orderNumber)
+    clearCart()
     checkoutLockedRef.current = true
     navigate('/checkout/status', {
       replace: true,
@@ -133,7 +135,6 @@ export function CheckoutReviewPage() {
         orderNumber,
         paymentMethod,
         estimatedDelivery: shippingQuote?.estimatedDelivery ?? null,
-        clearCart: true,
       },
     })
   }

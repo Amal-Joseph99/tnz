@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useCheckout } from '../context/CheckoutContext'
 
@@ -13,7 +12,7 @@ type OrderStatusState = {
 
 export function CheckoutOrderStatusPage() {
   const location = useLocation()
-  const { clearCart, placedOrderNumbers } = useCheckout()
+  const { placedOrderNumbers } = useCheckout()
   const state = (location.state as OrderStatusState | null) ?? {}
   const queryOrderNumber = new URLSearchParams(location.search).get('orderNumber')?.trim() ?? ''
   const recentOrderNumber = placedOrderNumbers[placedOrderNumbers.length - 1]?.trim() ?? ''
@@ -23,12 +22,6 @@ export function CheckoutOrderStatusPage() {
   const isSuccess = state.status === 'success' || (!hasExplicitStatus && Boolean(orderNumber))
   const paidOnline = state.paymentMethod === 'razorpay'
   const estimatedDelivery = state.estimatedDelivery ?? null
-
-  useEffect(() => {
-    if (isSuccess && state.clearCart) {
-      clearCart()
-    }
-  }, [clearCart, isSuccess, state.clearCart])
 
   if (!isSuccess && !isFailed) {
     return (
