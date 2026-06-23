@@ -1,62 +1,77 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { SellerProductConfirmDialog } from '../components/SellerProductConfirmDialog'
 import { SellerDashboardShell } from '../components/SellerDashboardShell'
 import {
+  fetchOrderProductThumbnails,
   fetchSellerOrders,
   formatOrderStatus,
-  getShipmentRow,
-  sellerMarkOrderPacked,
+  getOrderThumbnailProductId,
+  getPrimaryOrderItem,
   sellerRespondToOrder,
   type MarketplaceOrderRow,
 } from '../lib/marketplaceOrders'
-import { sellerFetchShipmentDocuments } from '../lib/shiprocketShipping'
+
+type ConfirmState = {
+  order: MarketplaceOrderRow
+  action: 'accept' | 'reject'
+} | null
 
 export function SellerOrdersPage() {
+  const navigate = useNavigate()
   const [orders, setOrders] = useState<MarketplaceOrderRow[]>([])
+  const [thumbnails, setThumbnails] = useState<Map<number, string>>(new Map())
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [confirmState, setConfirmState] = useState<ConfirmState>(null)
+  const [responding, setResponding] = useState(false)
+
+  const pendingOrders = useMemo(
+    () => orders.filter((order) => order.status === 'pending_seller_acceptance'),
+    [orders],
+  )
 
   const loadOrders = async () => {
-    setOrders(await fetchSellerOrders())
+    const rows = await fetchSellerOrders()
+    setOrders(rows)
+
+    const productIds = rows
+      .map((order) => getOrderThumbnailProductId(order))
+      .filter((id): id is number => id !== null)
+
+    setThumbnails(await fetchOrderProductThumbnails(productIds))
   }
 
   useEffect(() => {
     void loadOrders().finally(() => setLoading(false))
   }, [])
 
-  const respond = async (orderId: number, accept: boolean) => {
+  const handleConfirm = async () => {
+    if (!confirmState) return
+
+    setResponding(true)
     setError('')
     setMessage('')
-    const result = await sellerRespondToOrder(orderId, accept)
+
+    const result = await sellerRespondToOrder(
+      confirmState.order.id,
+      confirmState.action === 'accept',
+    )
+
+    setResponding(false)
+    setConfirmState(null)
+
     if (!result.ok) {
       setError(result.message)
       return
     }
-    setMessage(accept ? 'Order accepted.' : 'Order rejected.')
-    await loadOrders()
-  }
 
-  const downloadDocs = async (orderId: number) => {
-    setError('')
-    try {
-      const result = await sellerFetchShipmentDocuments(orderId)
-      if (result.labelUrl) window.open(result.labelUrl, '_blank', 'noopener,noreferrer')
-      if (result.manifestUrl) window.open(result.manifestUrl, '_blank', 'noopener,noreferrer')
-      setMessage('Label and manifest ready.')
-      await loadOrders()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to fetch documents.')
-    }
-  }
-
-  const markPacked = async (orderId: number) => {
-    setError('')
-    const result = await sellerMarkOrderPacked(orderId)
-    if (!result.ok) {
-      setError(result.message)
-      return
-    }
-    setMessage('Order marked packed.')
+    setMessage(
+      confirmState.action === 'accept'
+        ? `Order ${confirmState.order.order_number} accepted.`
+        : `Order ${confirmState.order.order_number} rejected.`,
+    )
     await loadOrders()
   }
 
@@ -67,42 +82,76 @@ export function SellerOrdersPage() {
 
       <section className="seller-console-card">
         <div className="seller-console-card__header">
-          <h2>Order queue</h2>
+          <div>
+            <h2>Order queue</h2>
+            <p>Confirmed orders awaiting your acceptance</p>
+          </div>
         </div>
 
         {loading ? (
           <p>Loading orders...</p>
-        ) : orders.length === 0 ? (
-          <p>No orders yet.</p>
+        ) : pendingOrders.length === 0 ? (
+          <p>No confirmed orders waiting for your response.</p>
         ) : (
-          <div className="admin-table">
-            {orders.map((order) => {
-              const shipment = getShipmentRow(order)
+          <div className="seller-order-list">
+            {pendingOrders.map((order) => {
+              const primaryItem = getPrimaryOrderItem(order)
+              const productId = getOrderThumbnailProductId(order)
+              const imageUrl = productId ? thumbnails.get(productId) : undefined
+
               return (
-                <article key={order.id} className="admin-table__row">
-                  <div>
-                    <strong>{order.order_number}</strong>
-                    <p>{formatOrderStatus(order.status)}</p>
-                    <p>{order.delivery_city}, {order.delivery_country_iso2}</p>
+                <article key={order.id} className="seller-order-list__row">
+                  <div className="seller-order-list__product">
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={primaryItem?.product_name ?? 'Product'}
+                        className="seller-order-list__thumb"
+                      />
+                    ) : (
+                      <div className="seller-order-list__thumb seller-order-list__thumb--empty">No image</div>
+                    )}
+                    <div className="seller-order-list__copy">
+                      <strong>{order.order_number}</strong>
+                      <span>{primaryItem?.product_name ?? 'Order item'}</span>
+                      {order.marketplace_order_items && order.marketplace_order_items.length > 1 && (
+                        <small>+{order.marketplace_order_items.length - 1} more item(s)</small>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    {order.status === 'pending_seller_acceptance' && (
-                      <>
-                        <button type="button" className="admin-accept" onClick={() => void respond(order.id, true)}>Accept</button>
-                        <button type="button" className="admin-reject" onClick={() => void respond(order.id, false)}>Reject</button>
-                      </>
-                    )}
-                    {['shiprocket_created', 'packed', 'shipped', 'delivered'].includes(order.status) && (
-                      <>
-                        <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void downloadDocs(order.id)}>
-                          Label / manifest
-                        </button>
-                        {order.status === 'shiprocket_created' && (
-                          <button type="button" className="admin-accept" onClick={() => void markPacked(order.id)}>Mark packed</button>
-                        )}
-                      </>
-                    )}
-                    {shipment?.awb_code && <p>AWB: {shipment.awb_code}</p>}
+
+                  <div className="seller-order-list__buyer">
+                    <span>Buyer</span>
+                    <strong>{order.delivery_full_name}</strong>
+                    <small>{order.delivery_city}, {order.delivery_country_iso2}</small>
+                  </div>
+
+                  <div className="seller-order-list__status">
+                    <span className="seller-order-list__badge">{formatOrderStatus(order.status)}</span>
+                  </div>
+
+                  <div className="seller-order-list__actions">
+                    <button
+                      type="button"
+                      className="admin-accept"
+                      onClick={() => setConfirmState({ order, action: 'accept' })}
+                    >
+                      Accept
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-reject"
+                      onClick={() => setConfirmState({ order, action: 'reject' })}
+                    >
+                      Reject
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--ghost"
+                      onClick={() => navigate(`/seller/orders/${order.id}`)}
+                    >
+                      View
+                    </button>
                   </div>
                 </article>
               )
@@ -110,6 +159,23 @@ export function SellerOrdersPage() {
           </div>
         )}
       </section>
+
+      <SellerProductConfirmDialog
+        open={confirmState !== null}
+        title={confirmState?.action === 'accept' ? 'Accept order' : 'Reject order'}
+        message={
+          confirmState
+            ? confirmState.action === 'accept'
+              ? `Accept order ${confirmState.order.order_number} from ${confirmState.order.delivery_full_name}?`
+              : `Reject order ${confirmState.order.order_number} from ${confirmState.order.delivery_full_name}? This cannot be undone.`
+            : ''
+        }
+        confirmLabel={confirmState?.action === 'accept' ? 'Accept order' : 'Reject order'}
+        onCancel={() => {
+          if (!responding) setConfirmState(null)
+        }}
+        onConfirm={() => void handleConfirm()}
+      />
     </SellerDashboardShell>
   )
 }

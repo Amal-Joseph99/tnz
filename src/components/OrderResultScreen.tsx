@@ -9,8 +9,9 @@ type OrderResultScreenProps = {
 
 function SuccessIcon() {
   return (
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className="order-result__icon-mark">
       <path
+        className="order-result__check-path"
         d="M14 25.5L21 32.5L34 18.5"
         stroke="currentColor"
         strokeWidth="4.5"
@@ -23,9 +24,17 @@ function SuccessIcon() {
 
 function FailedIcon() {
   return (
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className="order-result__icon-mark order-result__icon-mark--failed">
       <path
-        d="M17 17L31 31M31 17L17 31"
+        className="order-result__x-path order-result__x-path--a"
+        d="M17 17L31 31"
+        stroke="currentColor"
+        strokeWidth="4.5"
+        strokeLinecap="round"
+      />
+      <path
+        className="order-result__x-path order-result__x-path--b"
+        d="M31 17L17 31"
         stroke="currentColor"
         strokeWidth="4.5"
         strokeLinecap="round"
@@ -63,13 +72,18 @@ export function OrderResultScreen({ variant, title, message, children }: OrderRe
           )}
 
           <div className={`order-result__icon order-result__icon--${variant}`} aria-hidden="true">
+            <span className="order-result__icon-ring" />
             {isSuccess ? <SuccessIcon /> : <FailedIcon />}
           </div>
         </div>
 
-        <h1 className="order-result__title">{title}</h1>
-        <p className="order-result__message">{message}</p>
-        {children}
+        <h1 className="order-result__title order-result__animate order-result__animate--1">{title}</h1>
+        <p className="order-result__message order-result__animate order-result__animate--2">{message}</p>
+        {children && (
+          <div className="order-result__extras order-result__animate order-result__animate--3">
+            {children}
+          </div>
+        )}
       </div>
     </section>
   )

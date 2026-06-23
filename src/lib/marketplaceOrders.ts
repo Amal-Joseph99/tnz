@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { ShippingQuote } from './shiprocketShipping'
+import { getStorefrontProductImageUrl } from './storefrontCatalog'
 
 export type MarketplaceOrderStatus =
   | 'awaiting_payment'
@@ -31,14 +32,21 @@ export type MarketplaceOrderRow = {
   delivery_full_name: string
   delivery_phone: string
   delivery_email: string
+  delivery_address_line1?: string
+  delivery_address_line2?: string | null
   delivery_city: string
   delivery_state: string
   delivery_postcode: string
   delivery_country_iso2: string
   shipping_estimated_delivery: string | null
   shipping_courier_name: string | null
+  seller_response_note?: string | null
+  seller_responded_at?: string | null
+  packed_at?: string | null
+  paid_at?: string | null
   created_at: string
   marketplace_order_items?: Array<{
+    product_id: number
     product_name: string
     sku: string
     quantity: number
@@ -101,16 +109,33 @@ const orderSelect = `
   delivery_full_name,
   delivery_phone,
   delivery_email,
+  delivery_address_line1,
+  delivery_address_line2,
   delivery_city,
   delivery_state,
   delivery_postcode,
   delivery_country_iso2,
   shipping_estimated_delivery,
   shipping_courier_name,
+  seller_response_note,
+  seller_responded_at,
+  packed_at,
   created_at,
-  marketplace_order_items (product_name, sku, quantity, unit_price, line_total),
+  marketplace_order_items (product_id, product_name, sku, quantity, unit_price, line_total),
   marketplace_order_shipments (awb_code, label_url, manifest_url, tracking_payload)
 `
+
+export function isConfirmedSellerOrder(order: Pick<MarketplaceOrderRow, 'status' | 'payment_method' | 'payment_status'>) {
+  if (order.status === 'awaiting_payment' || order.status === 'cancelled') {
+    return false
+  }
+
+  if (order.payment_method === 'cod') {
+    return true
+  }
+
+  return order.payment_status === 'paid'
+}
 
 export async function createMarketplaceOrder(input: {
   sellerUserId: string
@@ -193,7 +218,61 @@ export async function fetchBuyerOrders(): Promise<MarketplaceOrderRow[]> {
 }
 
 export async function fetchSellerOrders(): Promise<MarketplaceOrderRow[]> {
-  return fetchBuyerOrders()
+  if (!supabase) return []
+
+  const { data, error } = await supabase
+    .from('marketplace_orders')
+    .select(orderSelect)
+    .order('created_at', { ascending: false })
+
+  if (error || !data) return []
+  return (data as MarketplaceOrderRow[]).filter(isConfirmedSellerOrder)
+}
+
+export async function fetchSellerOrder(orderId: number): Promise<MarketplaceOrderRow | null> {
+  if (!supabase) return null
+
+  const { data, error } = await supabase
+    .from('marketplace_orders')
+    .select(orderSelect)
+    .eq('id', orderId)
+    .maybeSingle()
+
+  if (error || !data) return null
+  const order = data as MarketplaceOrderRow
+  return isConfirmedSellerOrder(order) ? order : null
+}
+
+export async function fetchOrderProductThumbnails(productIds: number[]) {
+  const uniqueIds = [...new Set(productIds.filter((id) => Number.isFinite(id) && id > 0))]
+  const thumbnails = new Map<number, string>()
+  if (!supabase || uniqueIds.length === 0) return thumbnails
+
+  const { data, error } = await supabase
+    .from('seller_product_media')
+    .select('product_id, storage_path, sort_order')
+    .in('product_id', uniqueIds)
+    .eq('media_type', 'product_image')
+    .order('sort_order', { ascending: true })
+
+  if (error || !data) return thumbnails
+
+  for (const row of data) {
+    const productId = Number(row.product_id)
+    if (!thumbnails.has(productId)) {
+      thumbnails.set(productId, getStorefrontProductImageUrl(String(row.storage_path ?? '')))
+    }
+  }
+
+  return thumbnails
+}
+
+export function getPrimaryOrderItem(order: MarketplaceOrderRow) {
+  return order.marketplace_order_items?.[0] ?? null
+}
+
+export function getOrderThumbnailProductId(order: MarketplaceOrderRow) {
+  return getPrimaryOrderItem(order)?.product_id ?? null
 }
 
 export async function fetchAdminOrders(): Promise<MarketplaceOrderRow[]> {
@@ -222,7 +301,24 @@ export async function sellerMarkOrderPacked(orderId: number): Promise<MutationRe
 }
 
 export function formatOrderStatus(status: MarketplaceOrderStatus) {
-  return status.replaceAll('_', ' ')
+  const labels: Record<MarketplaceOrderStatus, string> = {
+    awaiting_payment: 'Awaiting payment',
+    pending_seller_acceptance: 'Pending your acceptance',
+    seller_rejected: 'Rejected',
+    seller_accepted: 'Accepted',
+    shiprocket_pending: 'Ready for dispatch',
+    shiprocket_created: 'Shipment created',
+    packed: 'Packed',
+    shipped: 'Shipped',
+    delivered: 'Delivered',
+    cancelled: 'Cancelled',
+  }
+
+  return labels[status] ?? status.replaceAll('_', ' ')
+}
+
+export function formatPaymentMethod(method: MarketplaceOrderRow['payment_method']) {
+  return method === 'cod' ? 'Cash on delivery' : 'Paid online'
 }
 
 export function getShipmentRow(order: MarketplaceOrderRow) {

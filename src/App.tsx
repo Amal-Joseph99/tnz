@@ -58,6 +58,7 @@ import { SellerForgotPasswordPage } from './pages/SellerForgotPasswordPage'
 import { SellerHelpPage } from './pages/SellerHelpPage'
 import { SellerNotificationsPage } from './pages/SellerNotificationsPage'
 import { SellerOtpVerificationPage } from './pages/SellerOtpVerificationPage'
+import { SellerOrderDetailPage } from './pages/SellerOrderDetailPage'
 import { SellerOrdersPage } from './pages/SellerOrdersPage'
 import { SellerProductsPage } from './pages/SellerProductsPage'
 import { ProductListingWizardPage, ProductListingWizardRedirect } from './pages/ProductListingWizardPage'
@@ -187,6 +188,7 @@ function AppContent() {
               <Route path="/seller/products/:productId/edit/step/:step" element={<RequireSellerAuth><ProductListingWizardPage /></RequireSellerAuth>} />
               <Route path="/seller/products" element={<RequireSellerAuth><SellerProductsPage /></RequireSellerAuth>} />
               <Route path="/seller/orders" element={<RequireSellerAuth><SellerOrdersPage /></RequireSellerAuth>} />
+              <Route path="/seller/orders/:orderId" element={<RequireSellerAuth><SellerOrderDetailPage /></RequireSellerAuth>} />
               <Route path="/seller/wallet" element={<RequireSellerAuth><SellerWalletPage /></RequireSellerAuth>} />
               <Route path="/seller/help" element={<RequireSellerAuth><SellerHelpPage /></RequireSellerAuth>} />
               <Route path="/seller/terms-policies" element={<RequireSellerAuth><SellerTermsPoliciesPage /></RequireSellerAuth>} />
