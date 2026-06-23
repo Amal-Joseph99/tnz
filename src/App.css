@@ -6646,6 +6646,10 @@
     display: none;
   }
 
+  .buyer-account__quick-nav {
+    display: flex;
+  }
+
   .buyer-account__menu-toggle {
     display: inline-flex;
   }
@@ -7150,6 +7154,31 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.buyer-account__quick-nav {
+  display: none;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.buyer-account__quick-nav-btn {
+  background: #fff;
+  border: 1px solid #dbe3ee;
+  border-radius: 999px;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 14px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.buyer-account__quick-nav-btn:hover,
+.buyer-account__quick-nav-btn--active {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
 }
 
 .buyer-account__header {
@@ -9870,6 +9899,14 @@
 }
 
 @media (max-width: 1024px) {
+  .buyer-account__sidebar--desktop {
+    display: none;
+  }
+
+  .buyer-account__quick-nav {
+    display: flex;
+  }
+
   .buyer-account,
   .buyer-panel-grid,
   .buyer-workspace,

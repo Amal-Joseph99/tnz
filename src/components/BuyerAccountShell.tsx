@@ -76,6 +76,22 @@ export function BuyerAccountShell({ title, subtitle, children, action }: BuyerAc
         </aside>
 
         <div className="buyer-account__main">
+          <nav className="buyer-account__quick-nav" aria-label="Account sections">
+            {accountNav.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  isActive
+                    ? 'buyer-account__quick-nav-btn buyer-account__quick-nav-btn--active'
+                    : 'buyer-account__quick-nav-btn'
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+
           <header className="buyer-account__header">
             <button
               type="button"
@@ -85,7 +101,7 @@ export function BuyerAccountShell({ title, subtitle, children, action }: BuyerAc
               onClick={() => setNavOpen((value) => !value)}
             >
               {navOpen ? <XIcon /> : <MenuIcon />}
-              <span>Account menu</span>
+              <span>More</span>
             </button>
             <div className="buyer-account__header-row">
               <div>
