@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { CheckoutShell } from '../components/CheckoutShell'
+import { PageLoadingState } from '../components/PageLoadingState'
 import { useCheckout } from '../context/CheckoutContext'
 import { useCurrency } from '../context/CurrencyContext'
 import { getCartTotals, getListingOrderTotals } from '../lib/checkout'
@@ -228,6 +229,10 @@ export function CheckoutReviewPage() {
 
   if (!delivery) {
     return <Navigate to="/checkout" replace />
+  }
+
+  if (loadingQuote || (!shippingQuote && !quoteError)) {
+    return <PageLoadingState label="Calculating shipping…" />
   }
 
   return (
