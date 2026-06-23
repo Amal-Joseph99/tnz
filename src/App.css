@@ -7636,6 +7636,8 @@
 .cart-items-toolbar {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   justify-content: space-between;
   margin-bottom: 14px;
 }
@@ -7643,6 +7645,33 @@
 .cart-items-toolbar h2 {
   font-size: 16px;
   margin: 0;
+}
+
+.cart-items-toolbar__select-all {
+  align-items: center;
+  color: #374151;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 600;
+  gap: 8px;
+}
+
+.cart-items-toolbar__select-all input,
+.cart-item-row__check input {
+  accent-color: #111827;
+  height: 16px;
+  width: 16px;
+}
+
+.cart-items-toolbar__delete {
+  background: none;
+  border: none;
+  color: #b91c1c;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0;
 }
 
 .cart-items-toolbar button {
@@ -7660,16 +7689,22 @@
 }
 
 .cart-item-row {
+  align-items: start;
   border-top: 1px solid #eef0f3;
   display: grid;
   gap: 14px;
-  grid-template-columns: 88px minmax(0, 1fr) 100px;
+  grid-template-columns: 20px 88px minmax(0, 1fr) 100px;
   padding-top: 14px;
 }
 
 .cart-item-row:first-child {
   border-top: none;
   padding-top: 0;
+}
+
+.cart-item-row__check {
+  display: flex;
+  margin-top: 34px;
 }
 
 .cart-item-row img {
@@ -7726,6 +7761,21 @@
   cursor: pointer;
 }
 
+.cart-item-row__delete {
+  align-items: center;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.cart-item-row__delete svg {
+  height: 14px;
+  width: 14px;
+}
+
+.cart-item-row__delete:hover {
+  color: #b91c1c;
+}
+
 .cart-item-row__price {
   text-align: right;
 }
@@ -7743,6 +7793,12 @@
 
 .cart-summary-panel h2 {
   font-size: 16px;
+  margin: 0 0 8px;
+}
+
+.cart-summary-panel__selection {
+  color: #6b7280;
+  font-size: 12px;
   margin: 0 0 14px;
 }
 
@@ -7778,6 +7834,11 @@
   text-align: center;
   text-decoration: none;
   width: 100%;
+}
+
+.cart-checkout-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
 }
 
 .cart-summary-note {
@@ -10159,11 +10220,15 @@
 
 @media (max-width: 768px) {
   .cart-item-row {
-    grid-template-columns: 72px minmax(0, 1fr);
+    grid-template-columns: 20px 72px minmax(0, 1fr);
+  }
+
+  .cart-item-row__check {
+    margin-top: 28px;
   }
 
   .cart-item-row__price {
-    grid-column: 2;
+    grid-column: 3;
     text-align: left;
   }
 

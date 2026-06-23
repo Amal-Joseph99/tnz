@@ -79,7 +79,10 @@ import { useEffect, useState } from 'react'
 import { showMarketplaceChrome } from './lib/authRoutes'
 import { PageBackButton } from './components/PageBackButton'
 import { ScrollToTop } from './components/ScrollToTop'
+import { initScrollRestoration, scrollPageToTop } from './lib/scrollToTop'
 import './App.css'
+
+initScrollRestoration()
 
 function AppContent() {
   const location = useLocation()
@@ -92,8 +95,12 @@ function AppContent() {
   }, [])
 
   useEffect(() => {
+    scrollPageToTop()
     setRouteLoading(true)
-    const timer = window.setTimeout(() => setRouteLoading(false), 180)
+    const timer = window.setTimeout(() => {
+      setRouteLoading(false)
+      scrollPageToTop()
+    }, 180)
     return () => window.clearTimeout(timer)
   }, [location.key])
 

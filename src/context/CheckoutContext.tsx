@@ -16,6 +16,7 @@ const STORAGE_KEY = 'agtrenz_checkout_v2'
 
 type StoredCheckout = {
   items: CartItem[]
+  heldItems: CartItem[]
   delivery: CheckoutDelivery | null
   paymentMethod: 'razorpay' | 'cod'
   shippingQuote: ShippingQuote | null
@@ -34,6 +35,9 @@ type CheckoutContextValue = {
   addItem: (item: CartItem) => void
   updateQuantity: (lineId: string, quantity: number) => void
   removeItem: (lineId: string) => void
+  removeItems: (lineIds: string[]) => void
+  beginCheckout: (lineIds: string[]) => void
+  restoreHeldCartItems: () => void
   clearCart: () => void
   setDelivery: (delivery: CheckoutDelivery) => void
   setPaymentMethod: (method: CheckoutPaymentMethod) => void
@@ -43,6 +47,7 @@ type CheckoutContextValue = {
 
 const defaultState: StoredCheckout = {
   items: [],
+  heldItems: [],
   delivery: null,
   paymentMethod: 'razorpay',
   shippingQuote: null,
@@ -64,6 +69,9 @@ function readStorage(): StoredCheckout {
       paymentMethod,
       items: Array.isArray(parsed.items)
         ? parsed.items.map((item) => normalizeCartItem(item as Partial<CartItem> & { productId: number }))
+        : [],
+      heldItems: Array.isArray(parsed.heldItems)
+        ? parsed.heldItems.map((item) => normalizeCartItem(item as Partial<CartItem> & { productId: number }))
         : [],
       placedOrderNumbers: Array.isArray(parsed.placedOrderNumbers) ? parsed.placedOrderNumbers : [],
     }
@@ -134,13 +142,62 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
       ...current,
       shippingQuote: null,
       items: current.items.filter((row) => row.id !== lineId),
+      heldItems: current.heldItems.filter((row) => row.id !== lineId),
     }))
+  }, [])
+
+  const removeItems = useCallback((lineIds: string[]) => {
+    const idSet = new Set(lineIds)
+    setState((current) => ({
+      ...current,
+      shippingQuote: null,
+      items: current.items.filter((row) => !idSet.has(row.id)),
+      heldItems: current.heldItems.filter((row) => !idSet.has(row.id)),
+    }))
+  }, [])
+
+  const beginCheckout = useCallback((lineIds: string[]) => {
+    setState((current) => {
+      const idSet = new Set(lineIds)
+      const selected = current.items.filter((row) => idSet.has(row.id))
+      const held = current.items.filter((row) => !idSet.has(row.id))
+
+      if (selected.length === 0) return current
+
+      if (held.length === 0) {
+        return {
+          ...current,
+          shippingQuote: null,
+        }
+      }
+
+      return {
+        ...current,
+        items: selected,
+        heldItems: [...current.heldItems, ...held],
+        shippingQuote: null,
+      }
+    })
+  }, [])
+
+  const restoreHeldCartItems = useCallback(() => {
+    setState((current) => {
+      if (current.heldItems.length === 0) return current
+
+      return {
+        ...current,
+        items: [...current.items, ...current.heldItems],
+        heldItems: [],
+        shippingQuote: null,
+      }
+    })
   }, [])
 
   const clearCart = useCallback(() => {
     setState((current) => ({
       ...current,
-      items: [],
+      items: current.heldItems,
+      heldItems: [],
       shippingQuote: null,
     }))
   }, [])
@@ -174,12 +231,15 @@ export function CheckoutProvider({ children }: { children: ReactNode }) {
     addItem,
     updateQuantity,
     removeItem,
+    removeItems,
+    beginCheckout,
+    restoreHeldCartItems,
     clearCart,
     setDelivery,
     setPaymentMethod,
     setShippingQuote,
     addPlacedOrderNumber,
-  }), [state, addItem, updateQuantity, removeItem, clearCart, setDelivery, setPaymentMethod, setShippingQuote, addPlacedOrderNumber])
+  }), [state, addItem, updateQuantity, removeItem, removeItems, beginCheckout, restoreHeldCartItems, clearCart, setDelivery, setPaymentMethod, setShippingQuote, addPlacedOrderNumber])
 
   return <CheckoutContext.Provider value={value}>{children}</CheckoutContext.Provider>
 }
