@@ -97,6 +97,10 @@ Deno.serve(async (req) => {
       return razorpayJsonResponse({ error: orderError.message }, 400)
     }
 
+    if (!orderResult || typeof orderResult !== 'object' || !('orderId' in orderResult)) {
+      return razorpayJsonResponse({ error: 'Order creation returned an invalid response.' }, 500)
+    }
+
     const orderId = Number(orderResult.orderId)
     const orderNumber = String(orderResult.orderNumber)
 

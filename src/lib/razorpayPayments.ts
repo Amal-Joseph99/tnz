@@ -80,7 +80,10 @@ async function invokeRazorpayFunction<T>(functionName: string, body: unknown): P
 
   const { data, error } = await supabase.functions.invoke(functionName, { body: body as Record<string, unknown> })
   if (error) {
-    throw new Error(error.message)
+    const serverMessage = data && typeof data === 'object' && 'error' in data
+      ? String((data as { error: string }).error)
+      : error.message
+    throw new Error(serverMessage)
   }
 
   if (data && typeof data === 'object' && 'error' in data && typeof (data as { error: string }).error === 'string') {

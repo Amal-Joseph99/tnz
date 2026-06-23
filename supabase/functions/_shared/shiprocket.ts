@@ -249,12 +249,15 @@ export async function fetchShiprocketServiceability(input: {
   const codQuote = isDomestic ? pickLowestCourierQuote(couriers, true) : null
 
   const selected = input.cod && isDomestic ? codQuote : prepaidQuote
+  const codFeePreview = isDomestic
+    ? Math.max(0, (codQuote?.codCharges ?? 0))
+    : 0
 
   return {
     serviceable: couriers.length > 0 && selected !== null,
     shippingLane: isDomestic ? 'india_domestic' as const : 'india_international' as const,
     shippingCharge: selected?.shippingCharge ?? 0,
-    codCharges: input.cod && isDomestic ? (selected?.codCharges ?? 0) : 0,
+    codCharges: input.cod && isDomestic ? (selected?.codCharges ?? 0) : codFeePreview,
     totalShippingCharge: selected?.totalShippingCharge ?? 0,
     estimatedDelivery: selected?.estimatedDelivery ?? null,
     courierCompanyId: selected?.courierCompanyId ?? null,

@@ -68,6 +68,31 @@ export function getCartTotals(
   return { subtotal, shipping, total, itemCount }
 }
 
+/** Raw listing-currency amounts for Shiprocket / Razorpay order creation (always INR). */
+export function getListingOrderTotals(
+  items: CartItem[],
+  shippingQuote?: {
+    shippingCharge: number
+    codCharges?: number
+    totalShippingCharge: number
+  } | null,
+) {
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const shippingAmount = shippingQuote?.shippingCharge ?? 0
+  const codChargesAmount = shippingQuote?.codCharges ?? 0
+  const shippingTotal = shippingQuote?.totalShippingCharge ?? 0
+  const total = subtotal + shippingTotal
+
+  return {
+    subtotal,
+    shippingAmount,
+    codChargesAmount,
+    shippingTotal,
+    total,
+    currencyCode: 'INR' as const,
+  }
+}
+
 export const checkoutSteps = [
   { id: 'address', label: 'Address', path: '/checkout' },
   { id: 'review', label: 'Review', path: '/checkout/review' },

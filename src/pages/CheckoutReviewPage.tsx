@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { CheckoutShell } from '../components/CheckoutShell'
 import { useCheckout } from '../context/CheckoutContext'
 import { useCurrency } from '../context/CurrencyContext'
-import { getCartTotals } from '../lib/checkout'
+import { getCartTotals, getListingOrderTotals } from '../lib/checkout'
 import { createMarketplaceOrder } from '../lib/marketplaceOrders'
 import { startRazorpayCheckout } from '../lib/razorpayPayments'
 import { fetchShiprocketServiceability, type ShippingQuote } from '../lib/shiprocketShipping'
@@ -18,16 +18,20 @@ function variantLabel(item: { variantSize?: string; variantColor?: string }) {
   return parts.join(' · ')
 }
 
+function codSurchargeAmount(prepaidQuote: ShippingQuote, codQuote: ShippingQuote | null) {
+  if (!codQuote) return prepaidQuote.codCharges
+  return Math.max(0, codQuote.totalShippingCharge - prepaidQuote.totalShippingCharge)
+}
+
 export function CheckoutReviewPage() {
   const navigate = useNavigate()
-  const { currency, formatDisplayAmount, formatListingPrice, toDisplayListingAmount } = useCurrency()
+  const { formatDisplayAmount, formatListingPrice, toDisplayListingAmount } = useCurrency()
   const {
     items,
     delivery,
     shippingQuote,
     setShippingQuote,
     setPaymentMethod,
-    clearCart,
     addPlacedOrderNumber,
   } = useCheckout()
   const { subtotal, shipping, total } = getCartTotals(items, shippingQuote, {
@@ -37,14 +41,21 @@ export function CheckoutReviewPage() {
   const [loadingQuote, setLoadingQuote] = useState(false)
   const [quoteError, setQuoteError] = useState('')
   const [loadingAction, setLoadingAction] = useState<'razorpay' | 'cod' | null>(null)
+  const checkoutLockedRef = useRef(false)
 
   const sellerUserId = items[0]?.sellerUserId
   const isDomesticIndia = delivery?.countryIso2 === 'IN'
   const codAllowed = Boolean(isDomesticIndia && shippingQuote?.codAvailable)
-  const codExtraCharge = codQuote?.codCharges ?? shippingQuote?.codCharges ?? 0
-  const codTotal = codQuote
-    ? getCartTotals(items, codQuote, { toDisplayAmount: toDisplayListingAmount }).total
-    : total + toDisplayListingAmount(codExtraCharge, 'INR')
+  const listingPrepaid = getListingOrderTotals(items, shippingQuote)
+  const listingCod = getListingOrderTotals(items, codQuote ?? (codAllowed ? {
+    ...shippingQuote!,
+    shippingCharge: shippingQuote!.shippingCharge,
+    codCharges: codSurchargeAmount(shippingQuote!, codQuote),
+    totalShippingCharge: shippingQuote!.totalShippingCharge + codSurchargeAmount(shippingQuote!, codQuote),
+  } : null))
+  const codExtraInr = codSurchargeAmount(shippingQuote!, codQuote)
+  const codExtraDisplay = toDisplayListingAmount(codExtraInr, 'INR')
+  const codTotalDisplay = toDisplayListingAmount(listingCod.total, 'INR')
 
   useEffect(() => {
     if (!delivery || !sellerUserId || items.length === 0) return
@@ -100,6 +111,7 @@ export function CheckoutReviewPage() {
   }))
 
   const goToFailed = (message: string) => {
+    checkoutLockedRef.current = false
     navigate('/checkout/status', {
       state: {
         status: 'failed',
@@ -111,13 +123,15 @@ export function CheckoutReviewPage() {
 
   const goToSuccess = (orderNumber: string, paymentMethod: 'razorpay' | 'cod') => {
     addPlacedOrderNumber(orderNumber)
-    clearCart()
+    checkoutLockedRef.current = true
     navigate('/checkout/status', {
+      replace: true,
       state: {
         status: 'success',
         orderNumber,
         paymentMethod,
         estimatedDelivery: shippingQuote?.estimatedDelivery ?? null,
+        clearCart: true,
       },
     })
   }
@@ -127,15 +141,16 @@ export function CheckoutReviewPage() {
 
     setLoadingAction('razorpay')
     setPaymentMethod('razorpay')
+    checkoutLockedRef.current = true
 
     try {
       const razorpayResult = await startRazorpayCheckout({
         sellerUserId: items[0].sellerUserId,
-        currencyCode: currency,
-        subtotal,
-        shippingAmount: shippingQuote.shippingCharge,
+        currencyCode: listingPrepaid.currencyCode,
+        subtotal: listingPrepaid.subtotal,
+        shippingAmount: listingPrepaid.shippingAmount,
         codChargesAmount: 0,
-        totalAmount: total,
+        totalAmount: listingPrepaid.total,
         delivery,
         shippingQuote,
         items: lineItems,
@@ -143,6 +158,7 @@ export function CheckoutReviewPage() {
 
       goToSuccess(razorpayResult.orderNumber, 'razorpay')
     } catch (checkoutError) {
+      checkoutLockedRef.current = false
       goToFailed(checkoutError instanceof Error ? checkoutError.message : 'Payment could not be completed.')
     } finally {
       setLoadingAction(null)
@@ -154,6 +170,7 @@ export function CheckoutReviewPage() {
 
     setLoadingAction('cod')
     setPaymentMethod('cod')
+    checkoutLockedRef.current = true
 
     try {
       let activeCodQuote = codQuote
@@ -175,18 +192,16 @@ export function CheckoutReviewPage() {
         setCodQuote(activeCodQuote)
       }
 
-      const codTotals = getCartTotals(items, activeCodQuote, {
-        toDisplayAmount: toDisplayListingAmount,
-      })
+      const listingTotals = getListingOrderTotals(items, activeCodQuote)
 
       const result = await createMarketplaceOrder({
         sellerUserId: items[0].sellerUserId,
         paymentMethod: 'cod',
-        currencyCode: currency,
-        subtotal: codTotals.subtotal,
-        shippingAmount: activeCodQuote.shippingCharge,
-        codChargesAmount: activeCodQuote.codCharges,
-        totalAmount: codTotals.total,
+        currencyCode: listingTotals.currencyCode,
+        subtotal: listingTotals.subtotal,
+        shippingAmount: listingTotals.shippingAmount,
+        codChargesAmount: listingTotals.codChargesAmount,
+        totalAmount: listingTotals.total,
         delivery,
         shippingQuote: activeCodQuote,
         items: lineItems,
@@ -199,13 +214,14 @@ export function CheckoutReviewPage() {
 
       goToSuccess(result.orderNumber, 'cod')
     } catch (checkoutError) {
+      checkoutLockedRef.current = false
       goToFailed(checkoutError instanceof Error ? checkoutError.message : 'Order could not be placed.')
     } finally {
       setLoadingAction(null)
     }
   }
 
-  if (items.length === 0) {
+  if (items.length === 0 && !checkoutLockedRef.current && loadingAction === null) {
     return <Navigate to="/cart" replace />
   }
 
@@ -276,7 +292,9 @@ export function CheckoutReviewPage() {
                   <span>COD availability</span>
                   <strong>
                     {codAllowed
-                      ? `Available +${formatDisplayAmount(toDisplayListingAmount(codExtraCharge, 'INR'))}`
+                      ? (codExtraInr > 0
+                        ? `Available +${formatDisplayAmount(codExtraDisplay)}`
+                        : 'Available')
                       : 'Not available for this address'}
                   </strong>
                 </div>
@@ -303,7 +321,7 @@ export function CheckoutReviewPage() {
                   >
                     {loadingAction === 'cod'
                       ? 'Placing order...'
-                      : `Cash on delivery · ${formatDisplayAmount(codTotal)}`}
+                      : `Cash on delivery · ${formatDisplayAmount(codTotalDisplay)}`}
                   </button>
                 )}
               </div>

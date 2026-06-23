@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
+import { useCheckout } from '../context/CheckoutContext'
 
 type OrderStatusState = {
   status?: 'success' | 'failed'
@@ -6,21 +8,30 @@ type OrderStatusState = {
   paymentMethod?: 'razorpay' | 'cod'
   estimatedDelivery?: string | null
   message?: string
+  clearCart?: boolean
 }
 
 export function CheckoutOrderStatusPage() {
   const location = useLocation()
+  const { clearCart } = useCheckout()
   const state = (location.state as OrderStatusState | null) ?? {}
-  const isSuccess = state.status !== 'failed'
+  const isSuccess = state.status === 'success'
+  const isFailed = state.status === 'failed'
   const orderNumber = state.orderNumber ?? ''
   const paidOnline = state.paymentMethod === 'razorpay'
   const estimatedDelivery = state.estimatedDelivery ?? null
 
-  if (!state.status && !orderNumber) {
+  useEffect(() => {
+    if (isSuccess && state.clearCart) {
+      clearCart()
+    }
+  }, [clearCart, isSuccess, state.clearCart])
+
+  if (!isSuccess && !isFailed) {
     return <Navigate to="/orders" replace />
   }
 
-  if (!isSuccess) {
+  if (isFailed) {
     return (
       <section className="order-status-page order-status-page--failed">
         <div className="container order-status-page__inner">
