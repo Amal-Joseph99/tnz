@@ -126,6 +126,10 @@ const orderSelect = `
 `
 
 export function isConfirmedSellerOrder(order: Pick<MarketplaceOrderRow, 'status' | 'payment_method' | 'payment_status'>) {
+  return isConfirmedOrder(order)
+}
+
+export function isConfirmedOrder(order: Pick<MarketplaceOrderRow, 'status' | 'payment_method' | 'payment_status'>) {
   if (order.status === 'awaiting_payment' || order.status === 'cancelled') {
     return false
   }
@@ -276,7 +280,29 @@ export function getOrderThumbnailProductId(order: MarketplaceOrderRow) {
 }
 
 export async function fetchAdminOrders(): Promise<MarketplaceOrderRow[]> {
-  return fetchBuyerOrders()
+  if (!supabase) return []
+
+  const { data, error } = await supabase
+    .from('marketplace_orders')
+    .select(orderSelect)
+    .order('created_at', { ascending: false })
+
+  if (error || !data) return []
+  return (data as MarketplaceOrderRow[]).filter(isConfirmedOrder)
+}
+
+export async function fetchAdminOrder(orderId: number): Promise<MarketplaceOrderRow | null> {
+  if (!supabase) return null
+
+  const { data, error } = await supabase
+    .from('marketplace_orders')
+    .select(orderSelect)
+    .eq('id', orderId)
+    .maybeSingle()
+
+  if (error || !data) return null
+  const order = data as MarketplaceOrderRow
+  return isConfirmedOrder(order) ? order : null
 }
 
 export async function sellerRespondToOrder(orderId: number, accept: boolean, note?: string): Promise<MutationResult> {
@@ -303,7 +329,7 @@ export async function sellerMarkOrderPacked(orderId: number): Promise<MutationRe
 export function formatOrderStatus(status: MarketplaceOrderStatus) {
   const labels: Record<MarketplaceOrderStatus, string> = {
     awaiting_payment: 'Awaiting payment',
-    pending_seller_acceptance: 'Pending your acceptance',
+    pending_seller_acceptance: 'Pending seller acceptance',
     seller_rejected: 'Rejected',
     seller_accepted: 'Accepted',
     shiprocket_pending: 'Ready for dispatch',

@@ -13,6 +13,7 @@ import { AdminCustomersPage } from './pages/AdminCustomersPage'
 import { AdminDashboardPage } from './pages/AdminDashboardPage'
 import { AdminKycPage } from './pages/AdminKycPage'
 import { AdminNotificationsPage } from './pages/AdminNotificationsPage'
+import { AdminOrderDetailPage } from './pages/AdminOrderDetailPage'
 import { AdminOrdersPage } from './pages/AdminOrdersPage'
 import { AdminProductsPage } from './pages/AdminProductsPage'
 import { AdminProductDetailPage } from './pages/AdminProductDetailPage'
@@ -203,6 +204,7 @@ function AppContent() {
               <Route path="/admin/categories" element={<RequireAdminAuth><AdminCategoriesPage /></RequireAdminAuth>} />
               <Route path="/admin/homepage-sections" element={<RequireAdminAuth><AdminStorefrontSectionsPage /></RequireAdminAuth>} />
               <Route path="/admin/orders" element={<RequireAdminAuth><AdminOrdersPage /></RequireAdminAuth>} />
+              <Route path="/admin/orders/:orderId" element={<RequireAdminAuth><AdminOrderDetailPage /></RequireAdminAuth>} />
               <Route path="/admin/customers" element={<RequireAdminAuth><AdminCustomersPage /></RequireAdminAuth>} />
               <Route path="/admin/returns" element={<RequireAdminAuth><AdminReturnsPage /></RequireAdminAuth>} />
               <Route path="/admin/support" element={<RequireAdminAuth><AdminSupportPage /></RequireAdminAuth>} />

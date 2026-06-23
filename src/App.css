@@ -3501,6 +3501,17 @@
   padding: 6px 10px;
 }
 
+.seller-order-list__status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.seller-order-list__status small {
+  color: #64748b;
+  font-size: 11px;
+}
+
 .seller-order-list__actions {
   display: flex;
   flex-wrap: wrap;
