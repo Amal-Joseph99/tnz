@@ -11,7 +11,7 @@ import {
 import { trackShiprocketOrder } from '../lib/shiprocketShipping'
 
 export function OrdersPage() {
-  const { formatPrice } = useCurrency()
+  const { formatListingPrice } = useCurrency()
   const [orders, setOrders] = useState<MarketplaceOrderRow[]>([])
   const [loading, setLoading] = useState(true)
   const [tracking, setTracking] = useState<Record<number, unknown>>({})
@@ -43,7 +43,7 @@ export function OrdersPage() {
                   <div>
                     <strong>{order.order_number}</strong>
                     <p>{formatOrderStatus(order.status)}</p>
-                    <p>{formatPrice(order.total_amount)}</p>
+                    <p>{formatListingPrice(order.total_amount, order.currency_code)}</p>
                     <p>ETA: {order.shipping_estimated_delivery ?? '—'}</p>
                   </div>
                   <div>

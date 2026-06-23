@@ -24,7 +24,7 @@ const PRODUCT_PLACEHOLDER =
 
 export function SellerOrderDetailPage() {
   const { orderId } = useParams()
-  const { formatPrice } = useCurrency()
+  const { formatListingPrice } = useCurrency()
   const [order, setOrder] = useState<MarketplaceOrderRow | null>(null)
   const [thumbnails, setThumbnails] = useState<Map<number, string>>(new Map())
   const [loading, setLoading] = useState(true)
@@ -198,21 +198,21 @@ export function SellerOrderDetailPage() {
                   <span>SKU: {item.sku}</span>
                   <span>Qty: {item.quantity}</span>
                 </div>
-                <strong>{formatPrice(item.line_total)}</strong>
+                <strong>{formatListingPrice(item.line_total, order.currency_code)}</strong>
               </article>
             ))}
           </div>
         </div>
 
         <div className="seller-order-detail__totals">
-          <div><span>Subtotal</span><strong>{formatPrice(order.subtotal_amount)}</strong></div>
-          <div><span>Shipping</span><strong>{formatPrice(order.shipping_amount)}</strong></div>
+          <div><span>Subtotal</span><strong>{formatListingPrice(order.subtotal_amount, order.currency_code)}</strong></div>
+          <div><span>Shipping</span><strong>{formatListingPrice(order.shipping_amount, order.currency_code)}</strong></div>
           {order.cod_charges_amount > 0 && (
-            <div><span>COD charges</span><strong>{formatPrice(order.cod_charges_amount)}</strong></div>
+            <div><span>COD charges</span><strong>{formatListingPrice(order.cod_charges_amount, order.currency_code)}</strong></div>
           )}
           <div className="seller-order-detail__totals-total">
             <span>Total</span>
-            <strong>{formatPrice(order.total_amount)}</strong>
+            <strong>{formatListingPrice(order.total_amount, order.currency_code)}</strong>
           </div>
         </div>
 
