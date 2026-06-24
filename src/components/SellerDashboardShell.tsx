@@ -28,6 +28,8 @@ type SellerDashboardShellProps = {
   title?: string
   subtitle?: string
   hidePageHeading?: boolean
+  headerAction?: ReactNode
+  contentClassName?: string
   children: ReactNode
 }
 
@@ -35,6 +37,8 @@ export function SellerDashboardShell({
   title,
   subtitle,
   hidePageHeading = false,
+  headerAction,
+  contentClassName = '',
   children,
 }: SellerDashboardShellProps) {
   const { signOutFromConsole } = useAuth()
@@ -136,6 +140,7 @@ export function SellerDashboardShell({
           <h1 className="seller-console__mobile-title">{pageTitle}</h1>
 
           <div className="seller-console__mobile-actions">
+            {headerAction}
             <Link to="/seller/notifications" className="seller-console__mobile-bell" aria-label="Notifications">
               <BellIcon />
               <span>3</span>
@@ -146,6 +151,7 @@ export function SellerDashboardShell({
         <header className="seller-console__bar seller-console__header seller-console__header--desktop">
           <span className="seller-console__header-brand">AGTRENZ Seller Central</span>
           <div className="seller-console__header-actions">
+            {headerAction}
             <Link to="/seller/notifications" className="seller-console__notification" aria-label="Notifications">
               <BellIcon />
               <strong>3</strong>
@@ -154,7 +160,7 @@ export function SellerDashboardShell({
         </header>
 
         <div className="seller-console__scroll">
-          <main className="seller-console__content seller-console__content--bento">
+          <main className={`seller-console__content seller-console__content--bento${contentClassName ? ` ${contentClassName}` : ''}`}>
             {!hidePageHeading ? (
               <div className="seller-console__page-heading">
                 <h1>{pageTitle}</h1>

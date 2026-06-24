@@ -96,110 +96,106 @@ export function SellerOrdersPage() {
   }
 
   return (
-    <SellerDashboardShell>
+    <SellerDashboardShell
+      hidePageHeading
+      contentClassName="seller-console__content--orders"
+      headerAction={(
+        <Link to="/seller/how-to-pack" className="seller-console__header-link">
+          How to pack
+        </Link>
+      )}
+    >
       {error && <div className="auth-message auth-message--error">{error}</div>}
       {message && <div className="auth-message auth-message--success">{message}</div>}
 
-      <section className="seller-console-card">
-        <div className="seller-console-card__header seller-orders-page__header">
-          <div>
-            <h2>Orders</h2>
-            <p>Accept orders, download labels, and mark packed.</p>
-          </div>
-          <Link to="/seller/how-to-pack" className="seller-secondary-action seller-orders-page__how-to-pack">
-            How to pack
-          </Link>
-        </div>
+      {loading ? (
+        <p className="seller-orders-page__empty">Loading orders...</p>
+      ) : sortedOrders.length === 0 ? (
+        <p className="seller-orders-page__empty">No confirmed orders yet.</p>
+      ) : (
+        <div className="seller-order-list seller-order-list--flat">
+          {sortedOrders.map((order) => {
+            const primaryItem = getPrimaryOrderItem(order)
+            const productId = getOrderThumbnailProductId(order)
+            const imageUrl = productId ? thumbnails.get(productId) : undefined
+            const isPending = order.status === 'pending_seller_acceptance'
+            const showFulfillment = showSellerOrderFulfillment(order)
 
-        {loading ? (
-          <p>Loading orders...</p>
-        ) : sortedOrders.length === 0 ? (
-          <p>No confirmed orders yet.</p>
-        ) : (
-          <div className="seller-order-list">
-            {sortedOrders.map((order) => {
-              const primaryItem = getPrimaryOrderItem(order)
-              const productId = getOrderThumbnailProductId(order)
-              const imageUrl = productId ? thumbnails.get(productId) : undefined
-              const isPending = order.status === 'pending_seller_acceptance'
-              const showFulfillment = showSellerOrderFulfillment(order)
-
-              return (
-                <article key={order.id} className="seller-order-list__row">
-                  <div className="seller-order-list__product">
-                    {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt={primaryItem?.product_name ?? 'Product'}
-                        className="seller-order-list__thumb"
-                      />
-                    ) : (
-                      <div className="seller-order-list__thumb seller-order-list__thumb--empty">No image</div>
+            return (
+              <article key={order.id} className="seller-order-list__row">
+                <div className="seller-order-list__product">
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt={primaryItem?.product_name ?? 'Product'}
+                      className="seller-order-list__thumb"
+                    />
+                  ) : (
+                    <div className="seller-order-list__thumb seller-order-list__thumb--empty">No image</div>
+                  )}
+                  <div className="seller-order-list__copy">
+                    <strong>{order.order_number}</strong>
+                    <span>{primaryItem?.product_name ?? 'Order item'}</span>
+                    {order.marketplace_order_items && order.marketplace_order_items.length > 1 && (
+                      <small>+{order.marketplace_order_items.length - 1} more item(s)</small>
                     )}
-                    <div className="seller-order-list__copy">
-                      <strong>{order.order_number}</strong>
-                      <span>{primaryItem?.product_name ?? 'Order item'}</span>
-                      {order.marketplace_order_items && order.marketplace_order_items.length > 1 && (
-                        <small>+{order.marketplace_order_items.length - 1} more item(s)</small>
-                      )}
-                    </div>
                   </div>
+                </div>
 
-                  <div className="seller-order-list__buyer">
-                    <span>Buyer</span>
-                    <strong>{order.delivery_full_name}</strong>
-                    <small>{order.delivery_city}, {order.delivery_country_iso2}</small>
-                  </div>
+                <div className="seller-order-list__buyer">
+                  <span>Buyer</span>
+                  <strong>{order.delivery_full_name}</strong>
+                  <small>{order.delivery_city}, {order.delivery_country_iso2}</small>
+                </div>
 
-                  <div className="seller-order-list__status">
-                    <span className="seller-order-list__badge">{formatOrderStatus(order.status)}</span>
-                  </div>
+                <div className="seller-order-list__status">
+                  <span className="seller-order-list__badge">{formatOrderStatus(order.status)}</span>
+                </div>
 
-                  <div className="seller-order-list__actions">
-                    {isPending ? (
-                      <>
-                        <button
-                          type="button"
-                          className="admin-accept"
-                          onClick={() => setConfirmState({ order, action: 'accept' })}
-                        >
-                          Accept
-                        </button>
-                        <button
-                          type="button"
-                          className="admin-reject"
-                          onClick={() => setConfirmState({ order, action: 'reject' })}
-                        >
-                          Reject
-                        </button>
-                      </>
-                    ) : null}
-                    <button
-                      type="button"
-                      className="admin-btn admin-btn--ghost"
-                      onClick={() => navigate(`/seller/orders/${order.id}`)}
-                    >
-                      View
-                    </button>
-                  </div>
-
-                  {showFulfillment ? (
-                    <div className="seller-order-list__fulfillment">
-                      <SellerOrderFulfillmentBlock
-                        order={order}
-                        compact
-                        onOrderUpdated={loadOrders}
-                        onError={setError}
-                        onMessage={setMessage}
-                      />
-                    </div>
+                <div className="seller-order-list__actions">
+                  {isPending ? (
+                    <>
+                      <button
+                        type="button"
+                        className="admin-accept"
+                        onClick={() => setConfirmState({ order, action: 'accept' })}
+                      >
+                        Accept
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-reject"
+                        onClick={() => setConfirmState({ order, action: 'reject' })}
+                      >
+                        Reject
+                      </button>
+                    </>
                   ) : null}
-                </article>
-              )
-            })}
-          </div>
-        )}
-      </section>
+                  <button
+                    type="button"
+                    className="admin-btn admin-btn--ghost"
+                    onClick={() => navigate(`/seller/orders/${order.id}`)}
+                  >
+                    View
+                  </button>
+                </div>
+
+                {showFulfillment ? (
+                  <div className="seller-order-list__fulfillment">
+                    <SellerOrderFulfillmentBlock
+                      order={order}
+                      compact
+                      onOrderUpdated={loadOrders}
+                      onError={setError}
+                      onMessage={setMessage}
+                    />
+                  </div>
+                ) : null}
+              </article>
+            )
+          })}
+        </div>
+      )}
 
       <SellerProductConfirmDialog
         open={confirmState !== null}
