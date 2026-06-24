@@ -143,23 +143,21 @@ export function SellerProductsPage() {
   }
 
   return (
-    <SellerDashboardShell
-      headerActionLeft={(
+    <SellerDashboardShell>
+      <div className="seller-products-top-actions">
         <a
           href={SELLER_PRODUCT_LISTING_TUTORIAL_URL}
           target="_blank"
           rel="noreferrer"
-          className="seller-console__header-link"
+          className="seller-secondary-action seller-inline-link-button"
         >
           How to list
         </a>
-      )}
-      headerAction={(
-        <button type="button" className="seller-console__header-btn" onClick={handleAddProduct}>
+        <button type="button" className="seller-primary-action" onClick={handleAddProduct}>
           Add product
         </button>
-      )}
-    >
+      </div>
+
       <section className="seller-product-highlights seller-product-highlights--compact">
         <article>
           <span>Live</span>
