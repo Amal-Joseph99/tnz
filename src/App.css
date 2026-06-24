@@ -3626,7 +3626,7 @@
 
 .seller-order-list__fulfillment {
   grid-column: 1 / -1;
-  padding-top: 4px;
+  padding-top: 8px;
   border-top: 1px solid #e2e8f0;
 }
 
@@ -3654,7 +3654,32 @@
 
 .seller-order-fulfillment-block {
   display: grid;
+  gap: 8px;
+}
+
+.seller-order-packing-compact {
+  color: #475569;
+  display: grid;
+  font-size: 12px;
+  gap: 2px;
+  line-height: 1.4;
+}
+
+.seller-order-packing-compact__warning {
+  color: #92400e;
+  font-size: 11px;
+  font-weight: 600;
+  margin: 4px 0 0;
+}
+
+.seller-orders-page__header {
+  align-items: flex-start;
   gap: 12px;
+}
+
+.seller-orders-page__how-to-pack {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .seller-order-notice-dialog {

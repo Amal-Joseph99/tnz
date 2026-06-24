@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { SellerProductConfirmDialog } from '../components/SellerProductConfirmDialog'
 import { SellerOrderFulfillmentBlock } from '../components/SellerOrderFulfillmentBlock'
 import { SellerDashboardShell } from '../components/SellerDashboardShell'
@@ -101,11 +101,14 @@ export function SellerOrdersPage() {
       {message && <div className="auth-message auth-message--success">{message}</div>}
 
       <section className="seller-console-card">
-        <div className="seller-console-card__header">
+        <div className="seller-console-card__header seller-orders-page__header">
           <div>
             <h2>Orders</h2>
             <p>Accept orders, download labels, and mark packed.</p>
           </div>
+          <Link to="/seller/how-to-pack" className="seller-secondary-action seller-orders-page__how-to-pack">
+            How to pack
+          </Link>
         </div>
 
         {loading ? (

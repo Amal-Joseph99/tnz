@@ -6,6 +6,7 @@ import {
   type MarketplaceOrderRow,
 } from '../lib/marketplaceOrders'
 import { fetchShipmentDocument } from '../lib/shiprocketShipping'
+import { SellerLabelGeneratingDialog } from './SellerLabelGeneratingDialog'
 
 type SellerOrderFulfillmentActionsProps = {
   order: MarketplaceOrderRow
@@ -24,34 +25,43 @@ export function SellerOrderFulfillmentActions({
 }: SellerOrderFulfillmentActionsProps) {
   const [downloadingLabel, setDownloadingLabel] = useState(false)
   const [markingPacked, setMarkingPacked] = useState(false)
+  const [labelDialogOpen, setLabelDialogOpen] = useState(false)
 
   const labelReady = isSellerShippingLabelReady(order)
   const canPack = canSellerMarkOrderPacked(order)
   const isPacked = ['packed', 'shipped', 'delivered'].includes(order.status)
 
   const downloadLabel = async () => {
-    if (!labelReady) return
+    if (!labelReady) {
+      setLabelDialogOpen(true)
+      return
+    }
 
     setDownloadingLabel(true)
     onError('')
     try {
       const result = await fetchShipmentDocument(order.id, 'label')
       if (!result.labelUrl) {
-        onError('Label is not available yet.')
+        setLabelDialogOpen(true)
         return
       }
       window.open(result.labelUrl, '_blank', 'noopener,noreferrer')
       onMessage('Label ready.')
       await onOrderUpdated()
-    } catch (err) {
-      onError(err instanceof Error ? err.message : 'Unable to download label.')
+    } catch {
+      setLabelDialogOpen(true)
     } finally {
       setDownloadingLabel(false)
     }
   }
 
   const markPacked = async () => {
-    if (!canPack) return
+    if (isPacked) return
+
+    if (!labelReady || !canPack) {
+      setLabelDialogOpen(true)
+      return
+    }
 
     setMarkingPacked(true)
     onError('')
@@ -66,25 +76,29 @@ export function SellerOrderFulfillmentActions({
   }
 
   return (
-    <div className={`seller-order-fulfillment${compact ? ' seller-order-fulfillment--compact' : ''}`}>
-      <div className="seller-order-fulfillment__actions">
-        <button
-          type="button"
-          className="seller-order-fulfillment__download"
-          disabled={!labelReady || downloadingLabel}
-          onClick={() => void downloadLabel()}
-        >
-          {downloadingLabel ? 'Preparing label…' : 'Download label'}
-        </button>
-        <button
-          type="button"
-          className="admin-accept"
-          disabled={!canPack || markingPacked || isPacked}
-          onClick={() => void markPacked()}
-        >
-          {markingPacked ? 'Updating…' : isPacked ? 'Order packed' : 'Order Packed'}
-        </button>
+    <>
+      <div className={`seller-order-fulfillment${compact ? ' seller-order-fulfillment--compact' : ''}`}>
+        <div className="seller-order-fulfillment__actions">
+          <button
+            type="button"
+            className="seller-order-fulfillment__download"
+            disabled={downloadingLabel}
+            onClick={() => void downloadLabel()}
+          >
+            {downloadingLabel ? 'Preparing label…' : 'Download label'}
+          </button>
+          <button
+            type="button"
+            className="admin-accept"
+            disabled={isPacked || markingPacked}
+            onClick={() => void markPacked()}
+          >
+            {markingPacked ? 'Updating…' : isPacked ? 'Order packed' : 'Order Packed'}
+          </button>
+        </div>
       </div>
-    </div>
+
+      <SellerLabelGeneratingDialog open={labelDialogOpen} onClose={() => setLabelDialogOpen(false)} />
+    </>
   )
 }
