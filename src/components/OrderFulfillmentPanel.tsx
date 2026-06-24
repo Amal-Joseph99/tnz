@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { SellerOrderFulfillmentActions } from './SellerOrderFulfillmentActions'
+import { SellerOrderFulfillmentBlock } from './SellerOrderFulfillmentBlock'
 import {
   formatOrderStatus,
   getShipmentRow,
@@ -170,7 +170,7 @@ export function OrderFulfillmentPanel({
       )}
 
       {showSellerFulfillment ? (
-        <SellerOrderFulfillmentActions
+        <SellerOrderFulfillmentBlock
           order={order}
           onOrderUpdated={onOrderUpdated}
           onError={onError}

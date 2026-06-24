@@ -3,7 +3,6 @@ import {
   canSellerMarkOrderPacked,
   isSellerShippingLabelReady,
   sellerMarkOrderPacked,
-  SELLER_LABEL_GENERATING_MESSAGE,
   type MarketplaceOrderRow,
 } from '../lib/marketplaceOrders'
 import { fetchShipmentDocument } from '../lib/shiprocketShipping'
@@ -29,7 +28,6 @@ export function SellerOrderFulfillmentActions({
   const labelReady = isSellerShippingLabelReady(order)
   const canPack = canSellerMarkOrderPacked(order)
   const isPacked = ['packed', 'shipped', 'delivered'].includes(order.status)
-  const showGeneratingHint = !labelReady && !isPacked
 
   const downloadLabel = async () => {
     if (!labelReady) return
@@ -72,7 +70,7 @@ export function SellerOrderFulfillmentActions({
       <div className="seller-order-fulfillment__actions">
         <button
           type="button"
-          className="admin-btn admin-btn--ghost"
+          className="seller-order-fulfillment__download"
           disabled={!labelReady || downloadingLabel}
           onClick={() => void downloadLabel()}
         >
@@ -87,9 +85,6 @@ export function SellerOrderFulfillmentActions({
           {markingPacked ? 'Updating…' : isPacked ? 'Order packed' : 'Order Packed'}
         </button>
       </div>
-      {showGeneratingHint ? (
-        <p className="seller-order-fulfillment__hint">{SELLER_LABEL_GENERATING_MESSAGE}</p>
-      ) : null}
     </div>
   )
 }

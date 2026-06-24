@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SellerProductConfirmDialog } from '../components/SellerProductConfirmDialog'
-import { SellerOrderFulfillmentActions } from '../components/SellerOrderFulfillmentActions'
+import { SellerOrderFulfillmentBlock } from '../components/SellerOrderFulfillmentBlock'
 import { SellerDashboardShell } from '../components/SellerDashboardShell'
 import {
   fetchOrderProductThumbnails,
@@ -182,7 +182,7 @@ export function SellerOrdersPage() {
 
                   {showFulfillment ? (
                     <div className="seller-order-list__fulfillment">
-                      <SellerOrderFulfillmentActions
+                      <SellerOrderFulfillmentBlock
                         order={order}
                         compact
                         onOrderUpdated={loadOrders}
