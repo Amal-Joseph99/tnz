@@ -234,48 +234,60 @@ export function ProductListingStep3({ productId, onBack, onNext }: Step3Props) {
           </div>
           {draft.variants.map((variant, index) => (
             <div className="listing-variant-table__row" key={`${variant.variantId}-${index}`}>
-              <span>{variant.variantId || 'Auto on save'}</span>
-              <span>{variant.size}</span>
-              <span>{variant.color}</span>
-              <input
-                type="number"
-                disabled={isReadOnly}
-                value={variant.mrp || ''}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    variants: current.variants.map((row, i) =>
-                      i === index ? { ...row, mrp: Number(event.target.value) } : row,
-                    ),
-                  }))
-                }
-              />
-              <input
-                type="number"
-                disabled={isReadOnly}
-                value={variant.sellingPrice || ''}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    variants: current.variants.map((row, i) =>
-                      i === index ? { ...row, sellingPrice: Number(event.target.value) } : row,
-                    ),
-                  }))
-                }
-              />
-              <input
-                type="number"
-                disabled={isReadOnly}
-                value={variant.stock || ''}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    variants: current.variants.map((row, i) =>
-                      i === index ? { ...row, stock: Number(event.target.value) } : row,
-                    ),
-                  }))
-                }
-              />
+              <span className="listing-variant-meta">{variant.variantId || 'Auto on save'}</span>
+              <span className="listing-variant-meta">{variant.size}</span>
+              <span className="listing-variant-meta">{variant.color}</span>
+              <label className="listing-variant-field">
+                <span className="listing-variant-field__label">MRP</span>
+                <input
+                  type="number"
+                  disabled={isReadOnly}
+                  value={variant.mrp || ''}
+                  placeholder="MRP"
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      variants: current.variants.map((row, i) =>
+                        i === index ? { ...row, mrp: Number(event.target.value) } : row,
+                      ),
+                    }))
+                  }
+                />
+              </label>
+              <label className="listing-variant-field">
+                <span className="listing-variant-field__label">Sell price</span>
+                <input
+                  type="number"
+                  disabled={isReadOnly}
+                  value={variant.sellingPrice || ''}
+                  placeholder="Sell price"
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      variants: current.variants.map((row, i) =>
+                        i === index ? { ...row, sellingPrice: Number(event.target.value) } : row,
+                      ),
+                    }))
+                  }
+                />
+              </label>
+              <label className="listing-variant-field">
+                <span className="listing-variant-field__label">Stock</span>
+                <input
+                  type="number"
+                  disabled={isReadOnly}
+                  value={variant.stock || ''}
+                  placeholder="Stock"
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      variants: current.variants.map((row, i) =>
+                        i === index ? { ...row, stock: Number(event.target.value) } : row,
+                      ),
+                    }))
+                  }
+                />
+              </label>
               <label className="listing-upload-mini">
                 Upload
                 <input
