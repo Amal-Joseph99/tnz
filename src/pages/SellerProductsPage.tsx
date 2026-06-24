@@ -143,10 +143,26 @@ export function SellerProductsPage() {
   }
 
   return (
-    <SellerDashboardShell>
-      <section className="seller-product-highlights">
+    <SellerDashboardShell
+      headerActionLeft={(
+        <a
+          href={SELLER_PRODUCT_LISTING_TUTORIAL_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="seller-console__header-link"
+        >
+          How to list
+        </a>
+      )}
+      headerAction={(
+        <button type="button" className="seller-console__header-btn" onClick={handleAddProduct}>
+          Add product
+        </button>
+      )}
+    >
+      <section className="seller-product-highlights seller-product-highlights--compact">
         <article>
-          <span>Total live products</span>
+          <span>Live</span>
           <strong>{stats.liveProducts}</strong>
         </article>
         <article>
@@ -161,35 +177,19 @@ export function SellerProductsPage() {
 
       <section className="seller-console-card seller-products-card">
         <div className="seller-products-toolbar">
-          <div className="seller-products-toolbar__left">
-            <div className="seller-segmented-control" role="tablist" aria-label="Product status filter">
-              {(['draft', 'approved', 'rejected'] as ProductTab[]).map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === tab}
-                  className={activeTab === tab ? 'seller-segmented-control__btn seller-segmented-control__btn--active' : 'seller-segmented-control__btn'}
-                  onClick={() => updateQuery(tab, 1)}
-                >
-                  {tab === 'draft' ? 'Draft' : tab === 'approved' ? 'Approved' : 'Rejected'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="seller-products-toolbar__right">
-            <a
-              href={SELLER_PRODUCT_LISTING_TUTORIAL_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="seller-secondary-action seller-inline-link-button"
-            >
-              Tutorial for listing
-            </a>
-            <button type="button" className="seller-primary-action" onClick={handleAddProduct}>
-              Add product
-            </button>
+          <div className="seller-segmented-control" role="tablist" aria-label="Product status filter">
+            {(['draft', 'approved', 'rejected'] as ProductTab[]).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab}
+                className={activeTab === tab ? 'seller-segmented-control__btn seller-segmented-control__btn--active' : 'seller-segmented-control__btn'}
+                onClick={() => updateQuery(tab, 1)}
+              >
+                {tab === 'draft' ? 'Draft' : tab === 'approved' ? 'Approved' : 'Rejected'}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -203,35 +203,30 @@ export function SellerProductsPage() {
           />
         ) : (
           <>
-            <div className="seller-product-list">
-              <div className="seller-product-list__row seller-product-list__row--head">
-                <span>Product</span>
-                <span>SKU</span>
-                <span>MRP</span>
-                <span>Sell price</span>
-                <span>Qty</span>
-                <span>Status</span>
-                <span>Actions</span>
-              </div>
-
+            <div className="seller-product-card-list">
               {pageRows.map((row) => (
-                <div className="seller-product-list__row" key={row.id}>
-                  <div className="seller-product-list__product">
-                    {imageUrls[row.id] ? (
-                      <img src={imageUrls[row.id]} alt={row.productName} className="seller-product-list__thumb" />
-                    ) : (
-                      <div className="seller-product-list__thumb seller-product-list__thumb--empty">No image</div>
-                    )}
-                    <strong>{row.productName}</strong>
-                  </div>
-                  <span>{row.sku}</span>
-                  <span>{formatMoney(row.mrp)}</span>
-                  <span>{formatMoney(row.sellingPrice)}</span>
-                  <span>{row.stock}</span>
-                  <span className={`seller-product-status seller-product-status--${row.approvalStatus}`}>
+                <article className="seller-product-card" key={row.id}>
+                  <span className={`seller-product-card__status seller-product-status seller-product-status--${row.approvalStatus}`}>
                     {formatStatus(row.approvalStatus)}
                   </span>
-                  <div className="seller-product-list__actions">
+
+                  <div className="seller-product-card__identity">
+                    {imageUrls[row.id] ? (
+                      <img src={imageUrls[row.id]} alt={row.productName} className="seller-product-card__thumb" />
+                    ) : (
+                      <div className="seller-product-card__thumb seller-product-card__thumb--empty">No image</div>
+                    )}
+                    <strong className="seller-product-card__name">{row.productName}</strong>
+                  </div>
+
+                  <div className="seller-product-card__metrics">
+                    <span>SKU: {row.sku}</span>
+                    <span>MRP: {formatMoney(row.mrp)}</span>
+                    <span>Price: {formatMoney(row.sellingPrice)}</span>
+                    <span>Stock: {row.stock}</span>
+                  </div>
+
+                  <div className="seller-product-card__actions">
                     <button
                       type="button"
                       className="seller-secondary-action"
@@ -248,7 +243,7 @@ export function SellerProductsPage() {
                       Remove
                     </button>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
 

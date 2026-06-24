@@ -28,6 +28,7 @@ type SellerDashboardShellProps = {
   title?: string
   subtitle?: string
   hidePageHeading?: boolean
+  headerActionLeft?: ReactNode
   headerAction?: ReactNode
   contentClassName?: string
   children: ReactNode
@@ -36,7 +37,8 @@ type SellerDashboardShellProps = {
 export function SellerDashboardShell({
   title,
   subtitle,
-  hidePageHeading = false,
+  hidePageHeading = true,
+  headerActionLeft,
   headerAction,
   contentClassName = '',
   children,
@@ -46,6 +48,14 @@ export function SellerDashboardShell({
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   const pageTitle = title ?? resolveSellerPageTitle(pathname)
+  const mainContentClass = [
+    'seller-console__content',
+    'seller-console__content--bento',
+    hidePageHeading ? 'seller-console__content--flush' : '',
+    contentClassName,
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   useEffect(() => {
     document.body.style.overflow = drawerOpen ? 'hidden' : ''
@@ -126,7 +136,9 @@ export function SellerDashboardShell({
       </aside>
 
       <div className="seller-console__workspace">
-        <header className="seller-console__bar seller-console__mobile-bar">
+        <header
+          className={`seller-console__bar seller-console__mobile-bar${headerActionLeft ? ' seller-console__mobile-bar--leading' : ''}`}
+        >
           <button
             type="button"
             className="seller-console__menu-btn"
@@ -136,6 +148,10 @@ export function SellerDashboardShell({
           >
             <MenuIcon />
           </button>
+
+          {headerActionLeft ? (
+            <div className="seller-console__mobile-leading">{headerActionLeft}</div>
+          ) : null}
 
           <h1 className="seller-console__mobile-title">{pageTitle}</h1>
 
@@ -151,6 +167,7 @@ export function SellerDashboardShell({
         <header className="seller-console__bar seller-console__header seller-console__header--desktop">
           <span className="seller-console__header-brand">AGTRENZ Seller Central</span>
           <div className="seller-console__header-actions">
+            {headerActionLeft}
             {headerAction}
             <Link to="/seller/notifications" className="seller-console__notification" aria-label="Notifications">
               <BellIcon />
@@ -160,7 +177,7 @@ export function SellerDashboardShell({
         </header>
 
         <div className="seller-console__scroll">
-          <main className={`seller-console__content seller-console__content--bento${contentClassName ? ` ${contentClassName}` : ''}`}>
+          <main className={mainContentClass}>
             {!hidePageHeading ? (
               <div className="seller-console__page-heading">
                 <h1>{pageTitle}</h1>
