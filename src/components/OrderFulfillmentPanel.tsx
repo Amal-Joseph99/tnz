@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import { SellerOrderFulfillmentActions } from './SellerOrderFulfillmentActions'
 import {
   formatOrderStatus,
   getShipmentRow,
-  sellerMarkOrderPacked,
+  showSellerOrderFulfillment,
   type MarketplaceOrderRow,
 } from '../lib/marketplaceOrders'
 import {
@@ -32,7 +33,6 @@ export function OrderFulfillmentPanel({
   const [assigning, setAssigning] = useState(false)
   const [downloadingLabel, setDownloadingLabel] = useState(false)
   const [downloadingManifest, setDownloadingManifest] = useState(false)
-  const [markingPacked, setMarkingPacked] = useState(false)
 
   const shipment = getShipmentRow(order)
   const hasShiprocketShipment = Boolean(shipment?.shiprocket_shipment_id)
@@ -55,8 +55,11 @@ export function OrderFulfillmentPanel({
     && !hasAwb
     && Boolean(order.shipping_courier_company_id)
 
-  const canDownloadDocs = ['shiprocket_created', 'packed', 'shipped', 'delivered'].includes(order.status) && hasAwb
-  const canMarkPacked = mode === 'seller' && order.status === 'shiprocket_created'
+  const canDownloadDocs = mode === 'admin'
+    && ['shiprocket_created', 'packed', 'shipped', 'delivered'].includes(order.status)
+    && hasAwb
+
+  const showSellerFulfillment = mode === 'seller' && showSellerOrderFulfillment(order)
 
   const syncOrder = async () => {
     setSyncing(true)
@@ -115,20 +118,7 @@ export function OrderFulfillmentPanel({
     }
   }
 
-  const markPacked = async () => {
-    setMarkingPacked(true)
-    onError('')
-    const result = await sellerMarkOrderPacked(order.id)
-    setMarkingPacked(false)
-    if (!result.ok) {
-      onError(result.message)
-      return
-    }
-    onMessage('Order marked packed.')
-    await onOrderUpdated()
-  }
-
-  if (!showCourierCard && !canSync && !canAssign && !canDownloadDocs && !canMarkPacked) {
+  if (!showCourierCard && !canSync && !canAssign && !canDownloadDocs && !showSellerFulfillment) {
     return null
   }
 
@@ -179,43 +169,47 @@ export function OrderFulfillmentPanel({
         </article>
       )}
 
-      <div className="order-fulfillment__actions">
-        {canSync && (
-          <button type="button" className="admin-btn" disabled={syncing} onClick={() => void syncOrder()}>
-            {syncing ? 'Syncing…' : 'Sync to Shiprocket'}
-          </button>
-        )}
-        {canAssign && (
-          <button type="button" className="admin-btn" disabled={assigning} onClick={() => void createShipment()}>
-            {assigning ? 'Creating shipment…' : 'Create shipment'}
-          </button>
-        )}
-        {canDownloadDocs && (
-          <>
-            <button
-              type="button"
-              className="admin-btn admin-btn--ghost"
-              disabled={downloadingLabel}
-              onClick={() => void downloadDocument('label')}
-            >
-              {downloadingLabel ? 'Preparing label…' : 'Download label'}
+      {showSellerFulfillment ? (
+        <SellerOrderFulfillmentActions
+          order={order}
+          onOrderUpdated={onOrderUpdated}
+          onError={onError}
+          onMessage={onMessage}
+        />
+      ) : (
+        <div className="order-fulfillment__actions">
+          {canSync && (
+            <button type="button" className="admin-btn" disabled={syncing} onClick={() => void syncOrder()}>
+              {syncing ? 'Syncing…' : 'Sync to Shiprocket'}
             </button>
-            <button
-              type="button"
-              className="admin-btn admin-btn--ghost"
-              disabled={downloadingManifest}
-              onClick={() => void downloadDocument('manifest')}
-            >
-              {downloadingManifest ? 'Preparing manifest…' : 'Download manifest'}
+          )}
+          {canAssign && (
+            <button type="button" className="admin-btn" disabled={assigning} onClick={() => void createShipment()}>
+              {assigning ? 'Creating shipment…' : 'Create shipment'}
             </button>
-          </>
-        )}
-        {canMarkPacked && (
-          <button type="button" className="admin-accept" disabled={markingPacked} onClick={() => void markPacked()}>
-            {markingPacked ? 'Updating…' : 'Mark packed'}
-          </button>
-        )}
-      </div>
+          )}
+          {canDownloadDocs && (
+            <>
+              <button
+                type="button"
+                className="admin-btn admin-btn--ghost"
+                disabled={downloadingLabel}
+                onClick={() => void downloadDocument('label')}
+              >
+                {downloadingLabel ? 'Preparing label…' : 'Download label'}
+              </button>
+              <button
+                type="button"
+                className="admin-btn admin-btn--ghost"
+                disabled={downloadingManifest}
+                onClick={() => void downloadDocument('manifest')}
+              >
+                {downloadingManifest ? 'Preparing manifest…' : 'Download manifest'}
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </section>
   )
 }

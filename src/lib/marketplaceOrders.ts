@@ -368,3 +368,30 @@ export function getShipmentRow(order: MarketplaceOrderRow) {
     ? order.marketplace_order_shipments[0] ?? null
     : order.marketplace_order_shipments
 }
+
+export const SELLER_LABEL_GENERATING_MESSAGE =
+  'Label is generating, usually takes 1hrs, Please pack your products'
+
+export function showSellerOrderFulfillment(order: MarketplaceOrderRow) {
+  return [
+    'seller_accepted',
+    'shiprocket_pending',
+    'shiprocket_created',
+    'packed',
+    'shipped',
+    'delivered',
+  ].includes(order.status)
+}
+
+export function isSellerShippingLabelReady(order: MarketplaceOrderRow) {
+  const shipment = getShipmentRow(order)
+  const hasAwb = Boolean(shipment?.awb_code)
+  return (
+    hasAwb
+    && ['shiprocket_created', 'packed', 'shipped', 'delivered'].includes(order.status)
+  )
+}
+
+export function canSellerMarkOrderPacked(order: MarketplaceOrderRow) {
+  return order.status === 'shiprocket_created' && isSellerShippingLabelReady(order)
+}

@@ -3624,6 +3624,34 @@
   justify-content: flex-end;
 }
 
+.seller-order-list__fulfillment {
+  grid-column: 1 / -1;
+  padding-top: 4px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.seller-order-fulfillment {
+  display: grid;
+  gap: 8px;
+}
+
+.seller-order-fulfillment__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.seller-order-fulfillment--compact .seller-order-fulfillment__actions {
+  justify-content: flex-start;
+}
+
+.seller-order-fulfillment__hint {
+  margin: 0;
+  color: #b45309;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .seller-order-detail__back {
   color: #08428c;
   display: inline-block;

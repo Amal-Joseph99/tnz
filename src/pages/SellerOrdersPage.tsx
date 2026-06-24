@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SellerProductConfirmDialog } from '../components/SellerProductConfirmDialog'
+import { SellerOrderFulfillmentActions } from '../components/SellerOrderFulfillmentActions'
 import { SellerDashboardShell } from '../components/SellerDashboardShell'
 import {
   fetchOrderProductThumbnails,
@@ -9,6 +10,7 @@ import {
   getOrderThumbnailProductId,
   getPrimaryOrderItem,
   sellerRespondToOrder,
+  showSellerOrderFulfillment,
   type MarketplaceOrderRow,
 } from '../lib/marketplaceOrders'
 
@@ -16,6 +18,19 @@ type ConfirmState = {
   order: MarketplaceOrderRow
   action: 'accept' | 'reject'
 } | null
+
+const STATUS_SORT_ORDER: Record<MarketplaceOrderRow['status'], number> = {
+  awaiting_payment: 99,
+  pending_seller_acceptance: 0,
+  seller_accepted: 1,
+  shiprocket_pending: 2,
+  shiprocket_created: 3,
+  packed: 4,
+  shipped: 5,
+  delivered: 6,
+  seller_rejected: 7,
+  cancelled: 99,
+}
 
 export function SellerOrdersPage() {
   const navigate = useNavigate()
@@ -27,8 +42,13 @@ export function SellerOrdersPage() {
   const [confirmState, setConfirmState] = useState<ConfirmState>(null)
   const [responding, setResponding] = useState(false)
 
-  const pendingOrders = useMemo(
-    () => orders.filter((order) => order.status === 'pending_seller_acceptance'),
+  const sortedOrders = useMemo(
+    () =>
+      [...orders].sort((left, right) => {
+        const statusDiff = (STATUS_SORT_ORDER[left.status] ?? 98) - (STATUS_SORT_ORDER[right.status] ?? 98)
+        if (statusDiff !== 0) return statusDiff
+        return new Date(right.created_at).getTime() - new Date(left.created_at).getTime()
+      }),
     [orders],
   )
 
@@ -83,21 +103,23 @@ export function SellerOrdersPage() {
       <section className="seller-console-card">
         <div className="seller-console-card__header">
           <div>
-            <h2>Order queue</h2>
-            <p>Confirmed orders awaiting your acceptance</p>
+            <h2>Orders</h2>
+            <p>Accept orders, download labels, and mark packed.</p>
           </div>
         </div>
 
         {loading ? (
           <p>Loading orders...</p>
-        ) : pendingOrders.length === 0 ? (
-          <p>No confirmed orders waiting for your response.</p>
+        ) : sortedOrders.length === 0 ? (
+          <p>No confirmed orders yet.</p>
         ) : (
           <div className="seller-order-list">
-            {pendingOrders.map((order) => {
+            {sortedOrders.map((order) => {
               const primaryItem = getPrimaryOrderItem(order)
               const productId = getOrderThumbnailProductId(order)
               const imageUrl = productId ? thumbnails.get(productId) : undefined
+              const isPending = order.status === 'pending_seller_acceptance'
+              const showFulfillment = showSellerOrderFulfillment(order)
 
               return (
                 <article key={order.id} className="seller-order-list__row">
@@ -131,20 +153,24 @@ export function SellerOrdersPage() {
                   </div>
 
                   <div className="seller-order-list__actions">
-                    <button
-                      type="button"
-                      className="admin-accept"
-                      onClick={() => setConfirmState({ order, action: 'accept' })}
-                    >
-                      Accept
-                    </button>
-                    <button
-                      type="button"
-                      className="admin-reject"
-                      onClick={() => setConfirmState({ order, action: 'reject' })}
-                    >
-                      Reject
-                    </button>
+                    {isPending ? (
+                      <>
+                        <button
+                          type="button"
+                          className="admin-accept"
+                          onClick={() => setConfirmState({ order, action: 'accept' })}
+                        >
+                          Accept
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-reject"
+                          onClick={() => setConfirmState({ order, action: 'reject' })}
+                        >
+                          Reject
+                        </button>
+                      </>
+                    ) : null}
                     <button
                       type="button"
                       className="admin-btn admin-btn--ghost"
@@ -153,6 +179,18 @@ export function SellerOrdersPage() {
                       View
                     </button>
                   </div>
+
+                  {showFulfillment ? (
+                    <div className="seller-order-list__fulfillment">
+                      <SellerOrderFulfillmentActions
+                        order={order}
+                        compact
+                        onOrderUpdated={loadOrders}
+                        onError={setError}
+                        onMessage={setMessage}
+                      />
+                    </div>
+                  ) : null}
                 </article>
               )
             })}
