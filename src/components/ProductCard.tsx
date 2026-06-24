@@ -112,6 +112,8 @@ export function ProductCard({ product, onOpen }: ProductCardProps) {
                   title: product.title,
                   brand: product.brand,
                   variantId: product.variantId ?? 'default',
+                  variantSize: product.variantSize,
+                  variantColor: product.variantColor,
                   price: product.price,
                   originalPrice: product.originalPrice,
                   listingCurrencyCode: product.listingCurrencyCode,

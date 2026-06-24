@@ -12,6 +12,7 @@ import {
   sellerRespondToOrder,
   type MarketplaceOrderRow,
 } from '../lib/marketplaceOrders'
+import { formatOrderItemVariantLabel } from '../lib/variantDisplay'
 
 type ConfirmState = {
   action: 'accept' | 'reject'
@@ -175,6 +176,10 @@ export function SellerOrderDetailPage() {
                 />
                 <div>
                   <strong>{item.product_name}</strong>
+                  {item.brand_name && <span>{item.brand_name}</span>}
+                  {formatOrderItemVariantLabel(item) && (
+                    <span>{formatOrderItemVariantLabel(item)}</span>
+                  )}
                   <span>SKU: {item.sku}</span>
                   <span>Qty: {item.quantity}</span>
                 </div>

@@ -13,6 +13,7 @@ export type SellerAccountProfile = {
   email: string
   countryName: string
   phone: string
+  isoAlpha2: string
 }
 
 export type SellerKycSubmission = {
@@ -154,7 +155,7 @@ export async function fetchSellerAccountProfile(): Promise<SellerAccountProfile 
 
   const { data, error } = await supabase
     .from('seller_accounts')
-    .select('business_name, country_name, phone')
+    .select('business_name, country_name, phone, iso_alpha2')
     .eq('user_id', user.id)
     .maybeSingle()
 
@@ -165,6 +166,7 @@ export async function fetchSellerAccountProfile(): Promise<SellerAccountProfile 
     email: user.email ?? '',
     countryName: data.country_name,
     phone: data.phone,
+    isoAlpha2: String(data.iso_alpha2 ?? ''),
   }
 }
 

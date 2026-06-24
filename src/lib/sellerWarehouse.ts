@@ -57,7 +57,16 @@ export const WAREHOUSE_ADDRESS_LINE_ERROR =
   'House no./Flat no./Building no./Road no. is required at the start of the address. Eg: 46/A1, AKHIL NIVAS, MANNUR, ...'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const PHONE_PATTERN = /^[6-9]\d{9}$/
+const INDIAN_PHONE_PATTERN = /^[6-9]\d{9}$/
+const INTERNATIONAL_PHONE_PATTERN = /^\d{7,15}$/
+
+export function validateWarehouseContactPhone(phone: string, isoAlpha2?: string) {
+  const normalized = phone.trim()
+  if (isoAlpha2?.toUpperCase() === 'IN') {
+    return INDIAN_PHONE_PATTERN.test(normalized)
+  }
+  return INTERNATIONAL_PHONE_PATTERN.test(normalized)
+}
 const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/
 
 export function validateWarehouseAddressLine1(value: string) {
@@ -70,7 +79,10 @@ export function validateWarehouseAddressLine1(value: string) {
   )
 }
 
-export function validateSellerWarehouseInput(input: SellerWarehouseInput): MutationResult {
+export function validateSellerWarehouseInput(
+  input: SellerWarehouseInput,
+  options?: { sellerIsoAlpha2?: string },
+): MutationResult {
   if (!input.addressTagId) {
     return { ok: false, message: 'Select how you want to tag this address.' }
   }
@@ -80,7 +92,7 @@ export function validateSellerWarehouseInput(input: SellerWarehouseInput): Mutat
   }
 
   if (!input.postalCode.trim()) {
-    return { ok: false, message: 'Pincode is required.' }
+    return { ok: false, message: 'Postal code is required.' }
   }
 
   if (!input.city.trim() || !input.stateName.trim() || !input.countryName.trim()) {
@@ -103,8 +115,13 @@ export function validateSellerWarehouseInput(input: SellerWarehouseInput): Mutat
     return { ok: false, message: 'Enter a valid contact email address.' }
   }
 
-  if (!PHONE_PATTERN.test(input.contactPhone.trim())) {
-    return { ok: false, message: 'Mobile number must be exactly 10 digits.' }
+  if (!validateWarehouseContactPhone(input.contactPhone, options?.sellerIsoAlpha2)) {
+    return {
+      ok: false,
+      message: options?.sellerIsoAlpha2?.toUpperCase() === 'IN'
+        ? 'Mobile number must be exactly 10 digits starting with 6–9.'
+        : 'Enter a valid contact phone number (7–15 digits).',
+    }
   }
 
   if (!input.contactRoleId) {
@@ -201,12 +218,15 @@ export async function fetchSellerWarehouse(): Promise<SellerWarehouse | null> {
   }
 }
 
-export async function saveSellerWarehouse(input: SellerWarehouseInput): Promise<MutationResult> {
+export async function saveSellerWarehouse(
+  input: SellerWarehouseInput,
+  options?: { sellerIsoAlpha2?: string },
+): Promise<MutationResult> {
   if (!supabase) {
     return { ok: false, message: 'Supabase is not configured.' }
   }
 
-  const validation = validateSellerWarehouseInput(input)
+  const validation = validateSellerWarehouseInput(input, options)
   if (!validation.ok) return validation
 
   const { data: authData } = await supabase.auth.getUser()

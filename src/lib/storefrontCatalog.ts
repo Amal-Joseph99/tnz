@@ -24,6 +24,8 @@ type CatalogVariantPrice = {
   selling_price: number
   image_storage_path?: string | null
   variant_id?: string
+  size?: string
+  color?: string
 }
 
 type StorefrontVariantRow = {
@@ -133,6 +135,8 @@ function mapToProductCard(
     sellerUserId: product.user_id,
     sku: product.sku,
     variantId: variant?.variant_id,
+    variantSize: variant?.size,
+    variantColor: variant?.color,
   }
 }
 
@@ -159,6 +163,8 @@ function pickPrimaryVariant(variants: Array<{
   selling_price: number
   image_storage_path?: string | null
   variant_id?: string
+  size?: string
+  color?: string
 }>) {
   const variantByProduct = new Map<number, CatalogVariantPrice>()
 
@@ -170,6 +176,8 @@ function pickPrimaryVariant(variants: Array<{
         selling_price: variant.selling_price,
         image_storage_path: variant.image_storage_path,
         variant_id: variant.variant_id,
+        size: variant.size,
+        color: variant.color,
       })
     }
   }
@@ -251,7 +259,7 @@ export async function fetchStorefrontProductsByCategory(
   const [{ data: variants }, { data: media }, sellerCurrencyMap] = await Promise.all([
     supabase
       .from('seller_product_variants')
-      .select('product_id, variant_id, mrp, selling_price, image_storage_path')
+      .select('product_id, variant_id, size, color, mrp, selling_price, image_storage_path')
       .in('product_id', productIds),
     supabase
       .from('seller_product_media')
@@ -292,7 +300,7 @@ export async function fetchProductCardsByIds(productIds: number[]): Promise<Prod
   const [{ data: variants }, { data: media }, sellerCurrencyMap] = await Promise.all([
     supabase
       .from('seller_product_variants')
-      .select('product_id, variant_id, mrp, selling_price, image_storage_path')
+      .select('product_id, variant_id, size, color, mrp, selling_price, image_storage_path')
       .in('product_id', ids),
     supabase
       .from('seller_product_media')
@@ -387,6 +395,8 @@ export async function fetchStorefrontProductById(productId: number) {
           selling_price: primaryVariant.selling_price,
           image_storage_path: primaryVariant.image_storage_path,
           variant_id: primaryVariant.variant_id,
+          size: primaryVariant.size,
+          color: primaryVariant.color,
         }
       : undefined,
     listingImagePaths,
@@ -443,7 +453,7 @@ export async function searchStorefrontProducts(query: string): Promise<Product[]
   const [{ data: variants }, { data: media }, sellerCurrencyMap] = await Promise.all([
     supabase
       .from('seller_product_variants')
-      .select('product_id, variant_id, mrp, selling_price, image_storage_path')
+      .select('product_id, variant_id, size, color, mrp, selling_price, image_storage_path')
       .in('product_id', productIds),
     supabase
       .from('seller_product_media')

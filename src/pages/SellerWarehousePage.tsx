@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { SellerDashboardShell } from '../components/SellerDashboardShell'
 import { WarehouseConfirmLocationDialog } from '../components/WarehouseConfirmLocationDialog'
 import { WarehouseLocationMap } from '../components/WarehouseLocationMap'
-import { detectLocationWithOpenCage } from '../lib/opencage'
+import { detectLocationWithOpenCage, forwardGeocodeWithOpenCage } from '../lib/opencage'
 import { lookupPincode } from '../lib/pincodeLookup'
+import { fetchSellerAccountProfile } from '../lib/sellerKyc'
 import {
   fetchSellerWarehouse,
   saveSellerWarehouse,
@@ -13,6 +14,10 @@ import {
 } from '../lib/sellerWarehouse'
 import { fetchSellerWorkflow, type SellerWorkflowState } from '../lib/sellerWorkflow'
 import { fetchWarehouseFormOptions, type WarehouseFormOptions } from '../lib/warehouseFormOptions'
+
+function isIndianSeller(isoAlpha2: string) {
+  return isoAlpha2.toUpperCase() === 'IN'
+}
 
 export function SellerWarehousePage() {
   const [workflow, setWorkflow] = useState<SellerWorkflowState | null>(null)
@@ -23,7 +28,8 @@ export function SellerWarehousePage() {
   const [postalCode, setPostalCode] = useState('')
   const [city, setCity] = useState('')
   const [stateName, setStateName] = useState('')
-  const [countryName, setCountryName] = useState('India')
+  const [countryName, setCountryName] = useState('')
+  const [sellerIsoAlpha2, setSellerIsoAlpha2] = useState('')
   const [latitude, setLatitude] = useState<number | null>(null)
   const [longitude, setLongitude] = useState<number | null>(null)
   const [locationLabel, setLocationLabel] = useState('')
@@ -50,20 +56,42 @@ export function SellerWarehousePage() {
   const [warehouseId, setWarehouseId] = useState('')
   const [addressLineError, setAddressLineError] = useState('')
   const [pincodeLoading, setPincodeLoading] = useState(false)
+  const [pincodeHint, setPincodeHint] = useState('')
   const [locationLoading, setLocationLoading] = useState(false)
+  const [addressLocateLoading, setAddressLocateLoading] = useState(false)
+  const [locationFetchError, setLocationFetchError] = useState('')
+  const [locationNotice, setLocationNotice] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
+  const isIndiaWarehouse = useMemo(
+    () => isIndianSeller(sellerIsoAlpha2) || countryName.trim().toLowerCase() === 'india',
+    [sellerIsoAlpha2, countryName],
+  )
+
   useEffect(() => {
     let active = true
 
-    Promise.all([fetchSellerWorkflow(), fetchSellerWarehouse(), fetchWarehouseFormOptions()])
-      .then(([workflowState, warehouse, formOptions]) => {
+    Promise.all([
+      fetchSellerWorkflow(),
+      fetchSellerWarehouse(),
+      fetchWarehouseFormOptions(),
+      fetchSellerAccountProfile(),
+    ])
+      .then(([workflowState, warehouse, formOptions, accountProfile]) => {
         if (!active) return
         setWorkflow(workflowState)
         setOptions(formOptions)
+
+        if (accountProfile) {
+          setSellerIsoAlpha2(accountProfile.isoAlpha2)
+          if (!warehouse) {
+            if (accountProfile.countryName) setCountryName(accountProfile.countryName)
+            if (accountProfile.phone) setContactPhone(accountProfile.phone)
+          }
+        }
 
         if (warehouse) {
           setWarehouseId(warehouse.warehouseId)
@@ -73,7 +101,7 @@ export function SellerWarehousePage() {
           setPostalCode(warehouse.postalCode)
           setCity(warehouse.city)
           setStateName(warehouse.stateName)
-          setCountryName(warehouse.countryName || 'India')
+          setCountryName(warehouse.countryName || accountProfile?.countryName || '')
           setLatitude(warehouse.latitude)
           setLongitude(warehouse.longitude)
           setLocationLabel(warehouse.locationLabel)
@@ -102,28 +130,39 @@ export function SellerWarehousePage() {
   }, [])
 
   useEffect(() => {
+    if (!isIndiaWarehouse) {
+      setPincodeHint('')
+      return
+    }
+
     const normalized = postalCode.replace(/\D/g, '')
-    if (normalized.length !== 6) return
+    if (normalized.length !== 6) {
+      setPincodeHint('')
+      return
+    }
 
     let active = true
     setPincodeLoading(true)
+    setPincodeHint('')
 
     void lookupPincode(normalized).then((result) => {
-      if (!active || !result) {
-        if (active) setPincodeLoading(false)
+      if (!active) return
+
+      setPincodeLoading(false)
+      if (!result) {
+        setPincodeHint('Pincode lookup found no match. Enter city and state manually.')
         return
       }
 
       setCity(result.city)
       setStateName(result.state)
       setCountryName(result.country)
-      setPincodeLoading(false)
     })
 
     return () => {
       active = false
     }
-  }, [postalCode])
+  }, [postalCode, isIndiaWarehouse])
 
   const toggleOperationalDay = (dayCode: string) => {
     setOperationalDays((current) =>
@@ -141,27 +180,74 @@ export function SellerWarehousePage() {
     setAddressLineError(validateWarehouseAddressLine1(value) ? '' : WAREHOUSE_ADDRESS_LINE_ERROR)
   }
 
+  const applyDetectedLocation = (location: {
+    latitude: number
+    longitude: number
+    locationLabel: string
+    city: string
+    state: string
+    country: string
+  }) => {
+    setPendingLocation(location)
+    setConfirmOpen(true)
+  }
+
   const handleFetchCurrentLocation = async () => {
     setError('')
+    setLocationFetchError('')
+    setLocationNotice('')
     setLocationLoading(true)
 
-    const location = await detectLocationWithOpenCage()
+    const result = await detectLocationWithOpenCage()
     setLocationLoading(false)
 
-    if (!location || location.latitude == null || location.longitude == null) {
-      setError('Unable to fetch your current location. Allow location access and try again.')
+    if (!result.ok) {
+      setLocationFetchError(result.message)
       return
     }
 
-    setPendingLocation({
-      latitude: location.latitude,
-      longitude: location.longitude,
-      locationLabel: location.locationLabel,
-      city: location.city,
-      state: location.state,
-      country: location.country,
+    if (result.notice) {
+      setLocationNotice(result.notice)
+    }
+
+    applyDetectedLocation({
+      latitude: result.location.latitude,
+      longitude: result.location.longitude,
+      locationLabel: result.location.locationLabel,
+      city: result.location.city,
+      state: result.location.state,
+      country: result.location.country,
     })
-    setConfirmOpen(true)
+  }
+
+  const handleLocateFromAddress = async () => {
+    setError('')
+    setLocationFetchError('')
+    setLocationNotice('')
+
+    const query = [addressLine1, city, stateName, countryName].filter((part) => part.trim()).join(', ')
+    if (query.trim().length < 3) {
+      setLocationFetchError('Enter your street address, city, and country first, then locate from address.')
+      return
+    }
+
+    setAddressLocateLoading(true)
+    const result = await forwardGeocodeWithOpenCage(query)
+    setAddressLocateLoading(false)
+
+    if (!result.ok) {
+      setLocationFetchError(result.message)
+      return
+    }
+
+    applyDetectedLocation({
+      latitude: result.location.latitude,
+      longitude: result.location.longitude,
+      locationLabel: result.location.locationLabel,
+      city: result.location.city,
+      state: result.location.state,
+      country: result.location.country,
+    })
   }
 
   const handleConfirmLocation = () => {
@@ -173,7 +259,9 @@ export function SellerWarehousePage() {
 
     if (!city.trim() && pendingLocation.city) setCity(pendingLocation.city)
     if (!stateName.trim() && pendingLocation.state) setStateName(pendingLocation.state)
-    if (!countryName.trim() && pendingLocation.country) setCountryName(pendingLocation.country)
+    if (pendingLocation.country) setCountryName(pendingLocation.country)
+
+    setLocationFetchError('')
 
     setConfirmOpen(false)
     setPendingLocation(null)
@@ -218,7 +306,7 @@ export function SellerWarehousePage() {
       supplierName,
       supplierGstin,
       shiprocketPickupLocationName,
-    })
+    }, { sellerIsoAlpha2 })
 
     setSaving(false)
 
@@ -309,15 +397,25 @@ export function SellerWarehousePage() {
 
                 <div className="warehouse-address-grid">
                   <label>
-                    Pincode
+                    {isIndiaWarehouse ? 'Pincode' : 'Postal code'}
                     <input
                       value={postalCode}
-                      onChange={(event) => setPostalCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
-                      placeholder="Add Pincode"
-                      inputMode="numeric"
+                      onChange={(event) => {
+                        const value = event.target.value
+                        setPostalCode(
+                          isIndiaWarehouse
+                            ? value.replace(/\D/g, '').slice(0, 6)
+                            : value.slice(0, 20),
+                        )
+                      }}
+                      placeholder={isIndiaWarehouse ? 'Add pincode' : 'Postal / ZIP code'}
+                      inputMode={isIndiaWarehouse ? 'numeric' : 'text'}
                       required
                     />
-                    {pincodeLoading ? <span className="warehouse-field-hint">Looking up city and state...</span> : null}
+                    {pincodeLoading ? (
+                      <span className="warehouse-field-hint">Looking up city and state...</span>
+                    ) : null}
+                    {pincodeHint ? <span className="warehouse-field-error">{pincodeHint}</span> : null}
                   </label>
                   <label>
                     City
@@ -336,15 +434,34 @@ export function SellerWarehousePage() {
 
               <div className="warehouse-map-panel">
                 <WarehouseLocationMap latitude={latitude} longitude={longitude} locationLabel={locationLabel} />
-                <button
-                  type="button"
-                  className="seller-secondary-action warehouse-fetch-location"
-                  disabled={locationLoading}
-                  onClick={() => void handleFetchCurrentLocation()}
-                >
-                  {locationLoading ? 'Fetching location...' : 'Fetch my current location'}
-                </button>
+                <div className="warehouse-location-actions">
+                  <button
+                    type="button"
+                    className="seller-secondary-action warehouse-fetch-location"
+                    disabled={locationLoading || addressLocateLoading}
+                    onClick={() => void handleFetchCurrentLocation()}
+                  >
+                    {locationLoading ? 'Fetching location...' : 'Fetch my current location'}
+                  </button>
+                  <button
+                    type="button"
+                    className="seller-secondary-action warehouse-fetch-location"
+                    disabled={locationLoading || addressLocateLoading}
+                    onClick={() => void handleLocateFromAddress()}
+                  >
+                    {addressLocateLoading ? 'Locating address...' : 'Locate from address'}
+                  </button>
+                </div>
+                {locationFetchError ? (
+                  <p className="warehouse-location-error" role="alert">{locationFetchError}</p>
+                ) : null}
+                {locationNotice ? <p className="warehouse-location-notice">{locationNotice}</p> : null}
                 {locationLabel ? <p className="warehouse-location-label">{locationLabel}</p> : null}
+                {!locationLabel ? (
+                  <p className="warehouse-field-hint">
+                    Use GPS or locate from your address above, then confirm the pin on the map.
+                  </p>
+                ) : null}
               </div>
             </div>
 
@@ -368,7 +485,12 @@ export function SellerWarehousePage() {
                   Mobile no.
                   <input
                     value={contactPhone}
-                    onChange={(event) => setContactPhone(event.target.value.replace(/\D/g, '').slice(0, 10))}
+                    onChange={(event) => {
+                      const digits = event.target.value.replace(/\D/g, '')
+                      setContactPhone(
+                        isIndianSeller(sellerIsoAlpha2) ? digits.slice(0, 10) : digits.slice(0, 15),
+                      )
+                    }}
                     inputMode="numeric"
                     required
                   />

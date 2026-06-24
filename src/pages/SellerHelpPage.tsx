@@ -1,16 +1,10 @@
-import { useEffect } from 'react'
 import { SellerDashboardShell } from '../components/SellerDashboardShell'
-import { PortalHelpSection } from '../components/PortalHelpSection'
-import { fetchHelpPortalContent } from '../lib/helpCenter'
+import { SellerHelpSection } from '../components/SellerHelpSection'
 
 export function SellerHelpPage() {
-  useEffect(() => {
-    void fetchHelpPortalContent('seller')
-  }, [])
-
   return (
     <SellerDashboardShell>
-      <PortalHelpSection portalKey="seller" />
+      <SellerHelpSection />
     </SellerDashboardShell>
   )
 }

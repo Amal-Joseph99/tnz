@@ -49,6 +49,9 @@ export type MarketplaceOrderRow = {
   marketplace_order_items?: Array<{
     product_id: number
     product_name: string
+    brand_name?: string | null
+    variant_size?: string | null
+    variant_color?: string | null
     sku: string
     quantity: number
     unit_price: number
@@ -88,9 +91,12 @@ export type CheckoutCartItem = {
   sellerUserId: string
   sku: string
   title: string
+  brand: string
   quantity: number
   unitPrice: number
   variantId?: string
+  variantSize?: string
+  variantColor?: string
 }
 
 type MutationResult = { ok: true } | { ok: false; message: string }
@@ -127,7 +133,7 @@ const orderSelect = `
   seller_responded_at,
   packed_at,
   created_at,
-  marketplace_order_items (product_id, product_name, sku, quantity, unit_price, line_total),
+  marketplace_order_items (product_id, product_name, brand_name, variant_size, variant_color, sku, quantity, unit_price, line_total),
   marketplace_order_shipments (shiprocket_order_id, shiprocket_shipment_id, awb_code, label_url, manifest_url, tracking_payload)
 `
 
@@ -196,6 +202,9 @@ export async function createMarketplaceOrder(input: {
     p_items: input.items.map((item) => ({
       productId: item.productId,
       variantId: item.variantId ?? '',
+      brand: item.brand,
+      variantSize: item.variantSize ?? '',
+      variantColor: item.variantColor ?? '',
       sku: item.sku,
       quantity: item.quantity,
       unitPrice: item.unitPrice,

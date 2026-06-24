@@ -108,9 +108,12 @@ export function CheckoutReviewPage() {
     sellerUserId: item.sellerUserId,
     sku: item.sku,
     title: item.title,
+    brand: item.brand,
     quantity: item.quantity,
     unitPrice: item.price,
     variantId: item.variantId,
+    variantSize: item.variantSize,
+    variantColor: item.variantColor,
   }))
 
   const goToFailed = (message: string) => {

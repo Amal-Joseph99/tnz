@@ -13,3 +13,18 @@ export function formatVariantColor(color: string) {
   }
   return normalized
 }
+
+export function formatOrderItemVariantLabel(item: {
+  variant_size?: string | null
+  variant_color?: string | null
+  variantSize?: string | null
+  variantColor?: string | null
+}) {
+  const size = item.variant_size ?? item.variantSize
+  const color = item.variant_color ?? item.variantColor
+  const parts = [
+    size ? formatVariantSize(size) : '',
+    color ? formatVariantColor(color) : '',
+  ].filter(Boolean)
+  return parts.join(' · ')
+}

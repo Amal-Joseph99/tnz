@@ -13,8 +13,8 @@ function normalizeStoredLocation(raw: Partial<StoredLocation> | null): StoredLoc
     state: raw.state ?? '',
     country: raw.country ?? '',
     countryCode: (raw.countryCode ?? '').toUpperCase(),
-    latitude: raw.latitude ?? null,
-    longitude: raw.longitude ?? null,
+    latitude: typeof raw.latitude === 'number' ? raw.latitude : 0,
+    longitude: typeof raw.longitude === 'number' ? raw.longitude : 0,
     locationLabel: raw.locationLabel,
   }
 }

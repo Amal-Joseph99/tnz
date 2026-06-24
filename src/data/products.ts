@@ -14,6 +14,8 @@ export type Product = {
   sellerUserId: string
   sku: string
   variantId?: string
+  variantSize?: string
+  variantColor?: string
 }
 
 export const featuredProducts: Product[] = []

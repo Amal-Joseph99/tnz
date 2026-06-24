@@ -151,9 +151,12 @@ function buildCheckoutPayload(input: CreateCheckoutInput) {
       sellerUserId: item.sellerUserId,
       sku: item.sku,
       title: item.title,
+      brand: item.brand,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       variantId: item.variantId,
+      variantSize: item.variantSize,
+      variantColor: item.variantColor,
     })),
   }
 }

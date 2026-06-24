@@ -175,14 +175,14 @@ export function SellerKycVerificationPage() {
     setError('')
     try {
       const detected = await detectLocationWithOpenCage()
-      if (!detected) {
-        setError('Unable to detect your location. Enter the address manually.')
+      if (!detected.ok) {
+        setError(detected.message)
         return
       }
       patchDraft({
-        city: detected.city,
-        stateProvince: detected.state,
-        addressCountry: detected.country,
+        city: detected.location.city,
+        stateProvince: detected.location.state,
+        addressCountry: detected.location.country,
       })
     } finally {
       setLocating(false)

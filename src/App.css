@@ -3157,6 +3157,26 @@
   margin-top: 0;
 }
 
+.warehouse-location-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.warehouse-location-error {
+  margin: 0;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.warehouse-location-notice {
+  margin: 0;
+  color: #b45309;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .warehouse-location-label {
   margin: 0;
   color: #475569;
@@ -6212,6 +6232,74 @@
   width: 100%;
 }
 
+.buyer-help-contact {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.buyer-help-contact__card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #c7d0dc;
+  border-radius: 10px;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.buyer-help-contact__card:hover {
+  border-color: #94a3b8;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.buyer-help-contact__card strong {
+  display: block;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.buyer-help-contact__card span {
+  display: block;
+  margin-top: 4px;
+  color: #475569;
+  font-size: 13px;
+}
+
+.buyer-help-contact__icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.buyer-help-contact__card--whatsapp .buyer-help-contact__icon {
+  color: #25d366;
+}
+
+.buyer-help-contact__card--email .buyer-help-contact__icon {
+  color: #0059b8;
+}
+
+.buyer-help-ticket h2 {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.buyer-help-ticket__signin {
+  margin: 0;
+  color: #475569;
+  font-size: 14px;
+}
+
+.buyer-help-ticket__signin a {
+  color: #0059b8;
+  font-weight: 700;
+}
+
 .support-search-panel form,
 .returns-card form {
   display: flex;
@@ -7486,6 +7574,7 @@
 
   .account-workspace,
   .returns-layout,
+  .buyer-help-contact,
   .support-grid,
   .content-document__columns,
   .career-list,

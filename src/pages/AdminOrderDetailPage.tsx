@@ -10,6 +10,7 @@ import {
   formatPaymentMethod,
   type MarketplaceOrderRow,
 } from '../lib/marketplaceOrders'
+import { formatOrderItemVariantLabel } from '../lib/variantDisplay'
 
 const PRODUCT_PLACEHOLDER =
   'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%23f3f4f6" width="80" height="80"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="sans-serif" font-size="10"%3EAGTRENZ%3C/text%3E%3C/svg%3E'
@@ -137,6 +138,10 @@ export function AdminOrderDetailPage() {
                 />
                 <div>
                   <strong>{item.product_name}</strong>
+                  {item.brand_name && <span>{item.brand_name}</span>}
+                  {formatOrderItemVariantLabel(item) && (
+                    <span>{formatOrderItemVariantLabel(item)}</span>
+                  )}
                   <span>SKU: {item.sku}</span>
                   <span>Qty: {item.quantity}</span>
                 </div>

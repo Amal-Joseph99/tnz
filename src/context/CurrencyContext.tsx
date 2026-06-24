@@ -139,7 +139,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     setLocationLabel('Detecting location…')
 
     const detected = await detectLocationWithOpenCage()
-    if (!detected) {
+    if (!detected.ok) {
       setLocationLabel('Location unavailable')
       setHasStoredLocation(false)
       setCountryCode(null)
@@ -147,8 +147,8 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    await writeStoredLocation(detected)
-    await applyLocation(detected)
+    await writeStoredLocation(detected.location)
+    await applyLocation(detected.location)
   }, [applyLocation, resolvePricing])
 
   const refreshLocation = useCallback(async () => {

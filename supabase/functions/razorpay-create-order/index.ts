@@ -12,9 +12,12 @@ type CheckoutItem = {
   sellerUserId: string
   sku: string
   title: string
+  brand?: string
   quantity: number
   unitPrice: number
-  variantId?: number
+  variantId?: number | string
+  variantSize?: string
+  variantColor?: string
 }
 
 type CreateOrderRequest = {
@@ -86,6 +89,9 @@ Deno.serve(async (req) => {
       p_items: body.items.map((item) => ({
         productId: item.productId,
         variantId: item.variantId ?? '',
+        brand: item.brand ?? '',
+        variantSize: item.variantSize ?? '',
+        variantColor: item.variantColor ?? '',
         sku: item.sku,
         quantity: item.quantity,
         unitPrice: item.unitPrice,

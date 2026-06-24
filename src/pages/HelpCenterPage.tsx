@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PageShell } from '../components/PageShell'
-import { PortalHelpSection } from '../components/PortalHelpSection'
+import { BuyerHelpSection } from '../components/BuyerHelpSection'
 import { fetchHelpPortalContent } from '../lib/helpCenter'
 
 export function HelpCenterPage() {
@@ -18,7 +18,7 @@ export function HelpCenterPage() {
 
   return (
     <PageShell eyebrow="Support" title={title} subtitle={subtitle}>
-      <PortalHelpSection portalKey="buyer" showSupportForm={false} />
+      <BuyerHelpSection />
     </PageShell>
   )
 }
