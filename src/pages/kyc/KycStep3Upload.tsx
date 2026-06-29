@@ -36,7 +36,14 @@ export function KycStep3Upload({
               </div>
             </div>
             <div
-              className={`kyc-upload-card__drops${section.slots.length === 1 ? ' kyc-upload-card__drops--single' : ''}`}
+              className={[
+                'kyc-upload-card__drops',
+                section.slots.length === 1 ? 'kyc-upload-card__drops--single' : '',
+                section.documentType === 'photo' ? 'kyc-upload-card__drops--photo' : '',
+                section.documentType === 'business_address_proof' ? 'kyc-upload-card__drops--address' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
             >
               {section.slots.map((slot) => {
                 const uploaded = documents.find(
@@ -48,6 +55,7 @@ export function KycStep3Upload({
                     key={progressKey}
                     label={slot.label}
                     required={section.required && slot.slot === 1}
+                    previewShape={section.documentType === 'photo' ? 'portrait' : 'document'}
                     documentType={section.documentType}
                     documentSlot={slot.slot}
                     fileName={uploaded?.fileName}

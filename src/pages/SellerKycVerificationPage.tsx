@@ -26,7 +26,7 @@ import {
   validateKycStep3,
   type SellerKycDraft,
 } from '../lib/sellerKycWizard'
-import { uploadKycDocument } from '../lib/sellerStorage'
+import { uploadKycDocument, validateKycDocumentFile } from '../lib/sellerStorage'
 import { fetchSellerWorkflow, type SellerWorkflowState } from '../lib/sellerWorkflow'
 import { KycStep1Contact } from './kyc/KycStep1Contact'
 import { KycStep2Business } from './kyc/KycStep2Business'
@@ -199,6 +199,13 @@ export function SellerKycVerificationPage() {
 
     const progressKey = kycDocumentKey(documentType, documentSlot)
     setError('')
+
+    const validationError = validateKycDocumentFile(file)
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
     setUploadProgress((current) => ({ ...current, [progressKey]: 20 }))
 
     const upload = await uploadKycDocument(documentType, file, documentSlot)

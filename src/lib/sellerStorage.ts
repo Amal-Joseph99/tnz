@@ -11,6 +11,20 @@ function sanitizeFileName(fileName: string) {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, '_')
 }
 
+const ALLOWED_KYC_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'])
+const MAX_KYC_BYTES = 10 * 1024 * 1024
+
+export function validateKycDocumentFile(file: File): string | null {
+  const mime = file.type.toLowerCase()
+  if (!ALLOWED_KYC_TYPES.has(mime)) {
+    return 'Only JPEG, PNG, WebP, or PDF files are allowed.'
+  }
+  if (file.size > MAX_KYC_BYTES) {
+    return 'Each file must be 10MB or smaller.'
+  }
+  return null
+}
+
 export async function uploadKycDocument(
   documentType: string,
   file: File,
