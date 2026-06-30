@@ -25,3 +25,9 @@ supabase/sql/schedule_refresh_fx_rates_hourly.sql
 *.njsproj
 *.sln
 *.sw?
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
