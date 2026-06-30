@@ -48,6 +48,11 @@ import { ProductDetailsPage } from './pages/ProductDetailsPage'
 import { AdminReturnsPage } from './pages/AdminReturnsPage'
 import { AdminSupportPage } from './pages/AdminSupportPage'
 import { LegalDocumentBySlug } from './pages/LegalDocumentPage'
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
+import { CookiePolicyPage } from './pages/CookiePolicyPage'
+import { ReturnAndRefundPolicyPage } from './pages/ReturnAndRefundPolicyPage'
+import { ShippingPolicyPage } from './pages/ShippingPolicyPage'
+import { TermsAndConditionsPage } from './pages/TermsAndConditionsPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { DeleteAccountPage } from './pages/DeleteAccountPage'
 import { ReturnsPage } from './pages/ReturnsPage'
@@ -67,6 +72,7 @@ import { ProductListingWizardPage, ProductListingWizardRedirect } from './pages/
 import { SellerKycVerificationPage } from './pages/SellerKycVerificationPage'
 import { SellerProfilePage } from './pages/SellerProfilePage'
 import { SellerResetPasswordPage } from './pages/SellerResetPasswordPage'
+import { SellerAgreementPage, SellerAgreementPublicPage } from './pages/SellerAgreementPage'
 import { SellerTermsPoliciesPage } from './pages/SellerTermsPoliciesPage'
 import { SellerWalletPage } from './pages/SellerWalletPage'
 import { SellerWarehousePage } from './pages/SellerWarehousePage'
@@ -162,12 +168,12 @@ function AppContent() {
               <Route path="/careers" element={<CareersPage />} />
               <Route path="/press" element={<PressPage />} />
               <Route path="/sustainability" element={<SustainabilityPage />} />
-              <Route path="/privacy-policy" element={<LegalDocumentBySlug slug="privacy-policy" />} />
-              <Route path="/terms-of-service" element={<LegalDocumentBySlug slug="terms-of-service" />} />
-              <Route path="/cookies-settings" element={<LegalDocumentBySlug slug="cookies-settings" />} />
-              <Route path="/shipping-policy" element={<LegalDocumentBySlug slug="shipping-policy" />} />
-              <Route path="/refund-policy" element={<LegalDocumentBySlug slug="refund-policy" />} />
-              <Route path="/seller-agreement" element={<LegalDocumentBySlug slug="seller-agreement" />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms-of-service" element={<TermsAndConditionsPage />} />
+              <Route path="/cookies-settings" element={<CookiePolicyPage />} />
+              <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
+              <Route path="/refund-policy" element={<ReturnAndRefundPolicyPage />} />
+              <Route path="/seller-agreement" element={<SellerAgreementPublicPage />} />
               <Route path="/buyer-protection" element={<LegalDocumentBySlug slug="buyer-protection" />} />
               <Route path="/payment-terms" element={<LegalDocumentBySlug slug="payment-terms" />} />
               <Route path="/disclaimer" element={<LegalDocumentBySlug slug="disclaimer" />} />
@@ -195,6 +201,7 @@ function AppContent() {
               <Route path="/seller/wallet" element={<RequireSellerAuth><SellerWalletPage /></RequireSellerAuth>} />
               <Route path="/seller/help" element={<RequireSellerAuth><SellerHelpPage /></RequireSellerAuth>} />
               <Route path="/seller/terms-policies" element={<RequireSellerAuth><SellerTermsPoliciesPage /></RequireSellerAuth>} />
+              <Route path="/seller/agreement" element={<RequireSellerAuth><SellerAgreementPage /></RequireSellerAuth>} />
               <Route path="/seller/notifications" element={<RequireSellerAuth><SellerNotificationsPage /></RequireSellerAuth>} />
               <Route path="/admin/dashboard" element={<RequireAdminAuth><AdminDashboardPage /></RequireAdminAuth>} />
               <Route path="/admin/sellers" element={<RequireAdminAuth><AdminSellersPage /></RequireAdminAuth>} />

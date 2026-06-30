@@ -2618,6 +2618,141 @@
 .seller-policy-document {
   display: grid;
   gap: 18px;
+  padding: 28px 32px 32px;
+}
+
+.seller-agreement-document {
+  display: grid;
+  gap: 0;
+  padding: 28px 32px 32px;
+  color: var(--admin-bento-ink, #111827);
+}
+
+.seller-agreement-document--public {
+  width: min(100%, 980px);
+  margin: 0 auto;
+}
+
+.seller-agreement-document__head {
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.seller-agreement-document__head h2 {
+  margin: 8px 0 6px;
+  color: var(--admin-bento-ink, #111827);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+}
+
+.seller-agreement-document__head p {
+  margin: 0;
+  color: var(--admin-bento-muted, #6b7280);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.seller-agreement-document__eyebrow {
+  display: inline-block;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.seller-agreement-document__body {
+  display: grid;
+  gap: 0;
+}
+
+.seller-agreement-document__intro,
+.seller-agreement-document__section,
+.seller-agreement-document__footer {
+  padding: 22px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.seller-agreement-document__footer {
+  padding-bottom: 0;
+  border-bottom: none;
+  text-align: center;
+}
+
+.seller-agreement-document__section-title {
+  margin: 0 0 14px;
+  color: var(--admin-bento-ink, #111827);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  line-height: 1.35;
+}
+
+.seller-agreement-document__subsection-title {
+  margin: 16px 0 10px;
+  color: var(--admin-bento-ink, #111827);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.seller-agreement-document__subsection-title:first-child {
+  margin-top: 0;
+}
+
+.seller-agreement-document__paragraph {
+  margin: 0 0 12px;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.seller-agreement-document__paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.seller-agreement-document__list {
+  margin: 0 0 14px;
+  padding-left: 22px;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.seller-agreement-document__list li {
+  margin-bottom: 6px;
+}
+
+.seller-agreement-document__list li:last-child {
+  margin-bottom: 0;
+}
+
+.seller-agreement-document__paragraph strong,
+.seller-agreement-document__list strong {
+  color: var(--admin-bento-ink, #111827);
+  font-weight: 700;
+}
+
+.seller-agreement-document__footer .seller-agreement-document__paragraph {
+  margin-bottom: 8px;
+  color: var(--admin-bento-ink, #111827);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.simple-page--bento {
+  background: var(--admin-bento-canvas, #ececf1);
+}
+
+.simple-page--bento .simple-page__inner {
+  gap: 14px;
+  padding-top: 24px;
+  padding-bottom: 40px;
 }
 
 .seller-policy-document section {
@@ -2628,6 +2763,40 @@
 .seller-policy-document section:last-child {
   padding-bottom: 0;
   border-bottom: none;
+}
+
+.seller-policy-links {
+  display: grid;
+  gap: 12px;
+}
+
+.seller-policy-links__card {
+  display: grid;
+  gap: 4px;
+  padding: 16px 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #f9fafb;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.seller-policy-links__card:hover {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.seller-policy-links__card strong {
+  color: var(--admin-bento-ink, #111827);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.seller-policy-links__card span {
+  color: var(--admin-bento-muted, #6b7280);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .seller-badge {
@@ -8018,6 +8187,24 @@
 
   .seller-console-card {
     padding: 16px;
+  }
+
+  .seller-agreement-document,
+  .seller-policy-document {
+    padding: 20px 16px 24px;
+  }
+
+  .seller-agreement-document__head h2 {
+    font-size: 20px;
+  }
+
+  .seller-agreement-document__section-title {
+    font-size: 16px;
+  }
+
+  .seller-agreement-document__paragraph,
+  .seller-agreement-document__list {
+    font-size: 13px;
   }
 
   .seller-console-card__header {

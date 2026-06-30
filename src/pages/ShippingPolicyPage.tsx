@@ -1,6 +1,6 @@
-import { PrivacyPolicyBody } from '../components/legal/PrivacyPolicyBody'
+import { ShippingPolicyBody } from '../components/legal/ShippingPolicyBody'
 
-export function PrivacyPolicyPage() {
+export function ShippingPolicyPage() {
   return (
     <section className="simple-page simple-page--bento">
       <div className="container simple-page__inner">
@@ -8,11 +8,11 @@ export function PrivacyPolicyPage() {
           <div className="admin-bento__head seller-agreement-document__head">
             <div>
               <span className="seller-agreement-document__eyebrow">Legal</span>
-              <h2>Privacy Policy</h2>
-              <p>How AGTRENZ collects, uses, stores, shares, and protects your personal information.</p>
+              <h2>Shipping Policy</h2>
+              <p>How orders are processed, shipped, and delivered through the AGTRENZ marketplace.</p>
             </div>
           </div>
-          <PrivacyPolicyBody />
+          <ShippingPolicyBody />
         </article>
       </div>
     </section>

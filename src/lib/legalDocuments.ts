@@ -126,8 +126,8 @@ export const legalDocuments: Record<string, LegalDocument> = {
 
 export const footerLegalLinks = [
   { label: 'Privacy Policy', to: '/privacy-policy' },
-  { label: 'Terms of Service', to: '/terms-of-service' },
+  { label: 'Terms and Conditions', to: '/terms-of-service' },
   { label: 'Shipping Policy', to: '/shipping-policy' },
-  { label: 'Refund & Returns', to: '/refund-policy' },
+  { label: 'Return and Refund Policy', to: '/refund-policy' },
   { label: 'Cookie Policy', to: '/cookies-settings' },
 ] as const

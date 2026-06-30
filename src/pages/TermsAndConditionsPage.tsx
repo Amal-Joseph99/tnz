@@ -1,6 +1,6 @@
-import { PrivacyPolicyBody } from '../components/legal/PrivacyPolicyBody'
+import { TermsAndConditionsBody } from '../components/legal/TermsAndConditionsBody'
 
-export function PrivacyPolicyPage() {
+export function TermsAndConditionsPage() {
   return (
     <section className="simple-page simple-page--bento">
       <div className="container simple-page__inner">
@@ -8,11 +8,11 @@ export function PrivacyPolicyPage() {
           <div className="admin-bento__head seller-agreement-document__head">
             <div>
               <span className="seller-agreement-document__eyebrow">Legal</span>
-              <h2>Privacy Policy</h2>
-              <p>How AGTRENZ collects, uses, stores, shares, and protects your personal information.</p>
+              <h2>Terms and Conditions</h2>
+              <p>Rules governing your access to and use of the AGTRENZ marketplace.</p>
             </div>
           </div>
-          <PrivacyPolicyBody />
+          <TermsAndConditionsBody />
         </article>
       </div>
     </section>

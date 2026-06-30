@@ -91,7 +91,7 @@ export function KycStep4Bank({
                 onChange={(event) => onChange({ sellerAgreementAccepted: event.target.checked })}
               />
               <span>
-                I accept the AGTRENZ <Link to="/seller/terms-policies">Seller Agreement</Link>.
+                I accept the AGTRENZ <Link to="/seller/agreement">Seller Agreement</Link>.
               </span>
             </label>
             <label className="seller-terms-check">
