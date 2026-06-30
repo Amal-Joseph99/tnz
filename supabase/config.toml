@@ -424,7 +424,7 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
 
 [functions.refresh-fx-rates]
-verify_jwt = false
+verify_jwt = true
 
 [functions.shiprocket-serviceability]
 verify_jwt = true

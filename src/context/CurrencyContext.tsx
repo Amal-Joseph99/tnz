@@ -18,7 +18,15 @@ import {
   type AdminCurrencyOption,
   type CurrencyPackage,
 } from '../lib/currencyConfig'
-import { readStoredLocation, writeStoredLocation, type StoredLocation } from '../lib/userLocation'
+import {
+  clearLocationFetchAttempted,
+  getSignedInUserId,
+  hasLocationFetchBeenAttempted,
+  markLocationFetchAttempted,
+  readStoredLocation,
+  writeStoredLocation,
+  type StoredLocation,
+} from '../lib/userLocation'
 import { supabase } from '../lib/supabase'
 
 type CurrencyContextValue = {
@@ -36,7 +44,6 @@ type CurrencyContextValue = {
   toDisplayListingAmount: (amount: number, listingCurrencyCode: string) => number
   formatDisplayAmount: (amount: number) => string
   refreshLocation: () => Promise<void>
-  ensureHomepageLocation: () => Promise<void>
   setAdminCurrency: (currencyCode: string) => Promise<void>
 }
 
@@ -69,9 +76,9 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   const [pricingError, setPricingError] = useState('')
   const [hasStoredLocation, setHasStoredLocation] = useState(false)
   const [adminCurrencyOptions, setAdminCurrencyOptions] = useState<AdminCurrencyOption[]>([])
-  const [countryCode, setCountryCode] = useState<string | null>(null)
   const [currencyRates, setCurrencyRates] = useState<Record<string, number>>({ USD: 1 })
   const resolvingRef = useRef(0)
+  const locationFetchRef = useRef<Promise<void> | null>(null)
 
   const loadCurrencyRates = useCallback(async () => {
     if (!supabase) return
@@ -129,7 +136,6 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
 
   const applyLocation = useCallback(async (location: StoredLocation) => {
     setLocationLabel(location.locationLabel)
-    setCountryCode(location.countryCode)
     setHasStoredLocation(true)
     await resolvePricing(location.countryCode)
   }, [resolvePricing])
@@ -138,11 +144,13 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     setLoading(true)
     setLocationLabel('Detecting location…')
 
+    const userId = await getSignedInUserId()
+    markLocationFetchAttempted(userId)
+
     const detected = await detectLocationWithOpenCage()
     if (!detected.ok) {
       setLocationLabel('Location unavailable')
       setHasStoredLocation(false)
-      setCountryCode(null)
       await resolvePricing(null)
       return
     }
@@ -151,27 +159,50 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     await applyLocation(detected.location)
   }, [applyLocation, resolvePricing])
 
-  const refreshLocation = useCallback(async () => {
-    await fetchAndPersistLocation()
-  }, [fetchAndPersistLocation])
-
-  const ensureHomepageLocation = useCallback(async () => {
+  const ensureStorefrontLocation = useCallback(async (options?: { force?: boolean }) => {
     if (accountType === 'seller' || accountType === 'admin') {
       return
     }
 
-    if (hasStoredLocation && countryCode) {
+    if (locationFetchRef.current) {
+      await locationFetchRef.current
       return
     }
 
-    const stored = await readStoredLocation()
-    if (stored) {
-      await applyLocation(stored)
-      return
+    const run = async () => {
+      const userId = await getSignedInUserId()
+
+      if (!options?.force) {
+        const stored = await readStoredLocation()
+        if (stored) {
+          await applyLocation(stored)
+          return
+        }
+
+        if (hasLocationFetchBeenAttempted(userId)) {
+          setLocationLabel('Location unavailable')
+          setHasStoredLocation(false)
+          await resolvePricing(null)
+          return
+        }
+      } else {
+        clearLocationFetchAttempted(userId)
+      }
+
+      await fetchAndPersistLocation()
     }
 
-    await fetchAndPersistLocation()
-  }, [accountType, applyLocation, countryCode, fetchAndPersistLocation, hasStoredLocation])
+    locationFetchRef.current = run()
+    try {
+      await locationFetchRef.current
+    } finally {
+      locationFetchRef.current = null
+    }
+  }, [accountType, applyLocation, fetchAndPersistLocation, resolvePricing])
+
+  const refreshLocation = useCallback(async () => {
+    await ensureStorefrontLocation({ force: true })
+  }, [ensureStorefrontLocation])
 
   const setAdminCurrency = useCallback(async (nextCurrencyCode: string) => {
     setLoading(true)
@@ -221,18 +252,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      const stored = await readStoredLocation()
-      if (!active) return
-
-      if (stored) {
-        await applyLocation(stored)
-        return
-      }
-
-      await resolvePricing(null)
-      if (active) {
-        setLocationLabel('Detecting location…')
-      }
+      await ensureStorefrontLocation()
     }
 
     void bootstrap()
@@ -240,7 +260,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false
     }
-  }, [accountType, applyLocation, authLoading, resolvePricing])
+  }, [accountType, authLoading, ensureStorefrontLocation, resolvePricing])
 
   const formatListingPrice = useCallback(
     (amount: number, listingCurrencyCode: string) => {
@@ -324,7 +344,6 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       toDisplayListingAmount,
       formatDisplayAmount,
       refreshLocation,
-      ensureHomepageLocation,
       setAdminCurrency,
     }),
     [
@@ -341,7 +360,6 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       pricingReady,
       rate,
       refreshLocation,
-      ensureHomepageLocation,
       setAdminCurrency,
       symbol,
     ],

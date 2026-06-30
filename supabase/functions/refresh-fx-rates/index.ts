@@ -15,11 +15,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-function isAuthorized(req: Request, serviceRoleKey: string) {
-  const authHeader = req.headers.get('Authorization')
-  return authHeader === `Bearer ${serviceRoleKey}`
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -34,13 +29,6 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: 'Missing EXCHANGERATE_API_KEY or Supabase env configuration.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
-  }
-
-  if (!isAuthorized(req, serviceRoleKey)) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
   }
 
   try {

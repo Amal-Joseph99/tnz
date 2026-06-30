@@ -16,7 +16,7 @@ function bulletsToText(bullets: string[]) {
 }
 
 function normalizeBulletLine(line: string) {
-  return line.replace(/^[•\-\*]\s*/, '')
+  return line.replace(/^[•\-*]\s*/, '')
 }
 
 function textToBullets(text: string) {

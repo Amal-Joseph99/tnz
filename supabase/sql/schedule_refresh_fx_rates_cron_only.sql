@@ -16,6 +16,12 @@ SELECT cron.schedule(
         FROM vault.decrypted_secrets
         WHERE name = 'service_role_key'
         LIMIT 1
+      ),
+      'apikey', (
+        SELECT decrypted_secret
+        FROM vault.decrypted_secrets
+        WHERE name = 'service_role_key'
+        LIMIT 1
       )
     ),
     body := '{"source":"pg_cron"}'::jsonb,

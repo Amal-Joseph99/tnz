@@ -2,8 +2,45 @@ import { supabase } from './supabase'
 import type { ResolvedLocation } from './opencage'
 
 const GUEST_LOCATION_KEY = 'agtrenz-guest-location'
+const LOCATION_FETCH_ATTEMPTED_PREFIX = 'agtrenz-location-fetch-attempted'
 
 export type StoredLocation = ResolvedLocation
+
+function locationAttemptStorageKey(userId?: string | null) {
+  return userId
+    ? `${LOCATION_FETCH_ATTEMPTED_PREFIX}:${userId}`
+    : `${LOCATION_FETCH_ATTEMPTED_PREFIX}:guest`
+}
+
+export function hasLocationFetchBeenAttempted(userId?: string | null) {
+  try {
+    return window.localStorage.getItem(locationAttemptStorageKey(userId)) === 'true'
+  } catch {
+    return false
+  }
+}
+
+export function markLocationFetchAttempted(userId?: string | null) {
+  try {
+    window.localStorage.setItem(locationAttemptStorageKey(userId), 'true')
+  } catch {
+    // ignore quota errors
+  }
+}
+
+export function clearLocationFetchAttempted(userId?: string | null) {
+  try {
+    window.localStorage.removeItem(locationAttemptStorageKey(userId))
+  } catch {
+    // ignore
+  }
+}
+
+export async function getSignedInUserId(): Promise<string | null> {
+  if (!supabase) return null
+  const { data: authData } = await supabase.auth.getUser()
+  return authData.user?.id ?? null
+}
 
 function normalizeStoredLocation(raw: Partial<StoredLocation> | null): StoredLocation | null {
   if (!raw?.locationLabel) return null
@@ -80,11 +117,25 @@ export async function writeUserLocation(location: StoredLocation): Promise<boole
   return !error
 }
 
+/** Copy guest localStorage location into DB when a buyer signs in. */
+export async function migrateGuestLocationToUserIfNeeded(): Promise<StoredLocation | null> {
+  const existing = await readUserLocation()
+  if (existing) return existing
+
+  const guestLocation = readGuestLocation()
+  if (!guestLocation) return null
+
+  const saved = await writeUserLocation(guestLocation)
+  return saved ? guestLocation : null
+}
+
 export async function readStoredLocation(): Promise<StoredLocation | null> {
   if (!supabase) return readGuestLocation()
 
   const { data: authData } = await supabase.auth.getUser()
   if (authData.user) {
+    const migrated = await migrateGuestLocationToUserIfNeeded()
+    if (migrated) return migrated
     return readUserLocation()
   }
 

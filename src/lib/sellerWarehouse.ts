@@ -74,7 +74,7 @@ export function validateWarehouseAddressLine1(value: string) {
   if (trimmed.length < 5) return false
 
   return (
-    /^\d+[A-Za-z0-9/\-]*/.test(trimmed) ||
+    /^\d+[A-Za-z0-9/-]*/.test(trimmed) ||
     /^(flat|house|plot|building|door|h\.?\s*no|road)\s*[#.:]?\s*\d/i.test(trimmed)
   )
 }
