@@ -3415,6 +3415,25 @@
   gap: 18px;
 }
 
+.warehouse-locked-notice {
+  margin: 0 0 4px;
+  padding: 12px 14px;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  background: #f0fdf4;
+  color: #166534;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.seller-warehouse-form--locked :is(input, select, textarea, button) {
+  cursor: not-allowed;
+}
+
+.seller-warehouse-form--locked .warehouse-weekday {
+  opacity: 0.85;
+}
+
 .warehouse-address-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);

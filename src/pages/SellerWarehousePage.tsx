@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { SellerDashboardShell } from '../components/SellerDashboardShell'
+import { StatusMessageDialog } from '../components/StatusMessageDialog'
 import { WarehouseConfirmLocationDialog } from '../components/WarehouseConfirmLocationDialog'
 import { WarehouseLocationMap } from '../components/WarehouseLocationMap'
 import { detectLocationWithOpenCage, forwardGeocodeWithOpenCage } from '../lib/opencage'
@@ -63,8 +64,12 @@ export function SellerWarehousePage() {
   const [locationNotice, setLocationNotice] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
+  const [isWarehouseLocked, setIsWarehouseLocked] = useState(false)
+  const [statusDialog, setStatusDialog] = useState<{
+    title: string
+    message: string
+    variant: 'success' | 'error'
+  } | null>(null)
 
   const isIndiaWarehouse = useMemo(
     () => isIndianSeller(sellerIsoAlpha2) || countryName.trim().toLowerCase() === 'india',
@@ -116,6 +121,7 @@ export function SellerWarehousePage() {
           setSupplierName(warehouse.supplierName)
           setSupplierGstin(warehouse.supplierGstin)
           setShiprocketPickupLocationName(warehouse.shiprocketPickupLocationName)
+          setIsWarehouseLocked(warehouse.isCompleted)
         } else if (formOptions.addressTags[0]) {
           setAddressTagId(String(formOptions.addressTags[0].id))
         }
@@ -130,7 +136,7 @@ export function SellerWarehousePage() {
   }, [])
 
   useEffect(() => {
-    if (!isIndiaWarehouse) {
+    if (!isIndiaWarehouse || isWarehouseLocked) {
       setPincodeHint('')
       return
     }
@@ -162,15 +168,17 @@ export function SellerWarehousePage() {
     return () => {
       active = false
     }
-  }, [postalCode, isIndiaWarehouse])
+  }, [postalCode, isIndiaWarehouse, isWarehouseLocked])
 
   const toggleOperationalDay = (dayCode: string) => {
+    if (isWarehouseLocked) return
     setOperationalDays((current) =>
       current.includes(dayCode) ? current.filter((code) => code !== dayCode) : [...current, dayCode],
     )
   }
 
   const handleAddressLine1Change = (value: string) => {
+    if (isWarehouseLocked) return
     setAddressLine1(value)
     if (!value.trim()) {
       setAddressLineError('')
@@ -188,12 +196,18 @@ export function SellerWarehousePage() {
     state: string
     country: string
   }) => {
+    if (isWarehouseLocked) return
     setPendingLocation(location)
     setConfirmOpen(true)
   }
 
+  const showSaveDialog = (title: string, message: string, variant: 'success' | 'error') => {
+    setStatusDialog({ title, message, variant })
+  }
+
   const handleFetchCurrentLocation = async () => {
-    setError('')
+    if (isWarehouseLocked) return
+
     setLocationFetchError('')
     setLocationNotice('')
     setLocationLoading(true)
@@ -221,7 +235,8 @@ export function SellerWarehousePage() {
   }
 
   const handleLocateFromAddress = async () => {
-    setError('')
+    if (isWarehouseLocked) return
+
     setLocationFetchError('')
     setLocationNotice('')
 
@@ -251,7 +266,7 @@ export function SellerWarehousePage() {
   }
 
   const handleConfirmLocation = () => {
-    if (!pendingLocation) return
+    if (!pendingLocation || isWarehouseLocked) return
 
     setLatitude(pendingLocation.latitude)
     setLongitude(pendingLocation.longitude)
@@ -268,17 +283,20 @@ export function SellerWarehousePage() {
   }
 
   const handleSaveWarehouse = async () => {
-    setError('')
-    setMessage('')
+    if (isWarehouseLocked) return
 
     if (!validateWarehouseAddressLine1(addressLine1)) {
       setAddressLineError(WAREHOUSE_ADDRESS_LINE_ERROR)
-      setError(WAREHOUSE_ADDRESS_LINE_ERROR)
+      showSaveDialog('Could not save warehouse', WAREHOUSE_ADDRESS_LINE_ERROR, 'error')
       return
     }
 
     if (latitude == null || longitude == null || !locationLabel.trim()) {
-      setError('Fetch and confirm your location on the map before saving.')
+      showSaveDialog(
+        'Could not save warehouse',
+        'Fetch and confirm your location on the map before saving.',
+        'error',
+      )
       return
     }
 
@@ -311,7 +329,7 @@ export function SellerWarehousePage() {
     setSaving(false)
 
     if (!result.ok) {
-      setError(result.message)
+      showSaveDialog('Could not save warehouse', result.message, 'error')
       return
     }
 
@@ -321,7 +339,12 @@ export function SellerWarehousePage() {
 
     const nextWorkflow = await fetchSellerWorkflow()
     setWorkflow(nextWorkflow)
-    setMessage('Warehouse verified and saved. Product listing is now unlocked.')
+    setIsWarehouseLocked(true)
+    showSaveDialog(
+      'Warehouse saved',
+      'Warehouse verified and saved. Product listing is now unlocked.',
+      'success',
+    )
   }
 
   if (loading || !workflow || !options) {
@@ -359,13 +382,31 @@ export function SellerWarehousePage() {
               <h2>Warehouse creation</h2>
               <p>Complete address, map location, contact, and operational details.</p>
             </div>
-            {warehouseId ? <span className="seller-badge">ID: {warehouseId}</span> : null}
+            {warehouseId ? (
+              <span className={`seller-badge${isWarehouseLocked ? ' seller-badge--success' : ''}`}>
+                {isWarehouseLocked ? `Verified · ID: ${warehouseId}` : `ID: ${warehouseId}`}
+              </span>
+            ) : null}
           </div>
 
-          <form className="seller-warehouse-form" onSubmit={(event) => event.preventDefault()}>
+          {isWarehouseLocked ? (
+            <p className="warehouse-locked-notice">
+              This warehouse has been verified and saved. Details can no longer be edited.
+            </p>
+          ) : null}
+
+          <form
+            className={`seller-warehouse-form${isWarehouseLocked ? ' seller-warehouse-form--locked' : ''}`}
+            onSubmit={(event) => event.preventDefault()}
+          >
             <label>
               Tag this address as
-              <select value={addressTagId} onChange={(event) => setAddressTagId(event.target.value)} required>
+              <select
+                value={addressTagId}
+                disabled={isWarehouseLocked}
+                onChange={(event) => setAddressTagId(event.target.value)}
+                required
+              >
                 <option value="">Select tag</option>
                 {options.addressTags.map((tag) => (
                   <option key={tag.id} value={tag.id}>{tag.label}</option>
@@ -379,6 +420,7 @@ export function SellerWarehousePage() {
                   Complete address
                   <input
                     value={addressLine1}
+                    disabled={isWarehouseLocked}
                     onChange={(event) => handleAddressLine1Change(event.target.value)}
                     placeholder="House/Floor No., Building Name or Street, Locality"
                     required
@@ -390,6 +432,7 @@ export function SellerWarehousePage() {
                   Landmark
                   <input
                     value={landmark}
+                    disabled={isWarehouseLocked}
                     onChange={(event) => setLandmark(event.target.value)}
                     placeholder="Any nearby post office, market, hospital as the landmark"
                   />
@@ -400,6 +443,7 @@ export function SellerWarehousePage() {
                     {isIndiaWarehouse ? 'Pincode' : 'Postal code'}
                     <input
                       value={postalCode}
+                      disabled={isWarehouseLocked}
                       onChange={(event) => {
                         const value = event.target.value
                         setPostalCode(
@@ -419,15 +463,15 @@ export function SellerWarehousePage() {
                   </label>
                   <label>
                     City
-                    <input value={city} onChange={(event) => setCity(event.target.value)} placeholder="City" required />
+                    <input value={city} disabled={isWarehouseLocked} onChange={(event) => setCity(event.target.value)} placeholder="City" required />
                   </label>
                   <label>
                     State
-                    <input value={stateName} onChange={(event) => setStateName(event.target.value)} placeholder="State" required />
+                    <input value={stateName} disabled={isWarehouseLocked} onChange={(event) => setStateName(event.target.value)} placeholder="State" required />
                   </label>
                   <label>
                     Country
-                    <input value={countryName} onChange={(event) => setCountryName(event.target.value)} required />
+                    <input value={countryName} disabled={isWarehouseLocked} onChange={(event) => setCountryName(event.target.value)} required />
                   </label>
                 </div>
               </div>
@@ -438,7 +482,7 @@ export function SellerWarehousePage() {
                   <button
                     type="button"
                     className="seller-secondary-action warehouse-fetch-location"
-                    disabled={locationLoading || addressLocateLoading}
+                    disabled={isWarehouseLocked || locationLoading || addressLocateLoading}
                     onClick={() => void handleFetchCurrentLocation()}
                   >
                     {locationLoading ? 'Fetching location...' : 'Fetch my current location'}
@@ -446,7 +490,7 @@ export function SellerWarehousePage() {
                   <button
                     type="button"
                     className="seller-secondary-action warehouse-fetch-location"
-                    disabled={locationLoading || addressLocateLoading}
+                    disabled={isWarehouseLocked || locationLoading || addressLocateLoading}
                     onClick={() => void handleLocateFromAddress()}
                   >
                     {addressLocateLoading ? 'Locating address...' : 'Locate from address'}
@@ -470,13 +514,14 @@ export function SellerWarehousePage() {
               <div className="warehouse-contact-grid">
                 <label>
                   Name
-                  <input value={contactName} onChange={(event) => setContactName(event.target.value)} required />
+                  <input value={contactName} disabled={isWarehouseLocked} onChange={(event) => setContactName(event.target.value)} required />
                 </label>
                 <label>
                   Email
                   <input
                     type="email"
                     value={contactEmail}
+                    disabled={isWarehouseLocked}
                     onChange={(event) => setContactEmail(event.target.value)}
                     required
                   />
@@ -485,6 +530,7 @@ export function SellerWarehousePage() {
                   Mobile no.
                   <input
                     value={contactPhone}
+                    disabled={isWarehouseLocked}
                     onChange={(event) => {
                       const digits = event.target.value.replace(/\D/g, '')
                       setContactPhone(
@@ -497,7 +543,7 @@ export function SellerWarehousePage() {
                 </label>
                 <label>
                   Role
-                  <select value={contactRoleId} onChange={(event) => setContactRoleId(event.target.value)} required>
+                  <select value={contactRoleId} disabled={isWarehouseLocked} onChange={(event) => setContactRoleId(event.target.value)} required>
                     <option value="">Select role</option>
                     {options.contactRoles.map((role) => (
                       <option key={role.id} value={role.id}>{role.label}</option>
@@ -515,6 +561,7 @@ export function SellerWarehousePage() {
                     <input
                       type="checkbox"
                       checked={operationalDays.includes(day.code)}
+                      disabled={isWarehouseLocked}
                       onChange={() => toggleOperationalDay(day.code)}
                     />
                     <span>{day.label}</span>
@@ -524,7 +571,7 @@ export function SellerWarehousePage() {
               <div className="warehouse-time-grid">
                 <label>
                   Opening timing
-                  <select value={openingTime} onChange={(event) => setOpeningTime(event.target.value)} required>
+                  <select value={openingTime} disabled={isWarehouseLocked} onChange={(event) => setOpeningTime(event.target.value)} required>
                     <option value="">Select opening time</option>
                     {options.timeSlots.map((slot) => (
                       <option key={slot.id} value={slot.time}>{slot.label}</option>
@@ -533,7 +580,7 @@ export function SellerWarehousePage() {
                 </label>
                 <label>
                   Closing time
-                  <select value={closingTime} onChange={(event) => setClosingTime(event.target.value)} required>
+                  <select value={closingTime} disabled={isWarehouseLocked} onChange={(event) => setClosingTime(event.target.value)} required>
                     <option value="">Select closing time</option>
                     {options.timeSlots.map((slot) => (
                       <option key={slot.id} value={slot.time}>{slot.label}</option>
@@ -548,6 +595,7 @@ export function SellerWarehousePage() {
                 <input
                   type="checkbox"
                   checked={isSupplierAddress}
+                  disabled={isWarehouseLocked}
                   onChange={(event) => setIsSupplierAddress(event.target.checked)}
                 />
                 <span>Add this address as Supplier/Vendor address (optional)</span>
@@ -557,12 +605,13 @@ export function SellerWarehousePage() {
                 <div className="warehouse-supplier-grid">
                   <label>
                     Supplier/Vendor&apos;s name
-                    <input value={supplierName} onChange={(event) => setSupplierName(event.target.value)} />
+                    <input value={supplierName} disabled={isWarehouseLocked} onChange={(event) => setSupplierName(event.target.value)} />
                   </label>
                   <label>
                     Supplier/Vendor&apos;s GSTIN
                     <input
                       value={supplierGstin}
+                      disabled={isWarehouseLocked}
                       onChange={(event) => setSupplierGstin(event.target.value.toUpperCase())}
                       maxLength={15}
                     />
@@ -575,20 +624,28 @@ export function SellerWarehousePage() {
               Shiprocket pickup location name (optional)
               <input
                 value={shiprocketPickupLocationName}
+                disabled={isWarehouseLocked}
                 onChange={(event) => setShiprocketPickupLocationName(event.target.value)}
                 placeholder="Exact pickup name from Shiprocket panel"
               />
             </label>
           </form>
 
-          {error && <div className="auth-message auth-message--error">{error}</div>}
-          {message && <div className="auth-message auth-message--success">{message}</div>}
-
-          <button type="button" className="seller-primary-action" disabled={saving} onClick={() => void handleSaveWarehouse()}>
-            {saving ? 'Saving...' : 'Verify & Save'}
-          </button>
+          {!isWarehouseLocked ? (
+            <button type="button" className="seller-primary-action" disabled={saving} onClick={() => void handleSaveWarehouse()}>
+              {saving ? 'Saving...' : 'Verify & Save'}
+            </button>
+          ) : null}
         </article>
       </section>
+
+      <StatusMessageDialog
+        open={statusDialog !== null}
+        title={statusDialog?.title ?? ''}
+        message={statusDialog?.message ?? ''}
+        variant={statusDialog?.variant}
+        onClose={() => setStatusDialog(null)}
+      />
 
       <WarehouseConfirmLocationDialog
         open={confirmOpen}
