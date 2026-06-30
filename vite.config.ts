@@ -5,6 +5,8 @@ import { defineConfig, type Plugin } from 'vite'
 import { featuredProducts, trendingProducts } from './src/data/products'
 import { buildProductShareHtml } from './src/lib/sharePages'
 
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 function sharePagesPlugin(): Plugin {
   const siteOrigin = (process.env.VITE_SITE_URL ?? 'https://www.agtrenz.com').replace(/\/$/, '')
 
@@ -31,5 +33,5 @@ function sharePagesPlugin(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), sharePagesPlugin()],
+  plugins: [react(), sharePagesPlugin(), cloudflare()],
 })
